@@ -32,18 +32,39 @@
             
   <h1>Source code for placement.mapper</h1><div class="highlight"><pre>
 <span></span><span class="kn">from</span> <span class="nn">abc</span> <span class="k">import</span> <span class="n">ABC</span>
+<span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
+
+<div class="viewcode-block" id="AbstractMapper"><a class="viewcode-back" href="../../index.html#placement.mapper.AbstractMapper">[docs]</a><span class="k">class</span> <span class="nc">AbstractMapper</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;Abstract class for Mappers that perform VNF placements&quot;&quot;&quot;</span>
 
 
-<div class="viewcode-block" id="asa"><a class="viewcode-back" href="../../index.html#placement.mapper.asa">[docs]</a><span class="k">def</span> <span class="nf">asa</span><span class="p">(</span><span class="n">arg1</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">arg2</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;TODO: Docstring for asa.</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span>
 
-<span class="sd">    :arg1: str: TODO</span>
-<span class="sd">    :arg2: int: TODO</span>
-<span class="sd">    :returns: TODO</span>
+    <span class="k">def</span> <span class="nf">map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">infra</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">classes</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">Graph</span><span class="p">,</span>
+            <span class="n">ns</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">classes</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">Graph</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;TODO: Docstring for map.</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">pass</span></div>
+<span class="sd">        :infra: nx.classes.graph.Graph: TODO</span>
+<span class="sd">        :ns: nx.classes.graph.Graph: TODO</span>
+<span class="sd">        :returns: dict: </span>
 
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+
+<div class="viewcode-block" id="AbstractMapper.map"><a class="viewcode-back" href="../../index.html#placement.mapper.AbstractMapper.map">[docs]</a>    <span class="k">def</span> <span class="nf">map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">infra</span><span class="p">:</span> <span class="n">nx</span><span class="p">,</span> <span class="n">ns</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Performs the mapping of a network service over an infrastructure</span>
+
+<span class="sd">        :infra: networkx instance </span>
+<span class="sd">        :ns: TODO</span>
+<span class="sd">        :returns: TODO</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div></div>
+
+        
+    
 </pre></div>
 
           </div>

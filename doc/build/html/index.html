@@ -37,21 +37,27 @@
 </div>
 <div class="section" id="module-placement.mapper">
 <span id="teacherapi-main"></span><h1>TeacherAPI main<a class="headerlink" href="#module-placement.mapper" title="Permalink to this headline">¶</a></h1>
-<dl class="function">
-<dt id="placement.mapper.asa">
-<code class="descclassname">placement.mapper.</code><code class="descname">asa</code><span class="sig-paren">(</span><em>arg1: str</em>, <em>arg2: int</em><span class="sig-paren">)</span> &#x2192; str<a class="reference internal" href="_modules/placement/mapper.html#asa"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#placement.mapper.asa" title="Permalink to this definition">¶</a></dt>
-<dd><p>TODO: Docstring for asa.</p>
+<dl class="class">
+<dt id="placement.mapper.AbstractMapper">
+<em class="property">class </em><code class="descclassname">placement.mapper.</code><code class="descname">AbstractMapper</code><a class="reference internal" href="_modules/placement/mapper.html#AbstractMapper"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#placement.mapper.AbstractMapper" title="Permalink to this definition">¶</a></dt>
+<dd><p>Abstract class for Mappers that perform VNF placements</p>
+<dl class="method">
+<dt id="placement.mapper.AbstractMapper.map">
+<code class="descname">map</code><span class="sig-paren">(</span><em>infra: &lt;module 'networkx' from '/usr/local/lib/python3.7/site-packages/networkx/__init__.py'&gt;</em>, <em>ns</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/placement/mapper.html#AbstractMapper.map"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#placement.mapper.AbstractMapper.map" title="Permalink to this definition">¶</a></dt>
+<dd><p>Performs the mapping of a network service over an infrastructure</p>
 <dl class="field-list simple">
-<dt class="field-odd">Arg1</dt>
-<dd class="field-odd"><p>str: TODO</p>
+<dt class="field-odd">Infra</dt>
+<dd class="field-odd"><p>networkx instance</p>
 </dd>
-<dt class="field-even">Arg2</dt>
-<dd class="field-even"><p>int: TODO</p>
+<dt class="field-even">Ns</dt>
+<dd class="field-even"><p>TODO</p>
 </dd>
 <dt class="field-odd">Returns</dt>
 <dd class="field-odd"><p>TODO</p>
 </dd>
 </dl>
+</dd></dl>
+
 </dd></dl>
 
 </div>
