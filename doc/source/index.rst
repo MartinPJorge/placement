@@ -10,15 +10,21 @@ Welcome to placement's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-TeacherAPI main
-===================
-.. automodule:: placement.mapper
-   :members:
-
-
 Indices and tables
 ==================
 
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+
+Mapper module
+===================
+.. automodule:: placement.mapper
+   :members:
+
+Checker module
+===================
+.. automodule:: placement.checker
+   :members:
+
+

@@ -21,9 +21,10 @@ setup(name='placement',
       author='Jorge Martín Pérez',
       author_email='j.martinp@it.uc3m.es',
       license='MIT',
-      packages=['placement'],
+      packages=['placement', 'placement.test'],
       install_requires=[
           'networkx==2.2',
+          'haversine'
       ],
       # test_suite='nose.collector',
       # tests_require=['nose', 'nose-cover3'],
