@@ -145,7 +145,6 @@ class CheckBasicDigraphs(AbstractChecker):
             if 'cpu' not in node_dict or type(node_dict['cpu']) != int:
                 print("'cpu' key not present in node, or not an int",
                         file=sys.stderr)
-                print("Ns node: ", node, " cpu=", node_dict['cpu'])
                 return False
             if 'mem' not in node_dict or type(node_dict['mem']) != int:
                 print("'mem' key not present in node, or not an int",
