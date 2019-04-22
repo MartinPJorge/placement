@@ -2,6 +2,7 @@ from abc import ABCMeta, abstractmethod
 import networkx as nx
 import sys
 from itertools import islice
+import json
 
 class AbstractChecker(metaclass=ABCMeta):
 
@@ -66,8 +67,8 @@ class CheckBasicDigraphs(AbstractChecker):
         for node in infra.nodes():
             node_dict = infra.nodes[node]
             if 'cpu' not in node_dict or type(node_dict['cpu']) != int:
-                print("'cpu' key not present in node, or not an int",
-                        file=sys.stderr)
+                print("'cpu' key not present in node", node,
+                      "or not an int", file=sys.stderr)
                 return False
             if 'mem' not in node_dict or type(node_dict['mem']) != int:
                 print("'mem' key not present in node, or not an int",
@@ -191,4 +192,54 @@ class CheckBasicDigraphs(AbstractChecker):
         return True
 
 
+
+class CheckFogDigraphs(AbstractChecker):
+
+    """Checks that the network services and infrastructures graphs are Basic
+    digraphs with lifetime and reliability parameters."""
+
+    def __init__(self):
+        pass
+
+        
+    def check_infra(self, infra: nx.classes.digraph.DiGraph) -> bool:
+        """Checks if the infrastructure graph has the correct format
+
+        :infra: nx.classes.digraph.DiGraph: infrastructure graph
+        :returns: bool: telling if it satisfies it or not
+
+        """
+        basic_checker = CheckBasicDigraphs()
+        if not basic_checker.check_infra(infra):
+            return False
+
+        for h1,h2,e_d in infra.edges(data=True):
+            if 'reliability' not in e_d:
+                print("'reliability key not present in infrastructure",
+                       "edge (", h1, h2, ")'", file=sys.stderr)
+                return False
+
+            for host in [h1, h2]:
+                if 'reliability' not in infra.nodes[host]:
+                    print("'reliability key not present in infrastructure"
+                          "host", host, file=sys.stderr)
+                    return False
+
+                if 'lifetime' not in infra.nodes[host]:
+                    print("'lifetime key not present in infrastructure host'",
+                          host, file=sys.stderr)
+                    return False
+
+        return True
+
+
+    def check_ns(self, ns: nx.classes.digraph.DiGraph) -> bool:
+        """Checks if the network service graph has the correct format
+
+        :ns: nx.classes.digraph.DiGraph: network service graph
+        :returns: bool: telling if it satisfies it or not
+
+        """
+        basic_checker = CheckBasicDigraphs()
+        return basic_checker.check_ns(ns)
 

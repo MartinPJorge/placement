@@ -319,6 +319,58 @@ class TestCheckBasicDigraphs(unittest.TestCase):
         self.assertTrue(self.basic_di_checker.check_infra(self.infra_ok))
 
 
+class TestCheckFogDigraphs(unittest.TestCase):
+
+    """Test case for the CheckFogDigraphs class"""
+
+    def __infra_setUp(self):
+        # Create properly formed graphs
+        infra = nx.DiGraph()
+        cost = {'cpu': 2, 'disk': 2.3, 'mem': 4}
+        infra.add_node('h1', cpu=2, mem=16, disk=1024, rats=['LTE', 'MMW'],
+                       location=(39.1408046,-1.0795603), cost=cost,
+                       reliability=1, lifetime=10)
+        infra.add_node('h2', cpu=1, mem=8, disk=512, cost=cost, reliability=1,
+                       lifetime=10)
+        infra.add_edge('h1', 'h2', bw=100, delay=1, cost=20, reliability=1)
+
+        self.infra_ok = infra
+        
+        # h1 without reliability
+        infra_no_host_reliab = copy.deepcopy(infra)
+        del infra_no_host_reliab.nodes['h1']['reliability']
+        self.infra_no_host_reliab = infra_no_host_reliab
+        
+        # h1 without lifetime 
+        infra_no_host_lifetime = copy.deepcopy(infra)
+        del infra_no_host_lifetime.nodes['h1']['lifetime']
+        self.infra_no_host_lifetime = infra_no_host_lifetime
+
+        # No edge reliability
+        infra_no_edge_reliab = copy.deepcopy(infra)
+        del infra_no_edge_reliab['h1']['h2']['reliability']
+        self.infra_no_edge_reliab = infra_no_edge_reliab
+
+
+    def setUp(self):
+        """Creates the testing network service and infrastructure graph
+        :returns: None
+
+        """
+        self.fog_di_checker = checker.CheckFogDigraphs()
+        self.__infra_setUp()
+
+
+    def test_infra(self):
+        self.assertTrue(self.fog_di_checker.check_infra(self.infra_ok))
+        self.assertFalse(self.fog_di_checker.check_infra(
+                         self.infra_no_host_lifetime))
+        self.assertFalse(self.fog_di_checker.check_infra(
+                         self.infra_no_host_reliab))
+        self.assertFalse(self.fog_di_checker.check_infra(
+                         self.infra_no_edge_reliab))
+
+
 
 
 if __name__ == "__main__":
