@@ -4,7 +4,7 @@ import copy
 import networkx as nx
 import sys
 from itertools import islice
-from checker import AbstractChecker
+from .checker import AbstractChecker
 from functools import reduce
 
 class AbstractMapper(metaclass=ABCMeta):
@@ -198,7 +198,7 @@ class GreedyCostMapper(AbstractMapper):
         for vl in ns.edges():
             # Map the VNFs
             vnf1, vnf2 = vl
-            for vnf in vl:
+            for vnf in set(vl).difference(set(mapping.keys())):
                 host = self.__get_host(vnf=vnf, infra=infra_tmp, ns=ns)
                 if not host:
                     mapping['worked'] = False
@@ -236,6 +236,37 @@ class GreedyFogCostMapper(AbstractMapper):
         """
         self.__checker = checker
         self.__k = k
+
+
+    def __consume_vnf(self, host, vnf, infra: nx.classes.digraph.DiGraph,
+            ns: nx.classes.digraph.DiGraph) -> None:
+        """Consumes host's resources based on vnf resources
+
+        :host: host identifier
+        :vnf: vnf identifier within the graph
+        :infra: nx.classes.digraph.DiGraph: infrastructure graph
+        :ns: nx.classes.digraph.DiGraph: network service graph
+        :returns: None
+
+        """
+        infra.nodes[host]['cpu'] -= ns.nodes[vnf]['cpu']
+        infra.nodes[host]['mem'] -= ns.nodes[vnf]['mem']
+        infra.nodes[host]['disk'] -= ns.nodes[vnf]['disk']
+
+
+    def __consume_vl(self, path: list, vl, infra: nx.classes.digraph.DiGraph,
+            ns: nx.classes.digraph.DiGraph) -> None:
+        """Consumes the vl bandwidth accross the given path
+
+        :path: list: list of host id tuples [(h1,h2), ...]
+        :vl: tuple of VNF identifiers (vnf1Id, vnf2Id)
+        :infra: nx.classes.digraph.DiGraph: infrastructure graph
+        :ns: nx.classes.digraph.DiGraph: network service graph
+        :returns: None
+
+        """
+        for h1,h2 in zip(path, path[1:]):
+            infra[h1][h2]['bw'] -= ns[vl[0]][vl[1]]['bw']
 
 
     def __better_host(self, infra: nx.classes.digraph.DiGraph,
@@ -278,7 +309,7 @@ class GreedyFogCostMapper(AbstractMapper):
             costs.append(cost)
 
         # If costs differ, return cost_a > cost_b
-        ca_cb = cost[0] - cost[1]
+        ca_cb = costs[0] - costs[1]
         if ca_cb != 0:
             return ca_cb < 0
     
@@ -376,7 +407,7 @@ class GreedyFogCostMapper(AbstractMapper):
                 delay += infra[h1][h2]['delay']
 
             if delay < vl['delay']:
-                if reliab < best_reliab or\
+                if reliab > best_reliab or\
                    reliab == best_reliab and cost < best_cost:
                     best_reliab = reliab
                     best_cost = cost
@@ -408,17 +439,14 @@ class GreedyFogCostMapper(AbstractMapper):
 
         infra_tmp = copy.deepcopy(infra)
         for vl in ns.edges():
-            print("Mapping VL: ", vl)
             # Map the VNFs
             vnf1, vnf2 = vl
-            for vnf in vl:
-                print("  mapping VNF: ", vnf)
+            for vnf in set(vl).difference(set(mapping.keys())):
                 host = self.__get_host(vnf=vnf, infra=infra_tmp, ns=ns)
                 if not host:
                     mapping['worked'] = False
                     return mapping
                 else:
-                    print("    mapped to: ", host)
                     mapping[vnf] = host
                     self.__consume_vnf(host, vnf, infra_tmp, ns)
 
@@ -436,7 +464,7 @@ class GreedyFogCostMapper(AbstractMapper):
 
 
     @staticmethod
-    def map_reliability(self, infra: nx.classes.digraph.DiGraph,
+    def map_reliability(infra: nx.classes.digraph.DiGraph,
                         mapping: dict) -> float:
         """Retrieve the reliability of a ns mapping
 
@@ -468,7 +496,7 @@ class GreedyFogCostMapper(AbstractMapper):
 
 
     @staticmethod
-    def map_lifetime(self, infra: nx.classes.digraph.DiGraph,
+    def map_lifetime(infra: nx.classes.digraph.DiGraph,
                      mapping: dict) -> float:
         """Retrieves the lifetime of a mapping
 
@@ -479,7 +507,8 @@ class GreedyFogCostMapper(AbstractMapper):
         """
         lifetime = 0
 
-        return min([infra[mapping[k]]['lifetime'] for k in mapping.keys()\
+        return min([infra.nodes[mapping[k]]['lifetime']\
+                    for k in mapping.keys()\
                     if k != 'worked' and type(k) != tuple])
 
 

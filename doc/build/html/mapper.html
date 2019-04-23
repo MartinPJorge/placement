@@ -1,0 +1,310 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Mapper &mdash; placement 0.1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Checker" href="checker.html" />
+    <link rel="prev" title="Welcome to placement’s documentation!" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> placement
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Mapper</a></li>
+<li class="toctree-l1"><a class="reference internal" href="checker.html">Checker</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">placement</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Mapper</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/mapper.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-placement.mapper">
+<span id="mapper"></span><h1>Mapper<a class="headerlink" href="#module-placement.mapper" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="placement.mapper.AbstractMapper">
+<em class="property">class </em><code class="descclassname">placement.mapper.</code><code class="descname">AbstractMapper</code><span class="sig-paren">(</span><em>checker: placement.checker.AbstractChecker</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/placement/mapper.html#AbstractMapper"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#placement.mapper.AbstractMapper" title="Permalink to this definition">¶</a></dt>
+<dd><p>Abstract class for Mappers that perform VNF placements</p>
+<dl class="method">
+<dt id="placement.mapper.AbstractMapper.map">
+<code class="descname">map</code><span class="sig-paren">(</span><em>infra</em>, <em>ns</em><span class="sig-paren">)</span> &#x2192; dict<a class="reference internal" href="_modules/placement/mapper.html#AbstractMapper.map"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#placement.mapper.AbstractMapper.map" title="Permalink to this definition">¶</a></dt>
+<dd><p>Maps a network service on top of an infrastructure.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Infra</dt>
+<dd class="field-odd"><p>infrastructure graph</p>
+</dd>
+<dt class="field-even">Ns</dt>
+<dd class="field-even"><p>network service graph</p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>dict: mapping decissions dictionary</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="placement.mapper.GreedyCostMapper">
+<em class="property">class </em><code class="descclassname">placement.mapper.</code><code class="descname">GreedyCostMapper</code><span class="sig-paren">(</span><em>checker: placement.checker.AbstractChecker</em>, <em>k: int</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/placement/mapper.html#GreedyCostMapper"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#placement.mapper.GreedyCostMapper" title="Permalink to this definition">¶</a></dt>
+<dd><p>Mapper to minimize cost of placing the network service.
+It traverses the network service graph node by node, deciding at each
+step the mapping of the node and the edge that connects it with the
+next one. That is, it follows a greedy approach.</p>
+<dl class="method">
+<dt id="placement.mapper.GreedyCostMapper.map">
+<code class="descname">map</code><span class="sig-paren">(</span><em>infra: networkx.classes.digraph.DiGraph</em>, <em>ns: networkx.classes.digraph.DiGraph</em><span class="sig-paren">)</span> &#x2192; dict<a class="reference internal" href="_modules/placement/mapper.html#GreedyCostMapper.map"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#placement.mapper.GreedyCostMapper.map" title="Permalink to this definition">¶</a></dt>
+<dd><p>Maps a network service on top of an infrastructure.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Infra</dt>
+<dd class="field-odd"><p>nx.classes.digraph.DiGraph: infrastructure graph</p>
+</dd>
+<dt class="field-even">Ns</dt>
+<dd class="field-even"><p>nx.classes.digraph.DiGraph: network service graph</p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>dict: mapping decissions dictionary</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="placement.mapper.GreedyFogCostMapper">
+<em class="property">class </em><code class="descclassname">placement.mapper.</code><code class="descname">GreedyFogCostMapper</code><span class="sig-paren">(</span><em>checker: placement.checker.AbstractChecker</em>, <em>k: int</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/placement/mapper.html#GreedyFogCostMapper"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#placement.mapper.GreedyFogCostMapper" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class definition of a mapper that greedily minimizes costs while
+accounting for reliability and service lifetime.</p>
+<dl class="method">
+<dt id="placement.mapper.GreedyFogCostMapper.map">
+<code class="descname">map</code><span class="sig-paren">(</span><em>infra: networkx.classes.digraph.DiGraph</em>, <em>ns: networkx.classes.digraph.DiGraph</em><span class="sig-paren">)</span> &#x2192; dict<a class="reference internal" href="_modules/placement/mapper.html#GreedyFogCostMapper.map"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#placement.mapper.GreedyFogCostMapper.map" title="Permalink to this definition">¶</a></dt>
+<dd><p>Maps a network service on top of an infrastructure.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Infra</dt>
+<dd class="field-odd"><p>nx.classes.digraph.DiGraph: infrastructure graph</p>
+</dd>
+<dt class="field-even">Ns</dt>
+<dd class="field-even"><p>nx.classes.digraph.DiGraph: network service graph</p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>dict: mapping decissions dictionary</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="placement.mapper.GreedyFogCostMapper.map_lifetime">
+<em class="property">static </em><code class="descname">map_lifetime</code><span class="sig-paren">(</span><em>infra: networkx.classes.digraph.DiGraph</em>, <em>mapping: dict</em><span class="sig-paren">)</span> &#x2192; float<a class="reference internal" href="_modules/placement/mapper.html#GreedyFogCostMapper.map_lifetime"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#placement.mapper.GreedyFogCostMapper.map_lifetime" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieves the lifetime of a mapping</p>
+<dl class="field-list simple">
+<dt class="field-odd">Infra</dt>
+<dd class="field-odd"><p>nx.classes.digraph.DiGraph: TODO</p>
+</dd>
+<dt class="field-even">Mapping</dt>
+<dd class="field-even"><p>dict: dictionary with the result of map() method</p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the minimum lifetime accross the mapped path</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="placement.mapper.GreedyFogCostMapper.map_reliability">
+<em class="property">static </em><code class="descname">map_reliability</code><span class="sig-paren">(</span><em>infra: networkx.classes.digraph.DiGraph</em>, <em>mapping: dict</em><span class="sig-paren">)</span> &#x2192; float<a class="reference internal" href="_modules/placement/mapper.html#GreedyFogCostMapper.map_reliability"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#placement.mapper.GreedyFogCostMapper.map_reliability" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieve the reliability of a ns mapping</p>
+<dl class="field-list simple">
+<dt class="field-odd">Infra</dt>
+<dd class="field-odd"><p>nx.classes.digraph.DiGraph: infrastructure graph</p>
+</dd>
+<dt class="field-even">Path</dt>
+<dd class="field-even"><p>dict: mapping decissions dictionary</p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the reliability</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="checker.html" class="btn btn-neutral float-right" title="Checker" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="index.html" class="btn btn-neutral float-left" title="Welcome to placement’s documentation!" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Jorge Martín Pérez
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

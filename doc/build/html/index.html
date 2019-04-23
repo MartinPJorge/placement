@@ -1,249 +1,269 @@
 
-<!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
-  <head>
-    <meta charset="utf-8" />
-    <title>Welcome to placement’s documentation! &#8212; placement 0.1 documentation</title>
-    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
-    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-    <script type="text/javascript" src="_static/jquery.js"></script>
-    <script type="text/javascript" src="_static/underscore.js"></script>
-    <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="_static/language_data.js"></script>
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Home &mdash; placement 0.1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Mapper" href="mapper.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
    
-  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
-  
-  
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
-
-  </head><body>
-  
-
-    <div class="document">
-      <div class="documentwrapper">
-        <div class="bodywrapper">
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
           
 
-          <div class="body" role="main">
+          
+            <a href="#" class="icon icon-home"> placement
+          
+
+          
+          </a>
+
+          
             
-  <div class="section" id="welcome-to-placement-s-documentation">
-<h1>Welcome to placement’s documentation!<a class="headerlink" href="#welcome-to-placement-s-documentation" title="Permalink to this headline">¶</a></h1>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="mapper.html">Mapper</a></li>
+<li class="toctree-l1"><a class="reference internal" href="checker.html">Checker</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="#">placement</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="#">Docs</a> &raquo;</li>
+        
+      <li>Home</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="home">
+<h1>Home<a class="headerlink" href="#home" title="Permalink to this headline">¶</a></h1>
+<p>This package is a collection of algorithms to solve the Virtual Network Embedding (VNE) problem <a class="reference internal" href="#vne" id="id1"><span>[VNE]</span></a>.</p>
+<p>The problem consists in assigning each element of a network service to the elements of the network infrastructure, which has computational nodes (servers, fog nodes as raspberry PIs, …) and physical links (ethernet, fiber, …).</p>
+<p>It relies on <a class="reference external" href="https://networkx.github.io/">networkx</a> for the generation of the network service and the infrastructure. Both graphs must contain the necessary graph’s edges and nodes attributes, to pass the checks of the classes present in the <a class="reference internal" href="checker.html"><span class="doc">Checker</span></a> module.</p>
+<div class="section" id="example">
+<h2>Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
+<p>Let’s see a simple example consisting where we want to deploy a network service consisting of an access point and a virtual cache:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">networkx</span> <span class="kn">as</span> <span class="nn">nx</span>
+
+<span class="n">ns</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">()</span>
+<span class="n">ns</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="s1">&#39;ap&#39;</span><span class="p">,</span> <span class="n">cpu</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">mem</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">disk</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">rats</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;LTE&#39;</span><span class="p">],</span>
+    <span class="n">location</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;center&#39;</span><span class="p">:</span> <span class="p">(</span><span class="mf">39.128380</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.080805</span><span class="p">),</span> <span class="s1">&#39;radius&#39;</span><span class="p">:</span> <span class="mi">20</span><span class="p">})</span>
+<span class="n">ns</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="s1">&#39;vcache&#39;</span><span class="p">,</span> <span class="n">cpu</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">mem</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">disk</span><span class="o">=</span><span class="mi">400</span><span class="p">)</span>
+<span class="n">ns</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="s1">&#39;ap&#39;</span><span class="p">,</span> <span class="s1">&#39;vcache&#39;</span><span class="p">,</span> <span class="n">bw</span><span class="o">=</span><span class="mi">59</span><span class="p">,</span> <span class="n">delay</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>If such service must be mapped on top of a simple infrastructure consisting of an antenna <cite>a1</cite> and a host <cite>h2</cite> connected to it:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">infra</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">()</span>
+<span class="n">cost</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;cpu&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;disk&#39;</span><span class="p">:</span> <span class="mf">2.3</span><span class="p">,</span> <span class="s1">&#39;mem&#39;</span><span class="p">:</span> <span class="mi">4</span><span class="p">}</span>
+<span class="n">infra</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="s1">&#39;a1&#39;</span><span class="p">,</span> <span class="n">cpu</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">mem</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="n">disk</span><span class="o">=</span><span class="mi">1024</span><span class="p">,</span> <span class="n">rats</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;LTE&#39;</span><span class="p">,</span> <span class="s1">&#39;MMW&#39;</span><span class="p">],</span>
+    <span class="n">location</span><span class="o">=</span><span class="p">(</span><span class="mf">39.1408046</span><span class="p">,</span><span class="o">-</span><span class="mf">1.0795603</span><span class="p">),</span> <span class="n">cost</span><span class="o">=</span><span class="n">cost</span><span class="p">)</span>
+<span class="n">infra</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="s1">&#39;h2&#39;</span><span class="p">,</span> <span class="n">cpu</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">mem</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">disk</span><span class="o">=</span><span class="mi">512</span><span class="p">,</span> <span class="n">cost</span><span class="o">=</span><span class="n">cost</span><span class="p">)</span>
+<span class="n">infra</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="s1">&#39;a1&#39;</span><span class="p">,</span> <span class="s1">&#39;h2&#39;</span><span class="p">,</span> <span class="n">bw</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">delay</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">cost</span><span class="o">=</span><span class="mi">30</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Then we just have to create a graph checker and assign it to the mapper to be used.
+In our case we’ve created an infrastructure graph as the ones expected by <a class="reference internal" href="checker.html#placement.checker.CheckBasicDigraphs" title="placement.checker.CheckBasicDigraphs"><code class="xref py py-class docutils literal notranslate"><span class="pre">CheckBasicDigraphs</span></code></a>, therefore, we request the mapping as follows:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">placement</span> <span class="kn">import</span> <span class="n">mapper</span>
+<span class="kn">from</span> <span class="nn">placement</span> <span class="kn">import</span> <span class="n">checker</span>
+
+<span class="n">checker</span> <span class="o">=</span> <span class="n">checker</span><span class="o">.</span><span class="n">CheckBasicDigraphs</span><span class="p">()</span>
+<span class="n">mapper</span> <span class="o">=</span> <span class="n">mapper</span><span class="o">.</span><span class="n">GreedyCostMapper</span><span class="p">(</span><span class="n">checker</span><span class="o">=</span><span class="n">checker</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">mapping</span> <span class="o">=</span> <span class="n">mapper</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">infra</span><span class="o">=</span><span class="n">infra</span><span class="p">,</span> <span class="n">ns</span><span class="o">=</span><span class="n">ns</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">mapping</span><span class="p">[</span><span class="s1">&#39;ap&#39;</span><span class="p">]</span>
+<span class="s1">&#39;a1&#39;</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">mapping</span><span class="p">[(</span><span class="s1">&#39;ap&#39;</span><span class="p">,</span> <span class="s1">&#39;vcache&#39;</span><span class="p">)]</span>
+<span class="p">[</span><span class="s1">&#39;a1&#39;</span><span class="p">,</span> <span class="s1">&#39;h2&#39;</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="documentation">
+<h2>Documentation<a class="headerlink" href="#documentation" title="Permalink to this headline">¶</a></h2>
+<dl class="field-list simple">
+<dt class="field-odd">Release</dt>
+<dd class="field-odd"><p></p>
+</dd>
+<dt class="field-even">Date</dt>
+<dd class="field-even"><p>Apr 23, 2019</p>
+</dd>
+</dl>
 <div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="mapper.html">Mapper</a></li>
+<li class="toctree-l1"><a class="reference internal" href="checker.html">Checker</a></li>
+</ul>
 </div>
 </div>
 <div class="section" id="indices-and-tables">
-<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
+<h2>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
 <li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
 <li><p><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></p></li>
 </ul>
+<dl class="citation">
+<dt class="label" id="vne"><span class="brackets"><a class="fn-backref" href="#id1">VNE</a></span></dt>
+<dd><p>Amaldi, Edoardo, et al. “On the computational complexity of the virtual network embedding problem.” Electronic Notes in Discrete Mathematics 52 (2016): 213-220.</p>
+</dd>
+</dl>
 </div>
-<div class="section" id="module-placement.mapper">
-<span id="mapper-module"></span><h1>Mapper module<a class="headerlink" href="#module-placement.mapper" title="Permalink to this headline">¶</a></h1>
-<dl class="class">
-<dt id="placement.mapper.AbstractMapper">
-<em class="property">class </em><code class="descclassname">placement.mapper.</code><code class="descname">AbstractMapper</code><span class="sig-paren">(</span><em>checker: placement.checker.AbstractChecker</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/placement/mapper.html#AbstractMapper"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#placement.mapper.AbstractMapper" title="Permalink to this definition">¶</a></dt>
-<dd><p>Abstract class for Mappers that perform VNF placements</p>
-<dl class="method">
-<dt id="placement.mapper.AbstractMapper.map">
-<code class="descname">map</code><span class="sig-paren">(</span><em>infra</em>, <em>ns</em><span class="sig-paren">)</span> &#x2192; dict<a class="reference internal" href="_modules/placement/mapper.html#AbstractMapper.map"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#placement.mapper.AbstractMapper.map" title="Permalink to this definition">¶</a></dt>
-<dd><p>Maps a network service on top of an infrastructure.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Infra</dt>
-<dd class="field-odd"><p>infrastructure graph</p>
-</dd>
-<dt class="field-even">Ns</dt>
-<dd class="field-even"><p>network service graph</p>
-</dd>
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p>dict: mapping decissions dictionary</p>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="placement.mapper.GreedyCostMapper">
-<em class="property">class </em><code class="descclassname">placement.mapper.</code><code class="descname">GreedyCostMapper</code><span class="sig-paren">(</span><em>checker: placement.checker.AbstractChecker</em>, <em>k: int</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/placement/mapper.html#GreedyCostMapper"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#placement.mapper.GreedyCostMapper" title="Permalink to this definition">¶</a></dt>
-<dd><p>Mapper to minimize cost of placing the network service.
-It traverses the network service graph node by node, deciding at each
-step the mapping of the node and the edge that connects it with the
-next one. That is, it follows a greedy approach.</p>
-<dl class="method">
-<dt id="placement.mapper.GreedyCostMapper.map">
-<code class="descname">map</code><span class="sig-paren">(</span><em>infra: networkx.classes.digraph.DiGraph</em>, <em>ns: networkx.classes.digraph.DiGraph</em><span class="sig-paren">)</span> &#x2192; dict<a class="reference internal" href="_modules/placement/mapper.html#GreedyCostMapper.map"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#placement.mapper.GreedyCostMapper.map" title="Permalink to this definition">¶</a></dt>
-<dd><p>Maps a network service on top of an infrastructure.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Infra</dt>
-<dd class="field-odd"><p>nx.classes.digraph.DiGraph: infrastructure graph</p>
-</dd>
-<dt class="field-even">Ns</dt>
-<dd class="field-even"><p>nx.classes.digraph.DiGraph: network service graph</p>
-</dd>
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p>dict: mapping decissions dictionary</p>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
-</div>
-<div class="section" id="module-placement.checker">
-<span id="checker-module"></span><h1>Checker module<a class="headerlink" href="#module-placement.checker" title="Permalink to this headline">¶</a></h1>
-<dl class="class">
-<dt id="placement.checker.AbstractChecker">
-<em class="property">class </em><code class="descclassname">placement.checker.</code><code class="descname">AbstractChecker</code><a class="reference internal" href="_modules/placement/checker.html#AbstractChecker"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#placement.checker.AbstractChecker" title="Permalink to this definition">¶</a></dt>
-<dd><p>Abstract class for Checkers that verify the format of network services
-and infrastructure graphs</p>
-<dl class="method">
-<dt id="placement.checker.AbstractChecker.check_infra">
-<code class="descname">check_infra</code><span class="sig-paren">(</span><em>infra</em><span class="sig-paren">)</span> &#x2192; bool<a class="reference internal" href="_modules/placement/checker.html#AbstractChecker.check_infra"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#placement.checker.AbstractChecker.check_infra" title="Permalink to this definition">¶</a></dt>
-<dd><p>Checks if the infrastructure graph has the correct format</p>
-<dl class="field-list simple">
-<dt class="field-odd">Infra</dt>
-<dd class="field-odd"><p>infrastructure graph</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>bool: telling if it satisfies it or not</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="placement.checker.AbstractChecker.check_ns">
-<code class="descname">check_ns</code><span class="sig-paren">(</span><em>ns</em><span class="sig-paren">)</span> &#x2192; bool<a class="reference internal" href="_modules/placement/checker.html#AbstractChecker.check_ns"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#placement.checker.AbstractChecker.check_ns" title="Permalink to this definition">¶</a></dt>
-<dd><p>Checks if the network service graph has the correct format</p>
-<dl class="field-list simple">
-<dt class="field-odd">Ns</dt>
-<dd class="field-odd"><p>network service graph</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>bool: telling if it satisfies it or not</p>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="placement.checker.CheckBasicDigraphs">
-<em class="property">class </em><code class="descclassname">placement.checker.</code><code class="descname">CheckBasicDigraphs</code><a class="reference internal" href="_modules/placement/checker.html#CheckBasicDigraphs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#placement.checker.CheckBasicDigraphs" title="Permalink to this definition">¶</a></dt>
-<dd><p>Checker for network services and infrastructure graphs as the shown
-below:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">infra</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">infra</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="s1">&#39;h1&#39;</span><span class="p">,</span> <span class="n">cpu</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">mem</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="n">disk</span><span class="o">=</span><span class="mi">1024</span><span class="p">,</span> <span class="n">rats</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;LTE&#39;</span><span class="p">,</span> <span class="s1">&#39;MMW&#39;</span><span class="p">],</span>
-<span class="go">        location=(39.1408046,-1.0795603))</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">infra</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="s1">&#39;h2&#39;</span><span class="p">,</span> <span class="n">cpu</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">mem</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">disk</span><span class="o">=</span><span class="mi">512</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">infra</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="s1">&#39;h1&#39;</span><span class="p">,</span> <span class="s1">&#39;h2&#39;</span><span class="p">,</span> <span class="n">bw</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">delay</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-</pre></div>
-</div>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ns</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">ns</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="s1">&#39;v1&#39;</span><span class="p">,</span> <span class="n">cpu</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">mem</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">disk</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">rats</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;LTE&#39;</span><span class="p">],</span>
-<span class="go">        location={&#39;center&#39;: (39.128380, -1.080805), &#39;radius&#39;: 20})</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">ns</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="s1">&#39;v2&#39;</span><span class="p">,</span> <span class="n">cpu</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">mem</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">disk</span><span class="o">=</span><span class="mi">400</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">ns</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="s1">&#39;v1&#39;</span><span class="p">,</span> <span class="s1">&#39;v2&#39;</span><span class="p">,</span> <span class="n">bw</span><span class="o">=</span><span class="mi">59</span><span class="p">,</span> <span class="n">delay</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
-</pre></div>
-</div>
-<dl class="method">
-<dt id="placement.checker.CheckBasicDigraphs.check_infra">
-<code class="descname">check_infra</code><span class="sig-paren">(</span><em>infra: networkx.classes.digraph.DiGraph</em><span class="sig-paren">)</span> &#x2192; bool<a class="reference internal" href="_modules/placement/checker.html#CheckBasicDigraphs.check_infra"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#placement.checker.CheckBasicDigraphs.check_infra" title="Permalink to this definition">¶</a></dt>
-<dd><p>Checks if the infrastructure graph has the correct format</p>
-<dl class="field-list simple">
-<dt class="field-odd">Infra</dt>
-<dd class="field-odd"><p>nx.classes.digraph.DiGraph: infrastructure graph</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>bool: telling if it satisfies it or not</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="placement.checker.CheckBasicDigraphs.check_ns">
-<code class="descname">check_ns</code><span class="sig-paren">(</span><em>ns: networkx.classes.digraph.DiGraph</em><span class="sig-paren">)</span> &#x2192; bool<a class="reference internal" href="_modules/placement/checker.html#CheckBasicDigraphs.check_ns"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#placement.checker.CheckBasicDigraphs.check_ns" title="Permalink to this definition">¶</a></dt>
-<dd><p>Checks if the network service graph has the correct format</p>
-<dl class="field-list simple">
-<dt class="field-odd">Ns</dt>
-<dd class="field-odd"><p>nx.classes.digraph.DiGraph: network service graph</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>bool: telling if it satisfies it or not</p>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
 </div>
 
 
+           </div>
+           
           </div>
-          
-        </div>
-      </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-<h1 class="logo"><a href="#">placement</a></h1>
-
-
-
-
-
-
-
-
-<h3>Navigation</h3>
-
-<div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="#">Documentation overview</a><ul>
-  </ul></li>
-</ul>
-</div>
-<div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
-    </form>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="mapper.html" class="btn btn-neutral float-right" title="Mapper" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
     </div>
-</div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
+  
 
+  <hr/>
 
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Jorge Martín Pérez
 
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
-
-
-
+</footer>
 
         </div>
       </div>
-      <div class="clearer"></div>
-    </div>
-    <div class="footer">
-      &copy;2019, Jorge Martín Pérez.
-      
-      |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.0.0</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
-      
-      |
-      <a href="_sources/index.rst.txt"
-          rel="nofollow">Page source</a>
-    </div>
 
-    
+    </section>
 
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
     
-  </body>
+   
+
+</body>
 </html>

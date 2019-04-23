@@ -1,43 +1,159 @@
 
+
 <!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>placement.mapper &mdash; placement 0.1 documentation</title>
+  
 
-<html xmlns="http://www.w3.org/1999/xhtml">
-  <head>
-    <meta charset="utf-8" />
-    <title>placement.mapper &#8212; placement 0.1 documentation</title>
-    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
-    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
-    <script type="text/javascript" src="../../_static/jquery.js"></script>
-    <script type="text/javascript" src="../../_static/underscore.js"></script>
-    <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <script type="text/javascript" src="../../_static/language_data.js"></script>
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="../../genindex.html" />
-    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
    
-  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
-  
-  
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
-
-  </head><body>
-  
-
-    <div class="document">
-      <div class="documentwrapper">
-        <div class="bodywrapper">
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
           
 
-          <div class="body" role="main">
+          
+            <a href="../../index.html" class="icon icon-home"> placement
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../mapper.html">Mapper</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../checker.html">Checker</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">placement</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>placement.mapper</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
             
   <h1>Source code for placement.mapper</h1><div class="highlight"><pre>
 <span></span><span class="kn">from</span> <span class="nn">abc</span> <span class="k">import</span> <span class="n">ABCMeta</span><span class="p">,</span> <span class="n">abstractmethod</span>
+<span class="kn">from</span> <span class="nn">haversine</span> <span class="k">import</span> <span class="n">haversine</span>
+<span class="kn">import</span> <span class="nn">copy</span>
 <span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
 <span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">from</span> <span class="nn">itertools</span> <span class="k">import</span> <span class="n">islice</span>
 <span class="kn">from</span> <span class="nn">.checker</span> <span class="k">import</span> <span class="n">AbstractChecker</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="k">import</span> <span class="n">reduce</span>
 
-<div class="viewcode-block" id="AbstractMapper"><a class="viewcode-back" href="../../index.html#placement.mapper.AbstractMapper">[docs]</a><span class="k">class</span> <span class="nc">AbstractMapper</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">ABCMeta</span><span class="p">):</span>
+<div class="viewcode-block" id="AbstractMapper"><a class="viewcode-back" href="../../mapper.html#placement.mapper.AbstractMapper">[docs]</a><span class="k">class</span> <span class="nc">AbstractMapper</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">ABCMeta</span><span class="p">):</span>
 
     <span class="sd">&quot;&quot;&quot;Abstract class for Mappers that perform VNF placements&quot;&quot;&quot;</span>
 
@@ -52,7 +168,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">__checker</span> <span class="o">=</span> <span class="n">checker</span>
 
 
-<div class="viewcode-block" id="AbstractMapper.map"><a class="viewcode-back" href="../../index.html#placement.mapper.AbstractMapper.map">[docs]</a>    <span class="nd">@abstractmethod</span>
+<div class="viewcode-block" id="AbstractMapper.map"><a class="viewcode-back" href="../../mapper.html#placement.mapper.AbstractMapper.map">[docs]</a>    <span class="nd">@abstractmethod</span>
     <span class="k">def</span> <span class="nf">map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">infra</span><span class="p">,</span> <span class="n">ns</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Maps a network service on top of an infrastructure.</span>
 
@@ -64,7 +180,7 @@
         <span class="k">pass</span></div></div>
 
 
-<div class="viewcode-block" id="GreedyCostMapper"><a class="viewcode-back" href="../../index.html#placement.mapper.GreedyCostMapper">[docs]</a><span class="k">class</span> <span class="nc">GreedyCostMapper</span><span class="p">(</span><span class="n">AbstractMapper</span><span class="p">):</span>
+<div class="viewcode-block" id="GreedyCostMapper"><a class="viewcode-back" href="../../mapper.html#placement.mapper.GreedyCostMapper">[docs]</a><span class="k">class</span> <span class="nc">GreedyCostMapper</span><span class="p">(</span><span class="n">AbstractMapper</span><span class="p">):</span>
 
     <span class="sd">&quot;&quot;&quot;Mapper to minimize cost of placing the network service.</span>
 <span class="sd">       It traverses the network service graph node by node, deciding at each</span>
@@ -83,47 +199,54 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">__k</span> <span class="o">=</span> <span class="n">k</span>
 
 
-    <span class="k">def</span> <span class="nf">__get_host</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vnf</span><span class="p">,</span> <span class="n">infra</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">classes</span><span class="o">.</span><span class="n">digraph</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__get_host</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vnf</span><span class="p">,</span> <span class="n">infra</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">classes</span><span class="o">.</span><span class="n">digraph</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">,</span>
+            <span class="n">ns</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">classes</span><span class="o">.</span><span class="n">digraph</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Retrieve cheapest host in the infrastructure to place the vnf.</span>
 
-<span class="sd">        :vnf: vnf dicrionary with its requirements</span>
+<span class="sd">        :vnf: vnf identifier</span>
 <span class="sd">        :infra: nx.classes.digraph.DiGraph: infrastructure graph</span>
+<span class="sd">        :ns: nx.classes.digraph.DiGraph: network service graph</span>
 <span class="sd">        :returns: identifier of best host</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">best_host</span><span class="p">,</span> <span class="n">best_cost</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">sys</span><span class="o">.</span><span class="n">maxsize</span>
-        <span class="n">host_cpu</span> <span class="o">=</span> <span class="n">infra</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">host</span><span class="p">][</span><span class="s1">&#39;cpu&#39;</span><span class="p">]</span>
-        <span class="n">host_mem</span> <span class="o">=</span> <span class="n">infra</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">host</span><span class="p">][</span><span class="s1">&#39;mem&#39;</span><span class="p">]</span>
-        <span class="n">host_disk</span> <span class="o">=</span> <span class="n">infra</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">host</span><span class="p">][</span><span class="s1">&#39;disk&#39;</span><span class="p">]</span>
 
         <span class="c1"># Filter RAT capable hosts</span>
         <span class="n">hosts</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">infra</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span>
-        <span class="k">if</span> <span class="s1">&#39;rats&#39;</span> <span class="ow">in</span> <span class="n">ns</span><span class="p">[</span><span class="n">vnf</span><span class="p">]:</span>
-            <span class="n">hosts</span> <span class="o">=</span> <span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">h</span><span class="p">:</span> <span class="s1">&#39;rats&#39;</span> <span class="ow">in</span> <span class="n">infra</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">h</span><span class="p">],</span> <span class="n">hosts</span><span class="p">)</span>
-            <span class="n">hosts</span> <span class="o">=</span> <span class="p">[</span><span class="n">h</span> <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">hosts</span> <span class="k">if</span> <span class="n">reduce</span><span class="p">(</span><span class="k">lambda</span> <span class="n">rv1</span><span class="p">,</span><span class="n">rv2</span><span class="p">:</span> <span class="n">rv1</span> <span class="ow">or</span> <span class="n">rv2</span><span class="p">,</span>
+        <span class="k">if</span> <span class="s1">&#39;rats&#39;</span> <span class="ow">in</span> <span class="n">ns</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">vnf</span><span class="p">]:</span>
+            <span class="n">hosts</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">h</span><span class="p">:</span> <span class="s1">&#39;rats&#39;</span> <span class="ow">in</span> <span class="n">infra</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">h</span><span class="p">],</span> <span class="n">hosts</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">hosts</span><span class="p">:</span>
+                <span class="n">hosts</span> <span class="o">=</span> <span class="p">[</span><span class="n">h</span> <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">hosts</span> <span class="k">if</span> <span class="n">reduce</span><span class="p">(</span><span class="k">lambda</span> <span class="n">rv1</span><span class="p">,</span><span class="n">rv2</span><span class="p">:</span> <span class="n">rv1</span> <span class="ow">or</span> <span class="n">rv2</span><span class="p">,</span>
                 <span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">rv</span><span class="p">:</span> <span class="n">rv</span> <span class="ow">in</span> <span class="n">infra</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">h</span><span class="p">][</span><span class="s1">&#39;rats&#39;</span><span class="p">],</span>
-                    <span class="n">ns</span><span class="p">[</span><span class="n">vnf</span><span class="p">][</span><span class="s1">&#39;rats&#39;</span><span class="p">]))]</span>
+                    <span class="n">ns</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">vnf</span><span class="p">][</span><span class="s1">&#39;rats&#39;</span><span class="p">]))]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">hosts</span> <span class="o">=</span> <span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">h</span><span class="p">:</span> <span class="s1">&#39;rats&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">infra</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">h</span><span class="p">],</span> <span class="n">hosts</span><span class="p">)</span>
 
         <span class="c1"># Filter hosts by location constraint</span>
-        <span class="k">if</span> <span class="s1">&#39;location&#39;</span> <span class="ow">in</span> <span class="n">ns</span><span class="p">[</span><span class="n">vnf</span><span class="p">]:</span>
-            <span class="n">vloc</span> <span class="o">=</span> <span class="n">ns</span><span class="p">[</span><span class="n">vnf</span><span class="p">][</span><span class="s1">&#39;location&#39;</span><span class="p">][</span><span class="s1">&#39;center&#39;</span><span class="p">]</span>
-            <span class="n">vrad</span> <span class="o">=</span> <span class="n">ns</span><span class="p">[</span><span class="n">vnf</span><span class="p">][</span><span class="s1">&#39;location&#39;</span><span class="p">][</span><span class="s1">&#39;radius&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s1">&#39;location&#39;</span> <span class="ow">in</span> <span class="n">ns</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">vnf</span><span class="p">]:</span>
+            <span class="n">vloc</span> <span class="o">=</span> <span class="n">ns</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">vnf</span><span class="p">][</span><span class="s1">&#39;location&#39;</span><span class="p">][</span><span class="s1">&#39;center&#39;</span><span class="p">]</span>
+            <span class="n">vrad</span> <span class="o">=</span> <span class="n">ns</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">vnf</span><span class="p">][</span><span class="s1">&#39;location&#39;</span><span class="p">][</span><span class="s1">&#39;radius&#39;</span><span class="p">]</span>
             <span class="n">hosts</span> <span class="o">=</span> <span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">h</span><span class="p">:</span> <span class="s1">&#39;location&#39;</span> <span class="ow">in</span> <span class="n">infra</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">h</span><span class="p">]</span>\
                     <span class="ow">and</span> <span class="n">haversine</span><span class="p">(</span><span class="n">infra</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">h</span><span class="p">][</span><span class="s1">&#39;location&#39;</span><span class="p">],</span> <span class="n">vloc</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">vrad</span><span class="p">,</span>
                     <span class="n">hosts</span><span class="p">)</span>
 
-        <span class="k">for</span> <span class="n">host</span> <span class="ow">in</span> <span class="n">rat_hosts</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">host_cpu</span> <span class="o">&gt;=</span> <span class="n">vnf</span><span class="p">[</span><span class="s1">&#39;cpu&#39;</span><span class="p">]</span> <span class="ow">and</span>\
-                    <span class="n">host_mem</span> <span class="o">&gt;=</span> <span class="n">vnf</span><span class="p">[</span><span class="s1">&#39;mem&#39;</span><span class="p">]</span> <span class="ow">and</span>\
-                    <span class="n">host_disk</span> <span class="o">&gt;=</span> <span class="n">vnf</span><span class="p">[</span><span class="s1">&#39;disk&#39;</span><span class="p">]:</span>
+        <span class="k">for</span> <span class="n">host</span> <span class="ow">in</span> <span class="n">hosts</span><span class="p">:</span>
+            <span class="n">host_cpu</span> <span class="o">=</span> <span class="n">infra</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">host</span><span class="p">][</span><span class="s1">&#39;cpu&#39;</span><span class="p">]</span>
+            <span class="n">host_mem</span> <span class="o">=</span> <span class="n">infra</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">host</span><span class="p">][</span><span class="s1">&#39;mem&#39;</span><span class="p">]</span>
+            <span class="n">host_disk</span> <span class="o">=</span> <span class="n">infra</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">host</span><span class="p">][</span><span class="s1">&#39;disk&#39;</span><span class="p">]</span>
+            <span class="n">host_cost</span> <span class="o">=</span> <span class="n">infra</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">host</span><span class="p">][</span><span class="s1">&#39;cost&#39;</span><span class="p">]</span>
 
-                <span class="n">host_cost</span> <span class="o">=</span> <span class="n">host_cost</span><span class="p">[</span><span class="s1">&#39;cpu&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">vnf</span><span class="p">[</span><span class="s1">&#39;cpu&#39;</span><span class="p">]</span> <span class="o">+</span>\
-                        <span class="n">host_cost</span><span class="p">[</span><span class="s1">&#39;mem&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">vnf</span><span class="p">[</span><span class="s1">&#39;mem&#39;</span><span class="p">]</span> <span class="o">+</span>\
-                        <span class="n">host_cost</span><span class="p">[</span><span class="s1">&#39;disk&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">vnf</span><span class="p">[</span><span class="s1">&#39;disk&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">host_cpu</span> <span class="o">&gt;=</span> <span class="n">ns</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">vnf</span><span class="p">][</span><span class="s1">&#39;cpu&#39;</span><span class="p">]</span> <span class="ow">and</span>\
+                    <span class="n">host_mem</span> <span class="o">&gt;=</span> <span class="n">ns</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">vnf</span><span class="p">][</span><span class="s1">&#39;mem&#39;</span><span class="p">]</span> <span class="ow">and</span>\
+                    <span class="n">host_disk</span> <span class="o">&gt;=</span> <span class="n">ns</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">vnf</span><span class="p">][</span><span class="s1">&#39;disk&#39;</span><span class="p">]:</span>
+
+                <span class="n">host_cost_n</span> <span class="o">=</span> <span class="n">host_cost</span><span class="p">[</span><span class="s1">&#39;cpu&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">ns</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">vnf</span><span class="p">][</span><span class="s1">&#39;cpu&#39;</span><span class="p">]</span> <span class="o">+</span>\
+                        <span class="n">host_cost</span><span class="p">[</span><span class="s1">&#39;mem&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">ns</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">vnf</span><span class="p">][</span><span class="s1">&#39;mem&#39;</span><span class="p">]</span> <span class="o">+</span>\
+                        <span class="n">host_cost</span><span class="p">[</span><span class="s1">&#39;disk&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">ns</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">vnf</span><span class="p">][</span><span class="s1">&#39;disk&#39;</span><span class="p">]</span>
                 
-                <span class="k">if</span> <span class="n">host_cost</span> <span class="o">&lt;</span> <span class="n">best_cost</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">host_cost_n</span> <span class="o">&lt;</span> <span class="n">best_cost</span><span class="p">:</span>
                     <span class="n">best_host</span> <span class="o">=</span> <span class="n">host</span>
-                    <span class="n">best_cost</span> <span class="o">=</span> <span class="n">host_cost</span>
+                    <span class="n">best_cost</span> <span class="o">=</span> <span class="n">host_cost_n</span>
         
         <span class="k">return</span> <span class="n">best_host</span>
 
@@ -145,7 +268,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># Prune links not meeting bandwidth and delay requirements</span>
         <span class="n">vl</span> <span class="o">=</span> <span class="n">ns</span><span class="p">[</span><span class="n">vl</span><span class="p">[</span><span class="mi">0</span><span class="p">]][</span><span class="n">vl</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
-        <span class="n">pruned_infra</span> <span class="o">=</span> <span class="n">infra</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">pruned_infra</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">infra</span><span class="p">)</span>
         <span class="n">pruned_links</span> <span class="o">=</span> <span class="p">[(</span><span class="n">h1</span><span class="p">,</span><span class="n">h2</span><span class="p">)</span> <span class="k">for</span> <span class="n">h1</span><span class="p">,</span><span class="n">h2</span> <span class="ow">in</span> <span class="n">pruned_infra</span><span class="o">.</span><span class="n">edges</span><span class="p">()</span>\
                 <span class="k">if</span> <span class="n">pruned_infra</span><span class="p">[</span><span class="n">h1</span><span class="p">][</span><span class="n">h2</span><span class="p">][</span><span class="s1">&#39;bw&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">vl</span><span class="p">[</span><span class="s1">&#39;bw&#39;</span><span class="p">]</span> <span class="ow">or</span>\
                     <span class="n">pruned_infra</span><span class="p">[</span><span class="n">h1</span><span class="p">][</span><span class="n">h2</span><span class="p">][</span><span class="s1">&#39;delay&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">vl</span><span class="p">[</span><span class="s1">&#39;delay&#39;</span><span class="p">]]</span>
@@ -164,7 +287,7 @@
                 <span class="n">best_cost</span> <span class="o">=</span> <span class="n">cost</span>
                 <span class="n">best_path</span> <span class="o">=</span> <span class="n">path</span>
 
-        <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;cost&#39;</span><span class="p">:</span> <span class="n">best_cost</span><span class="p">,</span> <span class="s1">&#39;path&#39;</span><span class="p">:</span> <span class="n">best_path</span><span class="p">}</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;cost&#39;</span><span class="p">:</span> <span class="n">best_cost</span><span class="p">,</span> <span class="s1">&#39;path&#39;</span><span class="p">:</span> <span class="n">best_path</span><span class="p">}</span> <span class="k">if</span> <span class="n">best_path</span> <span class="k">else</span> <span class="p">{}</span>
 
 
     <span class="k">def</span> <span class="nf">__consume_vnf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">host</span><span class="p">,</span> <span class="n">vnf</span><span class="p">,</span> <span class="n">infra</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">classes</span><span class="o">.</span><span class="n">digraph</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">,</span>
@@ -181,7 +304,6 @@
         <span class="n">infra</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">host</span><span class="p">][</span><span class="s1">&#39;cpu&#39;</span><span class="p">]</span> <span class="o">-=</span> <span class="n">ns</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">vnf</span><span class="p">][</span><span class="s1">&#39;cpu&#39;</span><span class="p">]</span>
         <span class="n">infra</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">host</span><span class="p">][</span><span class="s1">&#39;mem&#39;</span><span class="p">]</span> <span class="o">-=</span> <span class="n">ns</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">vnf</span><span class="p">][</span><span class="s1">&#39;mem&#39;</span><span class="p">]</span>
         <span class="n">infra</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">host</span><span class="p">][</span><span class="s1">&#39;disk&#39;</span><span class="p">]</span> <span class="o">-=</span> <span class="n">ns</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">vnf</span><span class="p">][</span><span class="s1">&#39;disk&#39;</span><span class="p">]</span>
-        <span class="n">infra</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">host</span><span class="p">][</span><span class="s1">&#39;rat_units&#39;</span><span class="p">]</span> <span class="o">-=</span> <span class="n">ns</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">vnf</span><span class="p">][</span><span class="s1">&#39;rat_units&#39;</span><span class="p">]</span>
 
 
     <span class="k">def</span> <span class="nf">__consume_vl</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">vl</span><span class="p">,</span> <span class="n">infra</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">classes</span><span class="o">.</span><span class="n">digraph</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">,</span>
@@ -195,11 +317,11 @@
 <span class="sd">        :returns: None</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">for</span> <span class="n">h1</span><span class="p">,</span><span class="n">h2</span> <span class="ow">in</span> <span class="n">path</span><span class="p">:</span>
-            <span class="n">path</span><span class="p">[</span><span class="n">h1</span><span class="p">][</span><span class="n">h2</span><span class="p">][</span><span class="s1">&#39;bw&#39;</span><span class="p">]</span> <span class="o">-=</span> <span class="n">ns</span><span class="p">[</span><span class="n">vl</span><span class="p">[</span><span class="mi">0</span><span class="p">]][</span><span class="n">vl</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
+        <span class="k">for</span> <span class="n">h1</span><span class="p">,</span><span class="n">h2</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">path</span><span class="p">[</span><span class="mi">1</span><span class="p">:]):</span>
+            <span class="n">infra</span><span class="p">[</span><span class="n">h1</span><span class="p">][</span><span class="n">h2</span><span class="p">][</span><span class="s1">&#39;bw&#39;</span><span class="p">]</span> <span class="o">-=</span> <span class="n">ns</span><span class="p">[</span><span class="n">vl</span><span class="p">[</span><span class="mi">0</span><span class="p">]][</span><span class="n">vl</span><span class="p">[</span><span class="mi">1</span><span class="p">]][</span><span class="s1">&#39;bw&#39;</span><span class="p">]</span>
 
 
-<div class="viewcode-block" id="GreedyCostMapper.map"><a class="viewcode-back" href="../../index.html#placement.mapper.GreedyCostMapper.map">[docs]</a>    <span class="k">def</span> <span class="nf">map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">infra</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">classes</span><span class="o">.</span><span class="n">digraph</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">,</span>
+<div class="viewcode-block" id="GreedyCostMapper.map"><a class="viewcode-back" href="../../mapper.html#placement.mapper.GreedyCostMapper.map">[docs]</a>    <span class="k">def</span> <span class="nf">map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">infra</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">classes</span><span class="o">.</span><span class="n">digraph</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">,</span>
             <span class="n">ns</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">classes</span><span class="o">.</span><span class="n">digraph</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Maps a network service on top of an infrastructure.</span>
 
@@ -212,12 +334,18 @@
             <span class="s1">&#39;worked&#39;</span><span class="p">:</span> <span class="kc">True</span>
         <span class="p">}</span>
 
-        <span class="n">infra_tmp</span> <span class="o">=</span> <span class="n">infra</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-        <span class="k">for</span> <span class="n">vl</span> <span class="ow">in</span> <span class="n">infra_tmp</span><span class="o">.</span><span class="n">edges</span><span class="p">():</span>
+        <span class="c1"># Check that graphs have correct format</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">__checker</span><span class="o">.</span><span class="n">check_infra</span><span class="p">(</span><span class="n">infra</span><span class="p">)</span> <span class="ow">or</span>\
+                <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">__checker</span><span class="o">.</span><span class="n">check_ns</span><span class="p">(</span><span class="n">ns</span><span class="p">):</span>
+            <span class="n">mapping</span><span class="p">[</span><span class="s1">&#39;worked&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">return</span> <span class="n">mapping</span>
+
+        <span class="n">infra_tmp</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">infra</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">vl</span> <span class="ow">in</span> <span class="n">ns</span><span class="o">.</span><span class="n">edges</span><span class="p">():</span>
             <span class="c1"># Map the VNFs</span>
             <span class="n">vnf1</span><span class="p">,</span> <span class="n">vnf2</span> <span class="o">=</span> <span class="n">vl</span>
-            <span class="k">for</span> <span class="n">vnf</span> <span class="ow">in</span> <span class="n">vl</span><span class="p">:</span>
-                <span class="n">host</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__get_host</span><span class="p">(</span><span class="n">vnf</span><span class="p">,</span> <span class="n">infra_tmp</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">vnf</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="n">vl</span><span class="p">)</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">mapping</span><span class="o">.</span><span class="n">keys</span><span class="p">())):</span>
+                <span class="n">host</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__get_host</span><span class="p">(</span><span class="n">vnf</span><span class="o">=</span><span class="n">vnf</span><span class="p">,</span> <span class="n">infra</span><span class="o">=</span><span class="n">infra_tmp</span><span class="p">,</span> <span class="n">ns</span><span class="o">=</span><span class="n">ns</span><span class="p">)</span>
                 <span class="k">if</span> <span class="ow">not</span> <span class="n">host</span><span class="p">:</span>
                     <span class="n">mapping</span><span class="p">[</span><span class="s1">&#39;worked&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
                     <span class="k">return</span> <span class="n">mapping</span>
@@ -238,67 +366,337 @@
         <span class="k">return</span> <span class="n">mapping</span></div></div>
 
 
+
+<div class="viewcode-block" id="GreedyFogCostMapper"><a class="viewcode-back" href="../../mapper.html#placement.mapper.GreedyFogCostMapper">[docs]</a><span class="k">class</span> <span class="nc">GreedyFogCostMapper</span><span class="p">(</span><span class="n">AbstractMapper</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;Class definition of a mapper that greedily minimizes costs while</span>
+<span class="sd">    accounting for reliability and service lifetime.&quot;&quot;&quot;</span>
+
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">checker</span><span class="p">:</span> <span class="n">AbstractChecker</span><span class="p">,</span> <span class="n">k</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initializes a Greedy Fog cost mapper</span>
+
+<span class="sd">        :checker: AbstractChecker: instance of a graph checker</span>
+<span class="sd">        :k: int: k shortest paths parameter for the virtual links steering</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__checker</span> <span class="o">=</span> <span class="n">checker</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__k</span> <span class="o">=</span> <span class="n">k</span>
+
+
+    <span class="k">def</span> <span class="nf">__consume_vnf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">host</span><span class="p">,</span> <span class="n">vnf</span><span class="p">,</span> <span class="n">infra</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">classes</span><span class="o">.</span><span class="n">digraph</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">,</span>
+            <span class="n">ns</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">classes</span><span class="o">.</span><span class="n">digraph</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Consumes host&#39;s resources based on vnf resources</span>
+
+<span class="sd">        :host: host identifier</span>
+<span class="sd">        :vnf: vnf identifier within the graph</span>
+<span class="sd">        :infra: nx.classes.digraph.DiGraph: infrastructure graph</span>
+<span class="sd">        :ns: nx.classes.digraph.DiGraph: network service graph</span>
+<span class="sd">        :returns: None</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">infra</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">host</span><span class="p">][</span><span class="s1">&#39;cpu&#39;</span><span class="p">]</span> <span class="o">-=</span> <span class="n">ns</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">vnf</span><span class="p">][</span><span class="s1">&#39;cpu&#39;</span><span class="p">]</span>
+        <span class="n">infra</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">host</span><span class="p">][</span><span class="s1">&#39;mem&#39;</span><span class="p">]</span> <span class="o">-=</span> <span class="n">ns</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">vnf</span><span class="p">][</span><span class="s1">&#39;mem&#39;</span><span class="p">]</span>
+        <span class="n">infra</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">host</span><span class="p">][</span><span class="s1">&#39;disk&#39;</span><span class="p">]</span> <span class="o">-=</span> <span class="n">ns</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">vnf</span><span class="p">][</span><span class="s1">&#39;disk&#39;</span><span class="p">]</span>
+
+
+    <span class="k">def</span> <span class="nf">__consume_vl</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">vl</span><span class="p">,</span> <span class="n">infra</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">classes</span><span class="o">.</span><span class="n">digraph</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">,</span>
+            <span class="n">ns</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">classes</span><span class="o">.</span><span class="n">digraph</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Consumes the vl bandwidth accross the given path</span>
+
+<span class="sd">        :path: list: list of host id tuples [(h1,h2), ...]</span>
+<span class="sd">        :vl: tuple of VNF identifiers (vnf1Id, vnf2Id)</span>
+<span class="sd">        :infra: nx.classes.digraph.DiGraph: infrastructure graph</span>
+<span class="sd">        :ns: nx.classes.digraph.DiGraph: network service graph</span>
+<span class="sd">        :returns: None</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">h1</span><span class="p">,</span><span class="n">h2</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">path</span><span class="p">[</span><span class="mi">1</span><span class="p">:]):</span>
+            <span class="n">infra</span><span class="p">[</span><span class="n">h1</span><span class="p">][</span><span class="n">h2</span><span class="p">][</span><span class="s1">&#39;bw&#39;</span><span class="p">]</span> <span class="o">-=</span> <span class="n">ns</span><span class="p">[</span><span class="n">vl</span><span class="p">[</span><span class="mi">0</span><span class="p">]][</span><span class="n">vl</span><span class="p">[</span><span class="mi">1</span><span class="p">]][</span><span class="s1">&#39;bw&#39;</span><span class="p">]</span>
+
+
+    <span class="k">def</span> <span class="nf">__better_host</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">infra</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">classes</span><span class="o">.</span><span class="n">digraph</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">,</span>
+            <span class="n">ns</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">classes</span><span class="o">.</span><span class="n">digraph</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">,</span> <span class="n">vnf</span><span class="p">,</span> <span class="n">host_a</span><span class="p">,</span> <span class="n">host_b</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Determines if host_a is better than host_b to deploy VNF vnf,</span>
+<span class="sd">        attending to following priorities</span>
+<span class="sd">            1. lifetime</span>
+<span class="sd">            2. reliability</span>
+<span class="sd">            3. cost</span>
+
+<span class="sd">        :infra: nx.classes.digraph.DiGraph: infrastructure graph</span>
+<span class="sd">        :ns: nx.classes.digraph.DiGraph: network service graph</span>
+<span class="sd">        :vnf: vnf identifier</span>
+<span class="sd">        :host_a: identifier of host A</span>
+<span class="sd">        :host_b: identifier of host B (None accepted)</span>
+<span class="sd">        :returns: True/False if host A is better than host B</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">host_b</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        
+        <span class="c1"># If lifetimes differ, return lifetime_a &gt; lifetime_b</span>
+        <span class="n">la_lb</span> <span class="o">=</span> <span class="n">infra</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">host_a</span><span class="p">][</span><span class="s1">&#39;lifetime&#39;</span><span class="p">]</span> <span class="o">-</span>\
+                <span class="n">infra</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">host_b</span><span class="p">][</span><span class="s1">&#39;lifetime&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">la_lb</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">la_lb</span> <span class="o">&gt;</span> <span class="mi">0</span>
+
+        <span class="c1"># If reliabilities differ, return reliability_a &gt; reliability_b</span>
+        <span class="n">ra_rb</span> <span class="o">=</span> <span class="n">infra</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">host_a</span><span class="p">][</span><span class="s1">&#39;reliability&#39;</span><span class="p">]</span> <span class="o">-</span>\
+                <span class="n">infra</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">host_b</span><span class="p">][</span><span class="s1">&#39;reliability&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">ra_rb</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">ra_rb</span> <span class="o">&gt;</span> <span class="mi">0</span>
+
+        <span class="c1"># Determine the deployment cost of the VNF</span>
+        <span class="n">costs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">host</span> <span class="ow">in</span> <span class="p">[</span><span class="n">host_a</span><span class="p">,</span> <span class="n">host_b</span><span class="p">]:</span>
+            <span class="n">cost</span> <span class="o">=</span> <span class="n">infra</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">host</span><span class="p">][</span><span class="s1">&#39;cost&#39;</span><span class="p">][</span><span class="s1">&#39;cpu&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">ns</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">vnf</span><span class="p">][</span><span class="s1">&#39;cpu&#39;</span><span class="p">]</span> <span class="o">+</span>\
+                   <span class="n">infra</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">host</span><span class="p">][</span><span class="s1">&#39;cost&#39;</span><span class="p">][</span><span class="s1">&#39;disk&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">ns</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">vnf</span><span class="p">][</span><span class="s1">&#39;disk&#39;</span><span class="p">]</span> <span class="o">+</span>\
+                   <span class="n">infra</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">host</span><span class="p">][</span><span class="s1">&#39;cost&#39;</span><span class="p">][</span><span class="s1">&#39;mem&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">ns</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">vnf</span><span class="p">][</span><span class="s1">&#39;mem&#39;</span><span class="p">]</span>
+            <span class="n">costs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cost</span><span class="p">)</span>
+
+        <span class="c1"># If costs differ, return cost_a &gt; cost_b</span>
+        <span class="n">ca_cb</span> <span class="o">=</span> <span class="n">costs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">costs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">ca_cb</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">ca_cb</span> <span class="o">&lt;</span> <span class="mi">0</span>
+    
+        <span class="k">return</span> <span class="kc">False</span> <span class="c1"># they are both equally good</span>
+
+
+    <span class="k">def</span> <span class="nf">__get_host</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vnf</span><span class="p">,</span> <span class="n">infra</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">classes</span><span class="o">.</span><span class="n">digraph</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">,</span>
+            <span class="n">ns</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">classes</span><span class="o">.</span><span class="n">digraph</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Retrieve the best host attending to following priorities (descendent</span>
+<span class="sd">        order):</span>
+<span class="sd">            1. lifetime</span>
+<span class="sd">            2. reliability</span>
+<span class="sd">            3. cost</span>
+
+<span class="sd">        :vnf: vnf identifier</span>
+<span class="sd">        :infra: nx.classes.digraph.DiGraph: infrastructure graph</span>
+<span class="sd">        :ns: nx.classes.digraph.DiGraph: network service graph</span>
+<span class="sd">        :returns: identifier of best host</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">best_host</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># Filter RAT capable hosts</span>
+        <span class="n">hosts</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">infra</span><span class="o">.</span><span class="n">nodes</span><span class="p">())</span>
+        <span class="k">if</span> <span class="s1">&#39;rats&#39;</span> <span class="ow">in</span> <span class="n">ns</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">vnf</span><span class="p">]:</span>
+            <span class="n">hosts</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">h</span><span class="p">:</span> <span class="s1">&#39;rats&#39;</span> <span class="ow">in</span> <span class="n">infra</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">h</span><span class="p">],</span> <span class="n">hosts</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">hosts</span><span class="p">:</span>
+                <span class="n">hosts</span> <span class="o">=</span> <span class="p">[</span><span class="n">h</span> <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">hosts</span> <span class="k">if</span> <span class="n">reduce</span><span class="p">(</span><span class="k">lambda</span> <span class="n">rv1</span><span class="p">,</span><span class="n">rv2</span><span class="p">:</span> <span class="n">rv1</span> <span class="ow">or</span> <span class="n">rv2</span><span class="p">,</span>
+                <span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">rv</span><span class="p">:</span> <span class="n">rv</span> <span class="ow">in</span> <span class="n">infra</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">h</span><span class="p">][</span><span class="s1">&#39;rats&#39;</span><span class="p">],</span>
+                    <span class="n">ns</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">vnf</span><span class="p">][</span><span class="s1">&#39;rats&#39;</span><span class="p">]))]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">hosts</span> <span class="o">=</span> <span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">h</span><span class="p">:</span> <span class="s1">&#39;rats&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">infra</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">h</span><span class="p">],</span> <span class="n">hosts</span><span class="p">)</span>
+
+        <span class="c1"># Filter hosts by location constraint</span>
+        <span class="k">if</span> <span class="s1">&#39;location&#39;</span> <span class="ow">in</span> <span class="n">ns</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">vnf</span><span class="p">]:</span>
+            <span class="n">vloc</span> <span class="o">=</span> <span class="n">ns</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">vnf</span><span class="p">][</span><span class="s1">&#39;location&#39;</span><span class="p">][</span><span class="s1">&#39;center&#39;</span><span class="p">]</span>
+            <span class="n">vrad</span> <span class="o">=</span> <span class="n">ns</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">vnf</span><span class="p">][</span><span class="s1">&#39;location&#39;</span><span class="p">][</span><span class="s1">&#39;radius&#39;</span><span class="p">]</span>
+            <span class="n">hosts</span> <span class="o">=</span> <span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">h</span><span class="p">:</span> <span class="s1">&#39;location&#39;</span> <span class="ow">in</span> <span class="n">infra</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">h</span><span class="p">]</span>\
+                    <span class="ow">and</span> <span class="n">haversine</span><span class="p">(</span><span class="n">infra</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">h</span><span class="p">][</span><span class="s1">&#39;location&#39;</span><span class="p">],</span> <span class="n">vloc</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">vrad</span><span class="p">,</span>
+                    <span class="n">hosts</span><span class="p">)</span>
+
+
+        <span class="c1"># Find the best fog host</span>
+        <span class="k">for</span> <span class="n">host</span> <span class="ow">in</span> <span class="n">hosts</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">infra</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">host</span><span class="p">][</span><span class="s1">&#39;cpu&#39;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">ns</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">vnf</span><span class="p">][</span><span class="s1">&#39;cpu&#39;</span><span class="p">]</span> <span class="ow">and</span>\
+               <span class="n">infra</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">host</span><span class="p">][</span><span class="s1">&#39;mem&#39;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">ns</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">vnf</span><span class="p">][</span><span class="s1">&#39;mem&#39;</span><span class="p">]</span> <span class="ow">and</span>\
+               <span class="n">infra</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">host</span><span class="p">][</span><span class="s1">&#39;disk&#39;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">ns</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">vnf</span><span class="p">][</span><span class="s1">&#39;disk&#39;</span><span class="p">]</span> <span class="ow">and</span>\
+               <span class="bp">self</span><span class="o">.</span><span class="n">__better_host</span><span class="p">(</span><span class="n">infra</span><span class="p">,</span> <span class="n">ns</span><span class="p">,</span> <span class="n">vnf</span><span class="p">,</span> <span class="n">host</span><span class="p">,</span> <span class="n">best_host</span><span class="p">):</span>
+                <span class="n">best_host</span> <span class="o">=</span> <span class="n">host</span>
+
+        <span class="k">return</span> <span class="n">best_host</span>
+
+
+    <span class="k">def</span> <span class="nf">__get_path</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vl</span><span class="p">,</span> <span class="n">src_host</span><span class="p">,</span> <span class="n">dst_host</span><span class="p">,</span>
+                   <span class="n">infra</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">classes</span><span class="o">.</span><span class="n">digraph</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">,</span>
+                   <span class="n">ns</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">classes</span><span class="o">.</span><span class="n">digraph</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Obtains a path to steer the vl accross the infrastructure,</span>
+<span class="sd">        satisfying bandwidth and delay constraints.</span>
+<span class="sd">        It looks for the cheapest, most reliable path, i.e., this is the</span>
+<span class="sd">        descendent list of priorities:</span>
+<span class="sd">            1. reliability</span>
+<span class="sd">            2. cost</span>
+
+<span class="sd">        :vl: tuple of VNF identifiers (v1,v2)</span>
+<span class="sd">        :src_host: identifier of the host where the vl starts</span>
+<span class="sd">        :dst_host: identifier of the host where the vl ends </span>
+<span class="sd">        :infra: nx.classes.digraph.DiGraph: infrastructure graph</span>
+<span class="sd">        :ns: nx.classes.digraph.DiGraph: network service graph</span>
+<span class="sd">        :returns: dict: {&#39;cost&#39;, &#39;reliability&#39;, &#39;path&#39;: [h1, ..., hn]},</span>
+<span class="sd">                  or {} if fails</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Prune links not meeting bandwidth and delay requirements</span>
+        <span class="n">vl</span> <span class="o">=</span> <span class="n">ns</span><span class="p">[</span><span class="n">vl</span><span class="p">[</span><span class="mi">0</span><span class="p">]][</span><span class="n">vl</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
+        <span class="n">pruned_infra</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">infra</span><span class="p">)</span>
+        <span class="n">pruned_links</span> <span class="o">=</span> <span class="p">[(</span><span class="n">h1</span><span class="p">,</span><span class="n">h2</span><span class="p">)</span> <span class="k">for</span> <span class="n">h1</span><span class="p">,</span><span class="n">h2</span> <span class="ow">in</span> <span class="n">pruned_infra</span><span class="o">.</span><span class="n">edges</span><span class="p">()</span>\
+                <span class="k">if</span> <span class="n">pruned_infra</span><span class="p">[</span><span class="n">h1</span><span class="p">][</span><span class="n">h2</span><span class="p">][</span><span class="s1">&#39;bw&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">vl</span><span class="p">[</span><span class="s1">&#39;bw&#39;</span><span class="p">]</span> <span class="ow">or</span>\
+                    <span class="n">pruned_infra</span><span class="p">[</span><span class="n">h1</span><span class="p">][</span><span class="n">h2</span><span class="p">][</span><span class="s1">&#39;delay&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">vl</span><span class="p">[</span><span class="s1">&#39;delay&#39;</span><span class="p">]]</span>
+        <span class="n">pruned_infra</span><span class="o">.</span><span class="n">remove_edges_from</span><span class="p">(</span><span class="n">pruned_links</span><span class="p">)</span>
+
+        <span class="c1"># Set the graph weight as 1/link_reliability</span>
+        <span class="n">weights</span> <span class="o">=</span> <span class="p">{(</span><span class="n">h1</span><span class="p">,</span><span class="n">h2</span><span class="p">):</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">d</span><span class="p">[</span><span class="s1">&#39;reliability&#39;</span><span class="p">]</span>
+                   <span class="k">for</span> <span class="p">(</span><span class="n">h1</span><span class="p">,</span><span class="n">h2</span><span class="p">,</span><span class="n">d</span><span class="p">)</span> <span class="ow">in</span> <span class="n">pruned_infra</span><span class="o">.</span><span class="n">edges</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="kc">True</span><span class="p">)}</span>
+        <span class="n">nx</span><span class="o">.</span><span class="n">set_edge_attributes</span><span class="p">(</span><span class="n">pruned_infra</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;inv_reliab&#39;</span><span class="p">,</span> <span class="n">values</span><span class="o">=</span><span class="n">weights</span><span class="p">)</span>
+
+        <span class="c1"># Get the cheapest path among the most reliables</span>
+        <span class="n">all_shortest</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">all_shortest_paths</span><span class="p">(</span><span class="n">pruned_infra</span><span class="p">,</span>
+                <span class="n">src_host</span><span class="p">,</span> <span class="n">dst_host</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="s1">&#39;inv_reliab&#39;</span><span class="p">)</span>
+        <span class="n">best_path</span><span class="p">,</span> <span class="n">best_reliab</span><span class="p">,</span> <span class="n">best_cost</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">sys</span><span class="o">.</span><span class="n">maxsize</span>
+        <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">islice</span><span class="p">(</span><span class="n">all_shortest</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__k</span><span class="p">):</span>
+            <span class="n">cost</span><span class="p">,</span> <span class="n">delay</span><span class="p">,</span> <span class="n">reliab</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span>
+            <span class="k">for</span> <span class="n">h1</span><span class="p">,</span><span class="n">h2</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">path</span><span class="p">[</span><span class="mi">1</span><span class="p">:]):</span>
+                <span class="n">cost</span> <span class="o">+=</span> <span class="n">infra</span><span class="p">[</span><span class="n">h1</span><span class="p">][</span><span class="n">h2</span><span class="p">][</span><span class="s1">&#39;cost&#39;</span><span class="p">]</span>
+                <span class="n">reliab</span> <span class="o">*=</span> <span class="n">infra</span><span class="p">[</span><span class="n">h1</span><span class="p">][</span><span class="n">h2</span><span class="p">][</span><span class="s1">&#39;reliability&#39;</span><span class="p">]</span>
+                <span class="n">delay</span> <span class="o">+=</span> <span class="n">infra</span><span class="p">[</span><span class="n">h1</span><span class="p">][</span><span class="n">h2</span><span class="p">][</span><span class="s1">&#39;delay&#39;</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="n">delay</span> <span class="o">&lt;</span> <span class="n">vl</span><span class="p">[</span><span class="s1">&#39;delay&#39;</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="n">reliab</span> <span class="o">&gt;</span> <span class="n">best_reliab</span> <span class="ow">or</span>\
+                   <span class="n">reliab</span> <span class="o">==</span> <span class="n">best_reliab</span> <span class="ow">and</span> <span class="n">cost</span> <span class="o">&lt;</span> <span class="n">best_cost</span><span class="p">:</span>
+                    <span class="n">best_reliab</span> <span class="o">=</span> <span class="n">reliab</span>
+                    <span class="n">best_cost</span> <span class="o">=</span> <span class="n">cost</span>
+                    <span class="n">best_path</span> <span class="o">=</span> <span class="n">path</span>
+
+
+        <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;cost&#39;</span><span class="p">:</span> <span class="n">best_cost</span><span class="p">,</span> <span class="s1">&#39;path&#39;</span><span class="p">:</span> <span class="n">best_path</span><span class="p">,</span>
+                <span class="s1">&#39;reliability&#39;</span><span class="p">:</span> <span class="n">best_reliab</span><span class="p">}</span> <span class="k">if</span> <span class="n">best_path</span> <span class="k">else</span> <span class="p">{}</span>
+
+
+<div class="viewcode-block" id="GreedyFogCostMapper.map"><a class="viewcode-back" href="../../mapper.html#placement.mapper.GreedyFogCostMapper.map">[docs]</a>    <span class="k">def</span> <span class="nf">map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">infra</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">classes</span><span class="o">.</span><span class="n">digraph</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">,</span>
+            <span class="n">ns</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">classes</span><span class="o">.</span><span class="n">digraph</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Maps a network service on top of an infrastructure.</span>
+
+<span class="sd">        :infra: nx.classes.digraph.DiGraph: infrastructure graph</span>
+<span class="sd">        :ns: nx.classes.digraph.DiGraph: network service graph</span>
+<span class="sd">        :returns: dict: mapping decissions dictionary</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">mapping</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;worked&#39;</span><span class="p">:</span> <span class="kc">True</span>
+        <span class="p">}</span>
+
+        <span class="c1"># Check that graphs have correct format</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">__checker</span><span class="o">.</span><span class="n">check_infra</span><span class="p">(</span><span class="n">infra</span><span class="p">)</span> <span class="ow">or</span>\
+                <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">__checker</span><span class="o">.</span><span class="n">check_ns</span><span class="p">(</span><span class="n">ns</span><span class="p">):</span>
+            <span class="n">mapping</span><span class="p">[</span><span class="s1">&#39;worked&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">return</span> <span class="n">mapping</span>
+
+        <span class="n">infra_tmp</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">infra</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">vl</span> <span class="ow">in</span> <span class="n">ns</span><span class="o">.</span><span class="n">edges</span><span class="p">():</span>
+            <span class="c1"># Map the VNFs</span>
+            <span class="n">vnf1</span><span class="p">,</span> <span class="n">vnf2</span> <span class="o">=</span> <span class="n">vl</span>
+            <span class="k">for</span> <span class="n">vnf</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="n">vl</span><span class="p">)</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">mapping</span><span class="o">.</span><span class="n">keys</span><span class="p">())):</span>
+                <span class="n">host</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__get_host</span><span class="p">(</span><span class="n">vnf</span><span class="o">=</span><span class="n">vnf</span><span class="p">,</span> <span class="n">infra</span><span class="o">=</span><span class="n">infra_tmp</span><span class="p">,</span> <span class="n">ns</span><span class="o">=</span><span class="n">ns</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">host</span><span class="p">:</span>
+                    <span class="n">mapping</span><span class="p">[</span><span class="s1">&#39;worked&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+                    <span class="k">return</span> <span class="n">mapping</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">mapping</span><span class="p">[</span><span class="n">vnf</span><span class="p">]</span> <span class="o">=</span> <span class="n">host</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">__consume_vnf</span><span class="p">(</span><span class="n">host</span><span class="p">,</span> <span class="n">vnf</span><span class="p">,</span> <span class="n">infra_tmp</span><span class="p">,</span> <span class="n">ns</span><span class="p">)</span>
+
+            <span class="c1"># Map the VL</span>
+            <span class="n">vl_map</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__get_path</span><span class="p">(</span><span class="n">vl</span><span class="o">=</span><span class="n">vl</span><span class="p">,</span> <span class="n">src_host</span><span class="o">=</span><span class="n">mapping</span><span class="p">[</span><span class="n">vnf1</span><span class="p">],</span>
+                    <span class="n">dst_host</span><span class="o">=</span><span class="n">mapping</span><span class="p">[</span><span class="n">vnf2</span><span class="p">],</span> <span class="n">infra</span><span class="o">=</span><span class="n">infra_tmp</span><span class="p">,</span> <span class="n">ns</span><span class="o">=</span><span class="n">ns</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">vl_map</span> <span class="o">==</span> <span class="p">{}:</span>
+                <span class="n">mapping</span><span class="p">[</span><span class="s1">&#39;worked&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+                <span class="k">return</span> <span class="n">mapping</span>
+            <span class="n">mapping</span><span class="p">[</span><span class="n">vl</span><span class="p">]</span> <span class="o">=</span> <span class="n">vl_map</span><span class="p">[</span><span class="s1">&#39;path&#39;</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__consume_vl</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="n">vl_map</span><span class="p">[</span><span class="s1">&#39;path&#39;</span><span class="p">],</span> <span class="n">vl</span><span class="o">=</span><span class="n">vl</span><span class="p">,</span>
+                    <span class="n">infra</span><span class="o">=</span><span class="n">infra_tmp</span><span class="p">,</span> <span class="n">ns</span><span class="o">=</span><span class="n">ns</span><span class="p">)</span>
+    
+        <span class="k">return</span> <span class="n">mapping</span></div>
+
+
+<div class="viewcode-block" id="GreedyFogCostMapper.map_reliability"><a class="viewcode-back" href="../../mapper.html#placement.mapper.GreedyFogCostMapper.map_reliability">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">map_reliability</span><span class="p">(</span><span class="n">infra</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">classes</span><span class="o">.</span><span class="n">digraph</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">,</span>
+                        <span class="n">mapping</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Retrieve the reliability of a ns mapping</span>
+
+<span class="sd">        :infra: nx.classes.digraph.DiGraph: infrastructure graph</span>
+<span class="sd">        :path: dict: mapping decissions dictionary</span>
+<span class="sd">        :returns: the reliability</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">reliab</span> <span class="o">=</span> <span class="mi">1</span>
+
+        <span class="c1"># Multiply by hosts reliability</span>
+        <span class="k">for</span> <span class="n">vnf</span> <span class="ow">in</span> <span class="p">[</span><span class="n">k</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">mapping</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>\
+                    <span class="k">if</span> <span class="n">k</span> <span class="o">!=</span> <span class="s1">&#39;worked&#39;</span> <span class="ow">and</span> <span class="nb">type</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">tuple</span><span class="p">]:</span>
+            <span class="n">reliab</span> <span class="o">*=</span> <span class="n">infra</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">mapping</span><span class="p">[</span><span class="n">vnf</span><span class="p">]][</span><span class="s1">&#39;reliability&#39;</span><span class="p">]</span>
+
+        <span class="c1"># Multiply by links&#39; reliability</span>
+        <span class="k">for</span> <span class="n">vl</span> <span class="ow">in</span> <span class="p">[</span><span class="n">k</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">mapping</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>\
+                   <span class="k">if</span> <span class="n">k</span> <span class="o">!=</span> <span class="s1">&#39;worked&#39;</span> <span class="ow">and</span> <span class="nb">type</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="o">==</span> <span class="nb">tuple</span><span class="p">]:</span>
+            <span class="n">limits</span> <span class="o">=</span> <span class="p">[</span><span class="n">mapping</span><span class="p">[</span><span class="n">vl</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">mapping</span><span class="p">[</span><span class="n">vl</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]]</span>
+            <span class="k">for</span> <span class="n">h1</span><span class="p">,</span><span class="n">h2</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">mapping</span><span class="p">[</span><span class="n">vl</span><span class="p">][:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">mapping</span><span class="p">[</span><span class="n">vl</span><span class="p">][</span><span class="mi">1</span><span class="p">:]):</span>
+                <span class="k">if</span> <span class="n">h1</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">limits</span><span class="p">:</span>
+                    <span class="n">reliab</span> <span class="o">*=</span> <span class="n">infra</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">h1</span><span class="p">][</span><span class="s1">&#39;reliability&#39;</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">h2</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">limits</span><span class="p">:</span>
+                    <span class="n">reliab</span> <span class="o">*=</span> <span class="n">infra</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">h2</span><span class="p">][</span><span class="s1">&#39;reliability&#39;</span><span class="p">]</span>
+
+                <span class="n">reliab</span> <span class="o">*=</span> <span class="n">infra</span><span class="p">[</span><span class="n">h1</span><span class="p">][</span><span class="n">h2</span><span class="p">][</span><span class="s1">&#39;reliability&#39;</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">reliab</span></div>
+
+
+<div class="viewcode-block" id="GreedyFogCostMapper.map_lifetime"><a class="viewcode-back" href="../../mapper.html#placement.mapper.GreedyFogCostMapper.map_lifetime">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">map_lifetime</span><span class="p">(</span><span class="n">infra</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">classes</span><span class="o">.</span><span class="n">digraph</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">,</span>
+                     <span class="n">mapping</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Retrieves the lifetime of a mapping</span>
+
+<span class="sd">        :infra: nx.classes.digraph.DiGraph: TODO</span>
+<span class="sd">        :mapping: dict: dictionary with the result of map() method</span>
+<span class="sd">        :returns: the minimum lifetime accross the mapped path</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">lifetime</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">return</span> <span class="nb">min</span><span class="p">([</span><span class="n">infra</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">mapping</span><span class="p">[</span><span class="n">k</span><span class="p">]][</span><span class="s1">&#39;lifetime&#39;</span><span class="p">]</span>\
+                    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">mapping</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>\
+                    <span class="k">if</span> <span class="n">k</span> <span class="o">!=</span> <span class="s1">&#39;worked&#39;</span> <span class="ow">and</span> <span class="nb">type</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">tuple</span><span class="p">])</span></div></div>
+
+
 </pre></div>
 
+           </div>
+           
           </div>
-          
-        </div>
-      </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-<h1 class="logo"><a href="../../index.html">placement</a></h1>
+          <footer>
+  
 
+  <hr/>
 
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Jorge Martín Pérez
 
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
-
-
-
-
-<h3>Navigation</h3>
-
-<div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="../../index.html">Documentation overview</a><ul>
-  <li><a href="../index.html">Module code</a><ul>
-  </ul></li>
-  </ul></li>
-</ul>
-</div>
-<div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="../../search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
-    </form>
-    </div>
-</div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
-
-
-
-
-
-
-
+</footer>
 
         </div>
       </div>
-      <div class="clearer"></div>
-    </div>
-    <div class="footer">
-      &copy;2019, Jorge Martín Pérez.
-      
-      |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.0.0</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
-      
-    </div>
 
-    
+    </section>
 
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
     
-  </body>
+   
+
+</body>
 </html>

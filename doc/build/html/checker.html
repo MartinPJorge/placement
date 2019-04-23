@@ -1,0 +1,320 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Checker &mdash; placement 0.1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Mapper" href="mapper.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> placement
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="mapper.html">Mapper</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Checker</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">placement</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Checker</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/checker.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-placement.checker">
+<span id="checker"></span><h1>Checker<a class="headerlink" href="#module-placement.checker" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="placement.checker.AbstractChecker">
+<em class="property">class </em><code class="descclassname">placement.checker.</code><code class="descname">AbstractChecker</code><a class="reference internal" href="_modules/placement/checker.html#AbstractChecker"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#placement.checker.AbstractChecker" title="Permalink to this definition">¶</a></dt>
+<dd><p>Abstract class for Checkers that verify the format of network services
+and infrastructure graphs</p>
+<dl class="method">
+<dt id="placement.checker.AbstractChecker.check_infra">
+<code class="descname">check_infra</code><span class="sig-paren">(</span><em>infra</em><span class="sig-paren">)</span> &#x2192; bool<a class="reference internal" href="_modules/placement/checker.html#AbstractChecker.check_infra"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#placement.checker.AbstractChecker.check_infra" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if the infrastructure graph has the correct format</p>
+<dl class="field-list simple">
+<dt class="field-odd">Infra</dt>
+<dd class="field-odd"><p>infrastructure graph</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>bool: telling if it satisfies it or not</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="placement.checker.AbstractChecker.check_ns">
+<code class="descname">check_ns</code><span class="sig-paren">(</span><em>ns</em><span class="sig-paren">)</span> &#x2192; bool<a class="reference internal" href="_modules/placement/checker.html#AbstractChecker.check_ns"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#placement.checker.AbstractChecker.check_ns" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if the network service graph has the correct format</p>
+<dl class="field-list simple">
+<dt class="field-odd">Ns</dt>
+<dd class="field-odd"><p>network service graph</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>bool: telling if it satisfies it or not</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="placement.checker.CheckBasicDigraphs">
+<em class="property">class </em><code class="descclassname">placement.checker.</code><code class="descname">CheckBasicDigraphs</code><a class="reference internal" href="_modules/placement/checker.html#CheckBasicDigraphs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#placement.checker.CheckBasicDigraphs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checker for network services and infrastructure graphs as the shown
+below:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">infra</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cost</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;cpu&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;disk&#39;</span><span class="p">:</span> <span class="mf">2.3</span><span class="p">,</span> <span class="s1">&#39;mem&#39;</span><span class="p">:</span> <span class="mi">4</span><span class="p">}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">infra</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="s1">&#39;h1&#39;</span><span class="p">,</span> <span class="n">cpu</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">mem</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="n">disk</span><span class="o">=</span><span class="mi">1024</span><span class="p">,</span> <span class="n">rats</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;LTE&#39;</span><span class="p">,</span> <span class="s1">&#39;MMW&#39;</span><span class="p">],</span>
+<span class="go">        location=(39.1408046,-1.0795603), cost=cost)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">infra</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="s1">&#39;h2&#39;</span><span class="p">,</span> <span class="n">cpu</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">mem</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">disk</span><span class="o">=</span><span class="mi">512</span><span class="p">,</span> <span class="n">cost</span><span class="o">=</span><span class="n">cost</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">infra</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="s1">&#39;h1&#39;</span><span class="p">,</span> <span class="s1">&#39;h2&#39;</span><span class="p">,</span> <span class="n">bw</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">delay</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">cost</span><span class="o">=</span><span class="mi">30</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ns</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ns</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="s1">&#39;v1&#39;</span><span class="p">,</span> <span class="n">cpu</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">mem</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">disk</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">rats</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;LTE&#39;</span><span class="p">],</span>
+<span class="go">        location={&#39;center&#39;: (39.128380, -1.080805), &#39;radius&#39;: 20})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ns</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="s1">&#39;v2&#39;</span><span class="p">,</span> <span class="n">cpu</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">mem</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">disk</span><span class="o">=</span><span class="mi">400</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ns</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="s1">&#39;v1&#39;</span><span class="p">,</span> <span class="s1">&#39;v2&#39;</span><span class="p">,</span> <span class="n">bw</span><span class="o">=</span><span class="mi">59</span><span class="p">,</span> <span class="n">delay</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="method">
+<dt id="placement.checker.CheckBasicDigraphs.check_infra">
+<code class="descname">check_infra</code><span class="sig-paren">(</span><em>infra: networkx.classes.digraph.DiGraph</em><span class="sig-paren">)</span> &#x2192; bool<a class="reference internal" href="_modules/placement/checker.html#CheckBasicDigraphs.check_infra"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#placement.checker.CheckBasicDigraphs.check_infra" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if the infrastructure graph has the correct format</p>
+<dl class="field-list simple">
+<dt class="field-odd">Infra</dt>
+<dd class="field-odd"><p>nx.classes.digraph.DiGraph: infrastructure graph</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>bool: telling if it satisfies it or not</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="placement.checker.CheckBasicDigraphs.check_ns">
+<code class="descname">check_ns</code><span class="sig-paren">(</span><em>ns: networkx.classes.digraph.DiGraph</em><span class="sig-paren">)</span> &#x2192; bool<a class="reference internal" href="_modules/placement/checker.html#CheckBasicDigraphs.check_ns"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#placement.checker.CheckBasicDigraphs.check_ns" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if the network service graph has the correct format</p>
+<dl class="field-list simple">
+<dt class="field-odd">Ns</dt>
+<dd class="field-odd"><p>nx.classes.digraph.DiGraph: network service graph</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>bool: telling if it satisfies it or not</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="placement.checker.CheckFogDigraphs">
+<em class="property">class </em><code class="descclassname">placement.checker.</code><code class="descname">CheckFogDigraphs</code><a class="reference internal" href="_modules/placement/checker.html#CheckFogDigraphs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#placement.checker.CheckFogDigraphs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks that the network services and infrastructures graphs are Basic
+digraphs with lifetime and reliability parameters.</p>
+<dl class="method">
+<dt id="placement.checker.CheckFogDigraphs.check_infra">
+<code class="descname">check_infra</code><span class="sig-paren">(</span><em>infra: networkx.classes.digraph.DiGraph</em><span class="sig-paren">)</span> &#x2192; bool<a class="reference internal" href="_modules/placement/checker.html#CheckFogDigraphs.check_infra"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#placement.checker.CheckFogDigraphs.check_infra" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if the infrastructure graph has the correct format</p>
+<dl class="field-list simple">
+<dt class="field-odd">Infra</dt>
+<dd class="field-odd"><p>nx.classes.digraph.DiGraph: infrastructure graph</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>bool: telling if it satisfies it or not</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="placement.checker.CheckFogDigraphs.check_ns">
+<code class="descname">check_ns</code><span class="sig-paren">(</span><em>ns: networkx.classes.digraph.DiGraph</em><span class="sig-paren">)</span> &#x2192; bool<a class="reference internal" href="_modules/placement/checker.html#CheckFogDigraphs.check_ns"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#placement.checker.CheckFogDigraphs.check_ns" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if the network service graph has the correct format</p>
+<dl class="field-list simple">
+<dt class="field-odd">Ns</dt>
+<dd class="field-odd"><p>nx.classes.digraph.DiGraph: network service graph</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>bool: telling if it satisfies it or not</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+      
+        <a href="mapper.html" class="btn btn-neutral float-left" title="Mapper" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Jorge Martín Pérez
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

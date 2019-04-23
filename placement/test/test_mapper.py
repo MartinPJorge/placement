@@ -82,7 +82,11 @@ class TestGreedyFogCostMapper(unittest.TestCase):
     """Test case for the GreedyFogCostMapper class"""
 
 
-    def setUp(self):
+    def __graphs_setup(self) -> None:
+        """Create the infrastructure and network service graphs
+        :returns: None
+
+        """
         # Create the infrastructure graph
         infra = nx.DiGraph()
         a_cost = {'cpu': 2, 'disk': 2.3, 'mem': 4}
@@ -104,10 +108,10 @@ class TestGreedyFogCostMapper(unittest.TestCase):
         infra.add_node('h1', cpu=1, mem=8, disk=512, cost=h_cost,
                        reliability=1, lifetime=100)
         infra.add_node('f1', cpu=1, mem=8, disk=512, cost=f_cost,
-                       reliability=1, lifetime=100,
+                       reliability=1, lifetime=80,
                        location=(39.128380, -1.080805))
         infra.add_node('f2', cpu=1, mem=8, disk=512, cost=f_cost,
-                       reliability=0.8, lifetime=100,
+                       reliability=0.8, lifetime=80,
                        location=(39.128380, -1.080805))
         infra.add_node('f3', cpu=1, mem=8, disk=512, cost=f_cost,
                        reliability=1, lifetime=50,
@@ -144,30 +148,75 @@ class TestGreedyFogCostMapper(unittest.TestCase):
         ns.add_edge('AP', 'control', bw=1, delay=100)
         self.ns = ns
 
-        # Instantiate a GreedyCostMapper
+
+    def __mapper_set_up(self) -> None:
+        """Creates the greedy fog mappers for the tests
+        :returns: None
+
+        """
         self.checker = checker.CheckFogDigraphs()
         self.mapper_k1 = mapper.GreedyFogCostMapper(checker=self.checker, k=1)
         self.mapper_k2 = mapper.GreedyFogCostMapper(checker=self.checker, k=2)
 
+    def __map_suite(self) -> None:
+        """Performs the mapping of the network service(s) in the test
+        :returns: None
+
+        """
+        pass
+        self.mapping_k1 = self.mapper_k1.map(infra=self.infra, ns=self.ns)
+        self.mapping_k2 = self.mapper_k2.map(infra=self.infra, ns=self.ns)
+
+
+    def setUp(self):
+        self.__graphs_setup()
+        self.__mapper_set_up()
+        self.__map_suite()
+
 
     def test_map(self):
+        """Checks if the mappings work
+        :returns: None
+
+        """
         # Check correct mapping for depth k=1
-        mapping = self.mapper_k1.map(infra=self.infra, ns=self.ns)
-        self.assertTrue(mapping['worked'])
-        self.assertEqual(mapping['robot'], 'f1')
-        self.assertEqual(mapping['AP'], 'a1')
-        self.assertEqual(mapping['control'], 'h1')
-        self.assertEqual(mapping['robot', 'AP'], ['f1', 'a1'])
-        self.assertEqual(mapping['AP', 'control'], ['a1', 'h1'])
+        self.assertTrue(self.mapping_k1['worked'])
+        self.assertEqual(self.mapping_k1['robot'], 'f1')
+        self.assertEqual(self.mapping_k1['AP'], 'a1')
+        self.assertEqual(self.mapping_k1['control'], 'h1')
+        self.assertEqual(self.mapping_k1['robot', 'AP'], ['f1', 'a1'])
+        self.assertEqual(self.mapping_k1['AP', 'control'], ['a1', 'sw1', 'h1'])
 
         # Check correct mapping for depth k=2
-        mapping = self.mapper_k1.map(infra=self.infra, ns=self.ns)
-        self.assertTrue(mapping['worked'])
-        self.assertEqual(mapping['robot'], 'f1')
-        self.assertEqual(mapping['AP'], 'a1')
-        self.assertEqual(mapping['control'], 'h1')
-        self.assertEqual(mapping['robot', 'AP'], ['f1', 'a1'])
-        self.assertEqual(mapping['AP', 'control'], ['a1', 'sw2', 'h1'])
+        self.assertTrue(self.mapping_k2['worked'])
+        self.assertEqual(self.mapping_k2['robot'], 'f1')
+        self.assertEqual(self.mapping_k2['AP'], 'a1')
+        self.assertEqual(self.mapping_k2['control'], 'h1')
+        self.assertEqual(self.mapping_k2['robot', 'AP'], ['f1', 'a1'])
+        self.assertEqual(self.mapping_k2['AP', 'control'], ['a1', 'sw2', 'h1'])
+
+
+    def test_reliability(self):
+        """Checks if the mapping reliability retrieval works
+        :returns: None
+
+        """
+        self.assertEqual(mapper.GreedyFogCostMapper.map_reliability(
+                         infra=self.infra, mapping=self.mapping_k1), 1/4)
+        self.assertEqual(mapper.GreedyFogCostMapper.map_reliability(
+                         infra=self.infra, mapping=self.mapping_k2), 1/4)
+
+
+    def test_lifetime(self):
+        """Checks if lifetime retrieval works
+        :returns: None
+
+        """
+        self.assertEqual(mapper.GreedyFogCostMapper.map_lifetime(
+                         infra=self.infra, mapping=self.mapping_k1), 80)  
+        self.assertEqual(mapper.GreedyFogCostMapper.map_lifetime(
+                         infra=self.infra, mapping=self.mapping_k2), 80)  
+        
 
 
 if __name__ == "__main__":
