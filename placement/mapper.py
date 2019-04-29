@@ -4,7 +4,7 @@ import copy
 import networkx as nx
 import sys
 from itertools import islice
-from .checker import AbstractChecker
+from checker import AbstractChecker, CheckFogDigraphs
 from functools import reduce
 
 class AbstractMapper(metaclass=ABCMeta):
@@ -227,10 +227,10 @@ class GreedyFogCostMapper(AbstractMapper):
     accounting for reliability and service lifetime."""
 
 
-    def __init__(self, checker: AbstractChecker, k: int):
+    def __init__(self, checker: CheckFogDigraphs, k: int):
         """Initializes a Greedy Fog cost mapper
 
-        :checker: AbstractChecker: instance of a graph checker
+        :checker: CheckFogDigraphs: instance of a fog graph checker
         :k: int: k shortest paths parameter for the virtual links steering
 
         """
@@ -500,7 +500,7 @@ class GreedyFogCostMapper(AbstractMapper):
                      mapping: dict) -> float:
         """Retrieves the lifetime of a mapping
 
-        :infra: nx.classes.digraph.DiGraph: TODO
+        :infra: nx.classes.digraph.DiGraph: inftastructure digraph instance 
         :mapping: dict: dictionary with the result of map() method
         :returns: the minimum lifetime accross the mapped path
 
@@ -510,5 +510,52 @@ class GreedyFogCostMapper(AbstractMapper):
         return min([infra.nodes[mapping[k]]['lifetime']\
                     for k in mapping.keys()\
                     if k != 'worked' and type(k) != tuple])
+
+        
+    @staticmethod
+    def map_cost(infra: nx.classes.digraph.DiGraph,
+                 ns: nx.classes.digraph.DiGraph, mapping: dict) -> float:
+        """Retrieves the cost of a given mapping
+
+        :infra: nx.classes.digraph.DiGraph: infrastructure digraph instance
+        :ns: nx.classes.digraph.DiGraph: network service graph
+        :mapping: dict: dictionary with the result of map() method
+        :returns: cost of the given mapping
+
+        """
+        cost = 0
+
+        # VNF mapping cost
+        for vnf in [k for k in mapping.keys() if type(k) != tuple and\
+                                                 k != 'worked']:
+            for r in infra.nodes[mapping[vnf]]['cost'].keys():
+                cost += infra.nodes[mapping[vnf]]['cost'][r] * ns.nodes[vnf][r]
+
+        # VL mapping cost
+        for vl in [k for k in mapping.keys() if type(k) == tuple]:
+            for h1,h2 in zip(mapping[vl], mapping[vl][1:]):
+                cost += infra[h1][h2]['cost'] * ns[vl[0]][vl[1]]['bw']
+
+        return cost
+
+
+    @staticmethod
+    def map_delay(infra: nx.classes.digraph.DiGraph,
+                  ns: nx.classes.digraph.DiGraph, mapping: dict) -> float:
+        """Retrieve the delay of the mapped network service
+
+        :infra: nx.classes.digraph.DiGraph: infrastructure digraph instance
+        :ns: nx.classes.digraph.DiGraph: network service graph
+        :mapping: dict: dictionary with the result of map() method
+        :returns: delay of the given mapping
+
+        """
+        delay = 0
+        
+        for vl in [k for k in mapping.keys() if type(k) == tuple]:
+            for h1,h2 in zip(mapping[vl], mapping[vl][1:]):
+                delay += infra[h1][h2]['delay']
+
+        return delay
 
 

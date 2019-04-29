@@ -186,6 +186,31 @@ class TestGreedyFogCostMapper(unittest.TestCase):
         self.assertEqual(self.mapping_k1['control'], 'h1')
         self.assertEqual(self.mapping_k1['robot', 'AP'], ['f1', 'a1'])
         self.assertEqual(self.mapping_k1['AP', 'control'], ['a1', 'sw1', 'h1'])
+        # Check mapping delay for depth k=1
+        expected_delay = self.infra['f1']['a1']['delay'] +\
+                         self.infra['a1']['sw1']['delay'] +\
+                         self.infra['sw1']['h1']['delay']
+        mk1 = dict(self.mapping_k1)
+        self.assertEqual(mapper.GreedyFogCostMapper.map_delay(
+                             infra=self.infra, ns=self.ns,
+                             mapping=self.mapping_k1), expected_delay)
+        # Check mapping cost depth k=1
+        expected_cost = self.infra['f1']['a1']['cost'] *\
+                            self.ns['robot']['AP']['bw'] +\
+                        (self.infra['a1']['sw1']['cost'] +\
+                         self.infra['a1']['sw1']['cost']) *\
+                            self.ns['AP']['control']['bw']
+        for v,h in [('robot', 'f1'), ('AP', 'a1'), ('control', 'h1')]:
+            for r in ['cpu', 'mem', 'disk']:
+                expected_cost += self.infra.nodes[h]['cost'][r] *\
+                                 self.ns.nodes[v][r]
+        self.assertEqual(mapper.GreedyFogCostMapper.map_cost(
+                             infra=self.infra, ns=self.ns,
+                             mapping=self.mapping_k1), expected_cost)
+        # Check the lifetime with depth k=1
+        self.assertEqual(mapper.GreedyFogCostMapper.map_lifetime(
+                             infra=self.infra, mapping=self.mapping_k1), 80)
+
 
         # Check correct mapping for depth k=2
         self.assertTrue(self.mapping_k2['worked'])
@@ -194,6 +219,33 @@ class TestGreedyFogCostMapper(unittest.TestCase):
         self.assertEqual(self.mapping_k2['control'], 'h1')
         self.assertEqual(self.mapping_k2['robot', 'AP'], ['f1', 'a1'])
         self.assertEqual(self.mapping_k2['AP', 'control'], ['a1', 'sw2', 'h1'])
+        self.assertEqual(mapper.GreedyFogCostMapper.map_delay(
+                             infra=self.infra, ns=self.ns,
+                             mapping=self.mapping_k2), 3)
+        # Check mapping delay for depth k=2
+        expected_delay = self.infra['f1']['a1']['delay'] +\
+                         self.infra['a1']['sw2']['delay'] +\
+                         self.infra['sw2']['h1']['delay']
+        mk1 = dict(self.mapping_k1)
+        self.assertEqual(mapper.GreedyFogCostMapper.map_delay(
+                             infra=self.infra, ns=self.ns,
+                             mapping=self.mapping_k2), expected_delay)
+        # Check mapping cost depth k=2
+        expected_cost = self.infra['f1']['a1']['cost'] *\
+                            self.ns['robot']['AP']['bw'] +\
+                        (self.infra['a1']['sw2']['cost'] +\
+                         self.infra['a1']['sw2']['cost']) *\
+                            self.ns['AP']['control']['bw']
+        for v,h in [('robot', 'f1'), ('AP', 'a1'), ('control', 'h1')]:
+            for r in ['cpu', 'mem', 'disk']:
+                expected_cost += self.infra.nodes[h]['cost'][r] *\
+                                 self.ns.nodes[v][r]
+        self.assertEqual(mapper.GreedyFogCostMapper.map_cost(
+                             infra=self.infra, ns=self.ns,
+                             mapping=self.mapping_k2), expected_cost)
+        # Check the lifetime with depth k=2
+        self.assertEqual(mapper.GreedyFogCostMapper.map_lifetime(
+                             infra=self.infra, mapping=self.mapping_k2), 80)
 
 
     def test_reliability(self):
