@@ -1,1 +1,1 @@
-# volatile-resources
+# volatile-resources collaboration
