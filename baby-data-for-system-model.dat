@@ -1,0 +1,27 @@
+set graph := 'infraGraph' 'serviceGraph';
+param infraGraph := 'infraGraph';
+param serviceGraph := 'serviceGraph';
+
+# specify graphs
+set vertices['infraGraph'] := 'accessPoint' 'robot1' 'robot2' 'server';
+set edges['infraGraph'] := ('robot1', 'robot2') ('robot2', 'accessPoint') ('accessPoint', 'server');
+set vertices['serviceGraph'] := 'robotMaster' 'robotSlave' 'vEPC' 'controller';
+set edges['serviceGraph'] := ('robotMaster', 'robotSlave') ('robotSlave', 'vEPC') ('vEPC', 'controller');
+set APs := 'accessPoint';
+set servers := 'server';
+set mobiles := 'robot1' 'robot2';
+
+param resources :=  'accessPoint' 0
+                    'robot1' 1
+                    'robot2' 1
+                    'server' 5;
+
+param demands :=    'robotMaster' 1
+                    'robotSlave' 1
+                    'vEPC' 2
+                    'controller' 2;
+
+param cost_unit_demand :=   'accessPoint' 0
+                            'robot1' 10
+                            'robot2' 10
+                            'server' 1;

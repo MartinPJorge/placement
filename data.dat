@@ -1,6 +1,0 @@
-set graph := 'infraGraph' 'serviceGraph';
-set vertices['infraGraph'] := 'accessPoint' 'robot1' 'robot2' 'server';
-set edges['infraGraph'] := ('robot1', 'robot2') ('robot2', 'accessPoint') ('accessPoint', 'server');
-set vertices['serviceGraph'] := 'robotMaster' 'robotSlave' 'vEPC' 'controller';
-set APs['infraGraph'] := 'accessPoint';
-
