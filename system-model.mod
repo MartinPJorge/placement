@@ -17,8 +17,20 @@ param resources {N in vertices[infraGraph]} >= 0;
 param demands {v in vertices[serviceGraph]} >= 0;
 param cost_unit_demand {N in vertices[infraGraph]} >= 0;
 
+# temporal parameters
+# interval length between t0 and t1
+param interval_length > 0;
+set subintervals := 1..interval_length;
+
+#coverage probabilities of the mobile cluster by the APs at subintervals
+param prob_AP {ap in APs, t_k in subintervals} >=0.0, <=1.0;
+# required coverage probability of the cluster
+param coverage_threshold >=0.0, <=1.0;
+
 # mapping variable: VNF v is mapped to infra node N
 var X {v in vertices[serviceGraph], N in vertices[infraGraph]} binary;
+# AP selection variable at time subinterval t_k
+var AP_x {ap in APs, t_k in subintervals} binary;
 
 minimize Total_cost:
     sum {v in vertices[serviceGraph], N in vertices[infraGraph]}
@@ -29,3 +41,9 @@ subject to Max_resources {N in vertices[infraGraph]}:
 
 subject to Map_to_one_place {v in vertices[serviceGraph]}:
     sum {N in vertices[infraGraph]}  X[v, N] = 1;
+
+subject to Single_AP_selection {t_k in subintervals}:
+    sum {ap in APs} AP_x[ap, t_k] = 1;
+
+subject to AP_coverage_threshold {t_k in subintervals}:
+    sum {ap in APs} AP_x[ap, t_k] *  prob_AP[ap, t_k] >= coverage_threshold;

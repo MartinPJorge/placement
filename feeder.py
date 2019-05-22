@@ -1,4 +1,6 @@
-from ampl import AMPL
+from amplpy import AMPL
+
+condition = True
 
 if condition:
     pass
