@@ -3,9 +3,12 @@ from haversine import haversine
 import copy
 import networkx as nx
 import sys
+import logging
 from itertools import islice
 from checker import AbstractChecker, CheckFogDigraphs
 from functools import reduce
+from utils import k_shortest_paths
+from math import log
 
 class AbstractMapper(metaclass=ABCMeta):
 
@@ -557,5 +560,195 @@ class GreedyFogCostMapper(AbstractMapper):
                 delay += infra[h1][h2]['delay']
 
         return delay
+
+
+class FPTASMapper(AbstractMapper):
+
+    """Maps a network service using a FPTAS modification of multiconstraint
+       routing under path additive constraints. Algorithm 2 of [1]
+       
+       [1] Xue, Guoliang, et al. "Finding a path subject to many additive QoS
+       constraints."
+       IEEE/ACM Transactions on Networking (TON) 15.1 (2007): 201-211."""
+
+
+    @abstractmethod
+    def __init__(self, checker: CheckFogDigraphs, log_out: str):
+        """Inits the mapper with its associated graphs checker
+
+        :checker: CheckFogDigraph: instance of a fog graph checker
+        :log_out: str: file to output the log of the mapper
+        :returns: None
+
+        """
+        self.__checker = checker
+        self.__log = logging.getLogger(name=log_out)
+        file_handler = logging.FileHandler(log_out, mode='w')
+        self.__log.addHandler(file_handler)
+
+
+    def __build_aux(self, infra: nx.classes.digraph.DiGraph, src,
+                    k: int, tau: int, ereliab: float)\
+                            -> nx.classes.digraph.DiGraph:
+        """Creates a digraph with nodes connected directly through paths
+
+        :infra: nx.classes.digraph.DiGraph: infrastructure digraph
+        :src: id of the source node used to build the auxiliary graph
+        :k: int: number of shortest paths between computational nodes
+        :tau: int: granularity, the higher, the more precise
+        :ereliab: float: endpoint reliability
+        :returns: nx.classes.digraph.DiGraph
+
+        """
+        comp_nodes = set(infra.nodes())
+        if src not in comp_nodes:
+            comp_nodes.union(src)
+        src_paths = {}
+
+        # Find all paths between computational nodes
+        for from_ in comp_nodes:
+            src_paths[from_] = {}
+            for to_ in [c for c in comp_nodes if c != to_]:
+                for path in k_shortest_paths(infra, from_, to_,
+                                             k=k, weight='delay'):
+                    if to_ not in src_paths[from_]:
+                        src_paths[from_][to_] = {
+                            'paths': [],
+                            'delays': [],
+                            'reliabs': [],
+                            'bw': []
+                        }
+
+                    # Calculate path delay and reliability
+                    src_paths[from_][to_]['paths'] += [path]
+                    delay, reliab, cost, bw = 0, 1, 0, sys.maxsize
+                    for (n1,n2) in zip(path[:-1], path[1:]):
+                        if infra[n1][n2]['bw'] < bw:
+                            bw = infra[n1][n2]['bw']
+                        delay += infra[n1][n2]['delay']
+                        reliab *= infra[n1][n2]['reliability']
+                        if n2 != to_:
+                            reliab *= infra[n2]['reliability']
+                        cost += infra[n1][n2]['trafficCost']
+                    src_paths[from_][to_]['delays'] += [delay]
+                    src_paths[from_][to_]['reliability'] += [reliab]
+                    src_paths[from_][to_]['bw'] += [bw]
+                    src_paths[from_][to_]['cost'] += [cost]
+
+
+        # Build the auxiliary graph
+        self.__aux_g = nx.DiGraph()
+        for comp_node in comp_nodes:
+            for tau_ in range(1, tau + 1):
+                self.__aux_g.add_node((comp_node,tau_),
+                                      **infra.nodes[comp_node])
+
+        # Connect the auxiliary graph nodes
+        for (c1,A) in self.__aux_g.nodes():
+            for (c2,B) in self.__aux_g.nodes():
+                if c1 == c2:
+                    self.__aux_g.add_edge((c1,A), (c2,B), w1=0, delay=0)
+                else:
+                    w1 = -1 * tau * log(1/(infra[c1][c2]['reliability']*\
+                                           infra[c2]['reliability']))\
+                                    / log(ereliab)
+                    if A + w1 <= B:
+                        self.__aux_g.add_edge((c1,A), (c2,B), w1=w1,
+                                              delay=infra[c1][c2]['delay'])
+
+
+    def __ordered_vls(self, ns: nx.classes.digraph.DiGraph) -> list:
+        """Obtain the ordered list of virtual links in a network service
+
+        :ns: nx.classes.digraph.DiGraph:  network service graph
+        :returns: list: [(vnf1, vnf2, {...}), ...]
+
+        """
+        start_vnf = list(filter(lambda vnf: ns.in_degree(vnf) == 0),
+                                ns.nodes())[0]
+        curr_vnf = start_vnf
+        vls = []
+        while len(ns[curr_vnf]) > 0:
+            next_vnf = list(ns[curr_vnf])[0]
+            vls += [(curr_vnf, next_vnf, ns[curr_vnf][next_vnf])]
+            curr_vnf = next_vnf
+
+        return vls
+
+
+    @abstractmethod
+    def map(self, infra: nx.classes.digraph.DiGraph,
+            ns: nx.classes.digraph.DiGraph, k: int, tau: int) -> dict:
+        """Maps a network service using a variation of [1]
+
+        :infra: nx.classes.digraph.DiGraph: infrastructure graph
+        :ns: nx.classes.digraph.DiGraph: network service graph
+        :k: int: number of shortest paths between computational nodes
+        :tau: int: granularity, the higher, the more precise
+        :returns: dict: mapping decissions dictionary
+
+        """
+        endpoint = list(filter(lambda vnf: ns.in_degree(vnf) == 0),
+                               ns.nodes())[0]
+        self.__build_aux(infra=infra, src=start_vnf, k=k, tau=tau,
+                         ereliab=ns.nodes[start_vnf]['reliability'])
+        vls = self.__ordered_vls(ns)
+        hop_delay = [ns.nodes[endpoint]['delay'] / len(infra.nodes)]\
+                    * len(infra.nodes)
+
+        # Dictionaries to store cost and cpu as mapping advances
+        cost = {
+            (c,A,v1,v2): sys.maxsize
+            for (c,A) in self.__aux_g.nodes()
+            for (v1,v2) in vls
+        }
+        curr_cpu = {
+            (c,A,v1,v2): infra.nodes[c]['cpu']
+            for (c,A) in self.__aux_g.nodes()
+            for (v1,v2) in vls
+        }
+        prev = {
+            (c,A,v1,v2): None
+            for (c,A) in self.__aux_g.nodes()
+            for (v1,v2) in vls
+        }
+
+        # MAIN LOOP
+        for hop in range(len(vls)):
+            v1,v2,vl_d = vls[hop]
+            v0 = None if hop == 0 else vls[hop-1][0]
+
+            first_vl = v1 == endpoint
+            to_visit = self.__aux_g.edges() if not first_vl else\
+                       filter(lambda ((c0,A),(c2,B)): c0 == endpoint\
+                                                      and A == 0,
+                              self.__aux_g.edges())
+
+
+            for ((c1,A),(c2,B),l_d) in filter(lambda ((c1,A),(c2,B),d):\
+                                            d['bw'] >= vl_d['bw'], to_visit):
+                need_cpu = ns.nodes[v2]['lv'] * vl_d['bw'] /\
+                           (hop_delay[hop] - l_d['delay'])
+                incur_cost = infra.nodes[c2]['resCost'] * need_cpu +\
+                             self.__aux_g[(c1,A)][(c2,B)]['cost'] +\
+                             (0 if first_vl else cost[(c1,A,v0,v1)])
+
+                if curr_cpu[(c2,B,v1,v2)] >= need_cpu and\
+                        incur_cost < cost[(c2,B,v1,v2)]:
+                    cost[(c2,B,v1,v2)] = incur_cost
+                    prev[(c2,B,v1,v2)] = (c1,A)
+
+                    if hop + 1 < len(vls): # refresh CPU status for next iters
+                        for c,B_ in map(lambda (c,B_): c==c2,
+                                        self.__aux_g.nodes()):
+                            _,v3 = vls[hop+1]
+                            curr_cpu[(c,B_,v2,v3)] =\
+                                    curr_cpu[(c2,B,v1,v2)] - need_cpu
+
+            if any(map(lambda (c,A): cost[(c,A,v1,v2)] < sys.maxsize,
+                       self.__aux_g.nodes())):
+                pass # success mapping
+            else:
+                # decrease per-hop link delay
 
 
