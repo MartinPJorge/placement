@@ -67,6 +67,9 @@ def fill_AP_coverage_probabilities(ampl: AMPL, interval_length: int) -> None:
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Given network service and' + \
                                                  ' infrastructure graphs, it creates an AMPL .dat file')
+
+    parser.add_argument('model', metavar='model', type=str,
+                        help='Path to the AMPL model')
     parser.add_argument('service', metavar='service', type=str,
                         help='Path to the network service GML file')
     parser.add_argument('infra', metavar='infra', type=str,
@@ -84,6 +87,7 @@ if __name__ == '__main__':
 
     # Fill our model data
     ampl = AMPL()
+    ampl.read(args.model)
     ampl.set['graph'] = [args.infra, args.service]
     ampl.param['infraGraph'] = [args.infra]
     ampl.param['serviceGraph'] = [args.service]
