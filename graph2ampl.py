@@ -73,8 +73,8 @@ if __name__ == '__main__':
                         help='Path to the infrastructure GML file')
     parser.add_argument('out', metavar='out', type=str,
                         help='Path to the output where .dat is created')
-    parser.add_argument('interval_length', metavar='out', type=int,
-                        help='Path to the output where .dat is created')
+    parser.add_argument('interval_length', metavar='time_len', type=int,
+                        help='Time interval length')
 
     args = parser.parse_args()
 
