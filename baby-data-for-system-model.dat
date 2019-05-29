@@ -7,7 +7,7 @@ set vertices['infraGraph'] := 'accessPoint1' 'accessPoint2' 'robot1' 'robot2' 's
 # NOTE: currently AP2 is not connected to the network
 set edges['infraGraph'] := ('robot1', 'robot2') ('robot2', 'accessPoint1') ('accessPoint1', 'server');
 set vertices['serviceGraph'] := 'robotMaster' 'robotSlave' 'vEPC' 'controller';
-set edges['serviceGraph'] := ('robotMaster', 'robotSlave') ('robotSlave', 'vEPC') ('vEPC', 'controller');
+set edges['serviceGraph'] := ('robotMaster', 'robotSlave') ('robotMaster', 'vEPC') ('vEPC', 'controller');
 set APs := 'accessPoint1' 'accessPoint2';
 set servers := 'server';
 set mobiles := 'robot1' 'robot2';

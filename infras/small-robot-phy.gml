@@ -6,8 +6,10 @@ graph
   node
   [
     id 0
+	resource 10
+	cost 10
     name "cell1"
-    type "cell"
+    type "AP"
     lon -3.73811
     lat 40.256661
     cpu 1
@@ -21,8 +23,10 @@ graph
   node
   [
     id 1
+	resource 10
+	cost 10
     name "cell2"
-    type "cell"
+    type "AP"
     lon -3.762818
     lat 40.257889
     cpu 1
@@ -36,8 +40,10 @@ graph
   node
   [
     id 2
+	resource 10
+	cost 10
     name "cell3"
-    type "cell"
+    type "AP"
     lon -3.760941
     lat 40.260452
     cpu 1
@@ -51,8 +57,10 @@ graph
   node
   [
     id 3
+	resource 10
+	cost 10
     name "cell4"
-    type "cell"
+    type "AP"
     lon -3.752824
     lat 40.271225
     cpu 1
@@ -66,8 +74,10 @@ graph
   node
   [
     id 4
+	resource 10
+	cost 10
     name "cell5"
-    type "cell"
+    type "AP"
     lon -3.753695
     lat 40.263814
     cpu 1
@@ -81,8 +91,10 @@ graph
   node
   [
     id 5
+	resource 10
+	cost 10
     name "cell6"
-    type "cell"
+    type "AP"
     lon -3.755264
     lat 40.268784
     cpu 1
@@ -96,8 +108,10 @@ graph
   node
   [
     id 6
+	resource 10
+	cost 10
     name "m1_0"
-    type "m1"
+    type "server"
     lon -3.75204221690003
     lat 40.2613578838582
     cpu 0
@@ -111,8 +125,10 @@ graph
   node
   [
     id 7
+	resource 10
+	cost 10
     name "m2_0"
-    type "m2"
+    type "server"
     lon -3.75204221690003
     lat 40.2613578838582
     cpu 0
@@ -126,8 +142,10 @@ graph
   node
   [
     id 8
+	resource 10
+	cost 10
     name "m3_0"
-    type "m3"
+    type "server"
     lon -3.75204221690003
     lat 40.2613578838582
     cpu 0
@@ -141,8 +159,10 @@ graph
   node
   [
     id 9
+	resource 10
+	cost 10
     name "m3_rep_0"
-    type "m3"
+    type "server"
     lon -3.75204221690003
     lat 40.2613578838582
     cpu 0
@@ -156,6 +176,8 @@ graph
   node
   [
     id 10
+	resource 10
+	cost 10
     name "dell_m1_server_0"
     type "server"
     lon -3.75204221690003
@@ -171,6 +193,8 @@ graph
   node
   [
     id 11
+	resource 10
+	cost 10
     name "dell_m2_server_0"
     type "server"
     lon -3.75204221690003
@@ -186,8 +210,10 @@ graph
   node
   [
     id 12
+	resource 10
+	cost 10
     name "fogEndpoint_test_fogNode_1"
-    type "fogNode"
+    type "mobile"
     lon -3.75591113449374
     lat 40.2753689393847
     cpu 1
@@ -201,8 +227,10 @@ graph
   node
   [
     id 13
+	resource 10
+	cost 10
     name "fogEndpoint_test_fogNode_2"
-    type "fogNode"
+    type "mobile"
     lon -3.74711856588699
     lat 40.2628525915245
     cpu 1
@@ -215,39 +243,11 @@ graph
   ]
   node
   [
-    id 14
-    name "fogEndpoint_test_endpoint_1"
-    type "endpoint"
-    lon -3.75591113449374
-    lat 40.2753689393847
-    cpu 0
-    mem 0
-    disk 0
-    reliability 1
-    radio ""
-    radioCost 0
-    resCost 0
-  ]
-  node
-  [
-    id 15
-    name "fogEndpoint_test_endpoint_2"
-    type "endpoint"
-    lon -3.74711856588699
-    lat 40.2628525915245
-    cpu 0
-    mem 0
-    disk 0
-    reliability 1
-    radio ""
-    radioCost 0
-    resCost 0
-  ]
-  node
-  [
     id 16
+	resource 10
+	cost 10
     name "test_fogNode_1"
-    type "fogNode"
+    type "mobile"
     lon -3.76228051489926
     lat 40.2668251875245
     cpu 2
@@ -521,28 +521,6 @@ graph
     distanceUnits "meters"
     reliability 0.8
     trafficCost 8
-  ]
-  edge
-  [
-    source 14
-    target 12
-    bandwidth 100000000000
-    bandwidthUnits "Mbps"
-    distance 0
-    distanceUnits "meters"
-    reliability 1
-    trafficCost 10
-  ]
-  edge
-  [
-    source 15
-    target 13
-    bandwidth 100000000000
-    bandwidthUnits "Mbps"
-    distance 0
-    distanceUnits "meters"
-    reliability 1
-    trafficCost 10
   ]
   edge
   [
