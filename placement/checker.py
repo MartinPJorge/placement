@@ -222,7 +222,7 @@ class CheckFogDigraphs(AbstractChecker):
             for host in [h1, h2]:
                 if 'reliability' not in infra.nodes[host]:
                     print("'reliability key not present in infrastructure"
-                          "host", host, file=sys.stderr)
+                          " host", host, file=sys.stderr)
                     return False
 
                 if 'lifetime' not in infra.nodes[host]:

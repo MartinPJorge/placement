@@ -572,7 +572,6 @@ class FPTASMapper(AbstractMapper):
        IEEE/ACM Transactions on Networking (TON) 15.1 (2007): 201-211."""
 
 
-    @abstractmethod
     def __init__(self, checker: CheckFogDigraphs, log_out: str = 'aux_g.loh'):
         """Inits the mapper with its associated graphs checker
 
@@ -601,8 +600,7 @@ class FPTASMapper(AbstractMapper):
 
         """
         self.__log.info('enter build auxiliary graph')
-        comp_nodes = set([n for n in infra.nodes() if 'cpu' in infra.nodes[n]\
-                                                and infra.nodes[n]['cpu'] > 0)
+        comp_nodes = set([n for n in infra.nodes() if 'cpu' in infra.nodes[n]])
         if src not in comp_nodes:
             comp_nodes.union(src)
         src_paths = {}
@@ -618,8 +616,9 @@ class FPTASMapper(AbstractMapper):
                         src_paths[from_][to_] = {
                             'paths': [],
                             'delays': [],
-                            'reliabs': [],
-                            'bw': []
+                            'reliability': [],
+                            'bw': [],
+                            'cost': []
                         }
 
                     # Calculate path delay and reliability
@@ -631,8 +630,8 @@ class FPTASMapper(AbstractMapper):
                         delay += infra[n1][n2]['delay']
                         reliab *= infra[n1][n2]['reliability']
                         if n2 != to_:
-                            reliab *= infra[n2]['reliability']
-                        cost += infra[n1][n2]['trafficCost']
+                            reliab *= infra.nodes[n2]['reliability']
+                        cost += infra[n1][n2]['cost']
                     src_paths[from_][to_]['delays'] += [delay]
                     src_paths[from_][to_]['reliability'] += [reliab]
                     src_paths[from_][to_]['bw'] += [bw]
@@ -643,7 +642,7 @@ class FPTASMapper(AbstractMapper):
         self.__log.info('inserting (c,A) nodes in the auxiliary graph')
         self.__aux_g = nx.DiGraph()
         for comp_node in comp_nodes:
-            for tau_ in range(1, tau + 1):
+            for tau_ in range(tau + 1):
                 self.__aux_g.add_node((comp_node,tau_),
                                       **infra.nodes[comp_node])
 
@@ -652,17 +651,20 @@ class FPTASMapper(AbstractMapper):
         for (c1,A) in self.__aux_g.nodes():
             for (c2,B) in self.__aux_g.nodes():
                 if c1 == c2:
-                    self.__aux_g.add_edge((c1,A), (c2,B), w1=0, delay=0)
+                    self.__aux_g.add_edge((c1,A), (c2,B), w1=0, delay=0,
+                                          bw=sys.maxsize)
                 else:
-                    best_idx = src_paths[c1][c2].index(\
+                    best_idx = src_paths[c1][c2]['reliability'].index(\
                                     min(src_paths[c1][c2]['reliability']))
                     w1 = -1 * tau * log(1 /\
                             (src_paths[c1][c2]['reliability'][best_idx]*\
-                                    infra[c2]['reliability'])) / log(ereliab)
+                                    infra.nodes[c2]['reliability'])) /\
+                                log(ereliab)
                     if A + w1 <= B:
                         self.__aux_g.add_edge((c1,A), (c2,B), w1=w1,
-                                    delay=src_paths[c1][c2]['delay'][best_idx],
-                                    path=src_paths[c1][c2]['paths'][best_idx])
+                                    delay=src_paths[c1][c2]['delays'][best_idx],
+                                    path=src_paths[c1][c2]['paths'][best_idx],
+                                    bw=src_paths[c1][c2]['bw'][best_idx])
 
 
     def __ordered_vls(self, ns: nx.classes.digraph.DiGraph) -> list:
@@ -673,8 +675,8 @@ class FPTASMapper(AbstractMapper):
 
         """
         self.__log.info('sorting list of virtual links')
-        start_vnf = list(filter(lambda vnf: ns.in_degree(vnf) == 0),
-                                ns.nodes())[0]
+        start_vnf = list(filter(lambda vnf: ns.in_degree(vnf) == 0,
+                                ns.nodes()))[0]
         curr_vnf = start_vnf
         vls = []
         while len(ns[curr_vnf]) > 0:
@@ -706,7 +708,7 @@ class FPTASMapper(AbstractMapper):
 
         return mapping
 
-    @abstractmethod
+
     def map(self, infra: nx.classes.digraph.DiGraph,
             ns: nx.classes.digraph.DiGraph, k: int, tau: int,
             relax: int) -> dict:
@@ -720,10 +722,10 @@ class FPTASMapper(AbstractMapper):
         :returns: dict: mapping decissions dictionary
 
         """
-        endpoint = list(filter(lambda vnf: ns.in_degree(vnf) == 0),
-                               ns.nodes())[0]
-        self.__build_aux(infra=infra, src=start_vnf, k=k, tau=tau,
-                         ereliab=ns.nodes[start_vnf]['reliability'])
+        endpoint = list(filter(lambda vnf: ns.in_degree(vnf) == 0,
+                               ns.nodes()))[0]
+        self.__build_aux(infra=infra, src=endpoint, k=k, tau=tau,
+                         ereliab=ns.nodes[endpoint]['reliability'])
         self.__log.info('setting auxiliary variables')
         vls = self.__ordered_vls(ns)
         hop_delay = [ns.nodes[endpoint]['delay']/len(ns.nodes)] * len(ns.nodes)
@@ -731,22 +733,24 @@ class FPTASMapper(AbstractMapper):
         # Dictionaries to store cost and cpu as mapping advances
         cost = {
             (c,A,v1,v2): sys.maxsize
-            for (c,A) in self.__aux_g.nodes()
-            for (v1,v2) in vls
+            for c,A in self.__aux_g.nodes()
+            for v1,v2,_ in vls
         }
         curr_cpu = {
             (c,A,v1,v2): infra.nodes[c]['cpu']
-            for (c,A) in self.__aux_g.nodes()
-            for (v1,v2) in vls
+            for c,A in self.__aux_g.nodes()
+            for v1,v2,_ in vls
         }
         prev = {
             (c,A,v1,v2): None
-            for (c,A) in self.__aux_g.nodes()
-            for (v1,v2) in vls
+            for c,A in self.__aux_g.nodes()
+            for v1,v2,_ in vls
         }
 
         # MAIN LOOP
+        # Note: in lambdas C0=(c0,A)
         hop = 0
+        print('first edge of aux graph: ', list(self.__aux_g.edges(data=True))[0])
         self.__log.info('entering main loop')
         while hop < len(vls):
             v1,v2,vl_d = vls[hop]
@@ -754,14 +758,12 @@ class FPTASMapper(AbstractMapper):
             self.__log.info('mapping virtual link (' + str(v1) + ',' +\
                             str(v2) + ')')
 
-            to_visit = self.__aux_g.edges() if not first_vl else\
-                       filter(lambda ((c0,A),(c2,B)): c0 == endpoint\
-                                                      and A == 0,
-                              self.__aux_g.edges())
+            to_visit = self.__aux_g.edges(data=True) if not first_vl else\
+                       filter(lambda e: e[0][0] == endpoint and e[0][1] == 0,
+                              self.__aux_g.edges(data=True))
 
-
-            for ((c1,A),(c2,B),l_d) in filter(lambda ((c1,A),(c2,B),d):\
-                                            d['bw'] >= vl_d['bw'], to_visit):
+            for ((c1,A),(c2,B),l_d) in filter(lambda e:\
+                                            e[2]['bw'] >= vl_d['bw'], to_visit):
                 need_cpu = ns.nodes[v2]['lv'] * vl_d['bw'] /\
                            (hop_delay[hop] - l_d['delay'])
                 incur_cost = infra.nodes[c2]['resCost'] * need_cpu +\
@@ -774,7 +776,7 @@ class FPTASMapper(AbstractMapper):
                     prev[(c2,B,v1,v2)] = (c1,A)
 
                     if hop + 1 < len(vls): # refresh CPU status for next iters
-                        for c,B_ in map(lambda (c,B_): c==c2,
+                        for c,B_ in map(lambda c,B_: c==c2,
                                         self.__aux_g.nodes()):
                             _,v3 = vls[hop+1]
                             curr_cpu[(c,B_,v2,v3)] =\
@@ -782,7 +784,7 @@ class FPTASMapper(AbstractMapper):
 
             # Check if delay relax is needed
             no_mapping = False
-            if all(map(lambda (c,A): cost[(c,A,v1,v2)] == sys.maxsize,
+            if all(map(lambda c,A: cost[(c,A,v1,v2)] == sys.maxsize,
                        self.__aux_g.nodes())):
                 self.__log.info('relax restriction for virtual link  (' +\
                                 str(v1) + ',' + str(v2) + ')')

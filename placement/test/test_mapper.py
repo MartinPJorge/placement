@@ -230,12 +230,14 @@ class TestFPTASMapper(unittest.TestCase):
         """
         # Create the infrastructure graph
         infra = nx.DiGraph()
-        a1_cost = {'cpu': 2, 'disk': 2.3, 'mem': 4}
-        a2_cost = {'cpu': 4, 'disk': 4.6, 'mem': 8}
-        a3_cost = {'cpu': 4, 'disk': 4.6, 'mem': 8}
-        f1_cost = {'cpu': 4, 'disk': 6, 'mem': 8}
-        f2_cost = {'cpu': 4, 'disk': 6, 'mem': 8}
+        a_cost = {'cpu': 2, 'disk': 2.3, 'mem': 4}
+        f_cost = {'cpu': 4, 'disk': 6, 'mem': 8}
+        h_cost = {'cpu': 2, 'disk': 4, 'mem': 5}
 
+        infra.add_node('e1', cpu=0, mem=0, disk=0, cost=0, reliability=1,
+                       lifetime=80, location=(39.128380, -1.080805))
+        infra.add_node('e2', cpu=0, mem=0, disk=0, cost=0, reliability=1,
+                       lifetime=80, location=(39.132474, -1.087976))
         infra.add_node('f1', cpu=1, mem=8, disk=512, cost=f_cost,
                        reliability=1, lifetime=80,
                        location=(39.128380, -1.080805))
@@ -251,22 +253,34 @@ class TestFPTASMapper(unittest.TestCase):
         infra.add_node('a3', cpu=1, mem=16, disk=1024,
                        rats=['LTE', 'MMW'], location=(39.1408046,-1.0795603),
                        cost=a_cost, reliability=1, lifetime=100)
-        infra.add_node('sw1', cpu=0, mem=0, disk=0, cost=sw_cost,
+        infra.add_node('sw1', cpu=0, mem=0, disk=0,
                        reliability=1, lifetime=100)
-        infra.add_node('sw2', cpu=0, mem=0, disk=0, cost=sw_cost,
+        infra.add_node('sw2', cpu=0, mem=0, disk=0,
                        reliability=1, lifetime=100)
         infra.add_node('h1', cpu=0, mem=0, disk=0, cost=h_cost,
                        reliability=1, lifetime=100)
         infra.add_node('h2', cpu=0, mem=0, disk=0, cost=h_cost,
                        reliability=1, lifetime=100)
 
+        # Endpoint-fog links
+        infra.add_edge('e1', 'f1', bw=10000, delay=0, cost=0, reliability=1)
+        infra.add_edge('f1', 'e1', bw=10000, delay=0, cost=0, reliability=1)
+        infra.add_edge('e2', 'f2', bw=10000, delay=0, cost=0, reliability=1)
+        infra.add_edge('f2', 'e2', bw=10000, delay=0, cost=0, reliability=1)
+
         # Fog-antennas' links
         infra.add_edge('f1', 'a1', bw=100, delay=1, cost=20, reliability=1)
+        infra.add_edge('a1', 'f1', bw=100, delay=1, cost=20, reliability=1)
         infra.add_edge('f2', 'a1', bw=100, delay=1, cost=20, reliability=1)
+        infra.add_edge('a1', 'f2', bw=100, delay=1, cost=20, reliability=1)
         infra.add_edge('f1', 'a2', bw=100, delay=1, cost=10, reliability=0.8)
+        infra.add_edge('a2', 'f1', bw=100, delay=1, cost=10, reliability=0.8)
         infra.add_edge('f2', 'a2', bw=100, delay=1, cost=10, reliability=0.8)
+        infra.add_edge('a2', 'f2', bw=100, delay=1, cost=10, reliability=0.8)
         infra.add_edge('f1', 'a3', bw=100, delay=1, cost=5, reliability=0.7)
+        infra.add_edge('a3', 'f1', bw=100, delay=1, cost=5, reliability=0.7)
         infra.add_edge('f2', 'a3', bw=100, delay=1, cost=5, reliability=0.7)
+        infra.add_edge('a3', 'f2', bw=100, delay=1, cost=5, reliability=0.7)
 
         # Antenna-switches' links
         infra.add_edge('a1', 'sw1', bw=100, delay=1, cost=20, reliability=1)
@@ -275,25 +289,42 @@ class TestFPTASMapper(unittest.TestCase):
         infra.add_edge('a2', 'sw2', bw=100, delay=1, cost=20, reliability=0.9)
         infra.add_edge('a3', 'sw1', bw=100, delay=1, cost=20, reliability=1)
         infra.add_edge('a3', 'sw2', bw=100, delay=1, cost=20, reliability=0.9)
+        infra.add_edge('sw1', 'a1', bw=100, delay=1, cost=20, reliability=1)
+        infra.add_edge('sw2', 'a1', bw=100, delay=1, cost=20, reliability=0.9)
+        infra.add_edge('sw1', 'a2', bw=100, delay=1, cost=20, reliability=1)
+        infra.add_edge('sw2', 'a2', bw=100, delay=1, cost=20, reliability=0.9)
+        infra.add_edge('sw1', 'a3', bw=100, delay=1, cost=20, reliability=1)
+        infra.add_edge('sw2', 'a3', bw=100, delay=1, cost=20, reliability=0.9)
 
         # Switches and servers
         infra.add_edge('sw1', 'h1', bw=100, delay=1, cost=20, reliability=1)
         infra.add_edge('sw2', 'h2', bw=100, delay=1, cost=20, reliability=1)
         infra.add_edge('sw1', 'h1', bw=100, delay=1, cost=20, reliability=1)
         infra.add_edge('sw2', 'h2', bw=100, delay=1, cost=20, reliability=1)
+        infra.add_edge('h1', 'sw1', bw=100, delay=1, cost=20, reliability=1)
+        infra.add_edge('h2', 'sw2', bw=100, delay=1, cost=20, reliability=1)
+        infra.add_edge('h1', 'sw1', bw=100, delay=1, cost=20, reliability=1)
+        infra.add_edge('h2', 'sw2', bw=100, delay=1, cost=20, reliability=1)
 
         self.infra = infra
         
         # Create the network service graph
         ns = nx.DiGraph()
+        ns.add_node('e1', cpu=0, mem=0, disk=0, lv=1, reliability=0.9,
+                    delay=400,
+                    location={'center': (39.128380, -1.080805), 'radius': 1})
         ns.add_node('robot_master', cpu=1, mem=1, disk=400, lv=1,
                     location={'center': (39.128380, -1.080805), 'radius': 1})
-        ns.add_node('AP', cpu=1, mem=4, disk=100, rats=['LTE', 'MMW'], lv=1
+        ns.add_node('AP', cpu=1, mem=4, disk=100, rats=['LTE', 'MMW'], lv=1,
             location={'center': (39.1408046,-1.0795603), 'radius': 2})
         ns.add_node('robot_slave', cpu=1, mem=1, disk=400, lv=1,
                     location={'center': (39.132474, -1.087976), 'radius': 1})
+        ns.add_node('e2', cpu=0, mem=0, disk=0, lv=1,
+                    location={'center': (39.132474, -1.087976), 'radius': 1})
+        ns.add_edge('e1', 'robot_master', bw=0, delay=100)
         ns.add_edge('robot_master', 'AP', bw=1, delay=100)
         ns.add_edge('AP', 'robot_slave', bw=1, delay=100)
+        ns.add_edge('robot_slave', 'e2', bw=0, delay=100)
         self.ns = ns
 
 
@@ -312,9 +343,9 @@ class TestFPTASMapper(unittest.TestCase):
 
         """
         # e2e-delay=400, reliability=1
-        self.infra['robot_master']['delay'] = 400
-        self.infra['robot_master']['reliability'] = 1
-        self.mapping_d400_r1_k1_t1_rel1 = self.mapper_k1.map(infra=self.infra,
+        self.ns.nodes['robot_master']['delay'] = 400
+        self.ns.nodes['robot_master']['reliability'] = 1
+        self.mapping_d400_r1_k1_t1_rel1 = self.mapper.map(infra=self.infra,
                                                              ns=self.ns, k=1,
                                                              tau=1, relax=1)
 

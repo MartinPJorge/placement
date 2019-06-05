@@ -12,8 +12,8 @@ class TestCheckBasicDigraphs(unittest.TestCase):
         infra = nx.DiGraph()
         cost = {'cpu': 2, 'disk': 2.3, 'mem': 4}
         infra.add_node('h1', cpu=2, mem=16, disk=1024, rats=['LTE', 'MMW'],
-            location=(39.1408046,-1.0795603), cost=cost)
-        infra.add_node('h2', cpu=1, mem=8, disk=512, cost=cost)
+            location=(39.1408046,-1.0795603), cost=cost, reliability=0.1)
+        infra.add_node('h2', cpu=1, mem=8, disk=512, cost=cost, reliability=0.7)
         infra.add_edge('h1', 'h2', bw=100, delay=1, cost=20)
 
         self.infra_ok = infra
@@ -346,6 +346,11 @@ class TestCheckFogDigraphs(unittest.TestCase):
         del infra_no_host_lifetime.nodes['h1']['lifetime']
         self.infra_no_host_lifetime = infra_no_host_lifetime
 
+        # No h1 reliability
+        infra_no_node_reliab = copy.deepcopy(infra)
+        del infra_no_node_reliab.nodes['h1']['reliability']
+        self.infra_no_node_reliab = infra_no_node_reliab
+
         # No edge reliability
         infra_no_edge_reliab = copy.deepcopy(infra)
         del infra_no_edge_reliab['h1']['h2']['reliability']
@@ -369,6 +374,8 @@ class TestCheckFogDigraphs(unittest.TestCase):
                          self.infra_no_host_reliab))
         self.assertFalse(self.fog_di_checker.check_infra(
                          self.infra_no_edge_reliab))
+        self.assertFalse(self.fog_di_checker.check_infra(
+                         self.infra_no_host_reliab))
 
 
 
