@@ -713,12 +713,14 @@ class FPTASMapper(AbstractMapper):
         curr_c, curr_A = c_f, A_f
         mapping = {}
         for vl in vls[::-1]:
+            print('prev[({},{},{},{})]'.format(curr_c,curr_A,vl[0],vl[1]))
             c_0, A_0 = prev[(curr_c,curr_A,vl[0],vl[1])]
             print((c_0,A_0), '--', (curr_c,curr_A))
             print('link=', self.__aux_g[(c_0,A_0)][(curr_c,curr_A)])
             mapping[vl[0],vl[1]] = self.__aux_g[(c_0,A_0)][(curr_c,curr_A)]\
                                                 ['path']
             mapping[vl[1]] = curr_A
+            curr_c, curr_A = c_0, A_0
 
         return mapping
 

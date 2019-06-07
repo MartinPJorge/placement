@@ -330,7 +330,7 @@ class TestFPTASMapper(unittest.TestCase):
                     location={'center': (39.132474, -1.087976),
                               'radius': 0.001})
         ns.add_node('e2', cpu=0, mem=0, disk=0, lv=1,
-                    location={'center': (39.132474, -1.087976),
+                    location={'center': (39.1348251,-1.0928467),
                               'radius': 0.001})
         ns.add_edge('e1', 'robot_master', bw=0, delay=100)
         ns.add_edge('robot_master', 'AP', bw=1, delay=100)
