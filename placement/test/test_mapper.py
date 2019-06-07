@@ -1,3 +1,4 @@
+import json
 import unittest
 import copy
 import checker
@@ -317,7 +318,7 @@ class TestFPTASMapper(unittest.TestCase):
         
         # Create the network service graph
         ns = nx.DiGraph()
-        ns.add_node('e1', cpu=0, mem=0, disk=0, lv=1, reliability=0.9,
+        ns.add_node('e1', cpu=0, mem=0, disk=0, lv=1, reliability=0.4,
                     delay=400,
                     location={'center': (39.1298611,-1.0851077),
                               'radius': 0.001})
@@ -354,9 +355,23 @@ class TestFPTASMapper(unittest.TestCase):
 
         """
         # e2e-delay=400, reliability=1
-        self.ns.nodes['robot_master']['delay'] = 400
-        self.ns.nodes['robot_master']['reliability'] = 1
-        self.mapping_d400_r1_k1_t3_rel1 = self.mapper.map(infra=self.infra,
+        self.ns.nodes['e1']['delay'] = 400
+        self.ns.nodes['e1']['reliability'] = 0.99
+        self.mapping_d400_r1_k1_t3_rel099 = self.mapper.map(infra=self.infra,
+                                                             ns=self.ns, k=1,
+                                                             tau=3, relax=1)
+
+        # e2e-delay=400, reliability=0.5
+        self.ns.nodes['e1']['delay'] = 400
+        self.ns.nodes['e1']['reliability'] = 0.5
+        self.mapping_d400_r1_k1_t3_rel05 = self.mapper.map(infra=self.infra,
+                                                             ns=self.ns, k=1,
+                                                             tau=3, relax=1)
+
+        # e2e-delay=400, reliability=0.3
+        self.ns.nodes['e1']['delay'] = 400
+        self.ns.nodes['e1']['reliability'] = 0.3
+        self.mapping_d400_r1_k1_t3_rel03 = self.mapper.map(infra=self.infra,
                                                              ns=self.ns, k=1,
                                                              tau=3, relax=1)
 
@@ -365,6 +380,24 @@ class TestFPTASMapper(unittest.TestCase):
         self.__graphs_setup()
         self.__mapper_set_up()
         self.__map_suite()
+
+
+    def test_reliability(self):
+        """Tests that the mapping reliabilities satisfy the imposed end to end
+        reliability
+
+        """
+        rel099 = mapper.GreedyFogCostMapper.map_reliability(infra=self.infra,
+                                    mapping=self.mapping_d400_r1_k1_t3_rel099)
+        self.assertTrue(rel099 >= 0.99)
+
+        rel05 = mapper.GreedyFogCostMapper.map_reliability(infra=self.infra,
+                                    mapping=self.mapping_d400_r1_k1_t3_rel05)
+        self.assertTrue(rel05 >= 0.5)
+
+        rel03 = mapper.GreedyFogCostMapper.map_reliability(infra=self.infra,
+                                    mapping=self.mapping_d400_r1_k1_t3_rel03)
+        self.assertTrue(rel03 >= 0.3)
 
 
     def test_map(self):
@@ -398,18 +431,6 @@ class TestFPTASMapper(unittest.TestCase):
     ##                       infra=self.infra, mapping=self.mapping_k1), 1/4)
     ##      self.assertEqual(mapper.GreedyFogCostMapper.map_reliability(
     ##                       infra=self.infra, mapping=self.mapping_k2), 1/4)
-
-
-    ##  def test_lifetime(self):
-    ##      """Checks if lifetime retrieval works
-    ##      :returns: None
-
-    ##      """
-    ##      self.assertEqual(mapper.GreedyFogCostMapper.map_lifetime(
-    ##                       infra=self.infra, mapping=self.mapping_k1), 80)  
-    ##      self.assertEqual(mapper.GreedyFogCostMapper.map_lifetime(
-    ##                       infra=self.infra, mapping=self.mapping_k2), 80)  
-        
 
 
 if __name__ == "__main__":

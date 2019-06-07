@@ -661,22 +661,12 @@ class FPTASMapper(AbstractMapper):
                         (src_paths[c1][c2]['reliability'][best_idx]*\
                                 infra.nodes[c2]['reliability'])) /\
                             log(ereliab)
-                if c2=='f2':
-                    print('w1[{},{}]={}'.format((c1,A),(c2,B),w1))
                 if A + w1 <= B:
                     self.__aux_g.add_edge((c1,A), (c2,B), w1=w1,
                                 delay=src_paths[c1][c2]['delays'][best_idx],
                                 path=src_paths[c1][c2]['paths'][best_idx],
                                 bw=src_paths[c1][c2]['bw'][best_idx],
                                 cost=src_paths[c1][c2]['cost'][best_idx])
-
-        print('auxiliary nodes:')
-        for C in self.__aux_g.nodes():
-            print('\t', C)
-
-        print('edges:')
-        for C0,C1 in self.__aux_g.edges():
-            print('Link', C0,C1)
 
 
     def __ordered_vls(self, ns: nx.classes.digraph.DiGraph) -> list:
@@ -713,13 +703,10 @@ class FPTASMapper(AbstractMapper):
         curr_c, curr_A = c_f, A_f
         mapping = {}
         for vl in vls[::-1]:
-            print('prev[({},{},{},{})]'.format(curr_c,curr_A,vl[0],vl[1]))
             c_0, A_0 = prev[(curr_c,curr_A,vl[0],vl[1])]
-            print((c_0,A_0), '--', (curr_c,curr_A))
-            print('link=', self.__aux_g[(c_0,A_0)][(curr_c,curr_A)])
             mapping[vl[0],vl[1]] = self.__aux_g[(c_0,A_0)][(curr_c,curr_A)]\
                                                 ['path']
-            mapping[vl[1]] = curr_A
+            mapping[vl[1]] = curr_c
             curr_c, curr_A = c_0, A_0
 
         return mapping
@@ -737,25 +724,18 @@ class FPTASMapper(AbstractMapper):
 
         """
         # Check location constraints
-        print('\tcan I map vnf {} in host {}'.format(vnf,host))
         if 'location' in ns.nodes[vnf] and ns.nodes[vnf]['location'] != None:
             if 'location' not in infra.nodes[host] or\
                     infra.nodes[host]['location'] == None:
-                #print('\t\t  -> NOPE')
                 return False
             else:
                 vnf_coords = (ns.nodes[vnf]['location']['center'][0],
                               ns.nodes[vnf]['location']['center'][1])
                 host_coords = (infra.nodes[host]['location'][0],
                                infra.nodes[host]['location'][1])
-                #print('\t VNF coords={}, host coords={}'.format(vnf_coords,host_coords))
-                #print('\t radius is=', ns.nodes[vnf]['location']['radius'])
                 if haversine(vnf_coords, host_coords) >\
                         ns.nodes[vnf]['location']['radius']:
-                    #print('\t\t  -> NOPE')
                     return False
-
-        print('\t\t  -> YEP location')
 
         # Check RAT constraints
         if 'rats' in ns.nodes[vnf] and ns.nodes[vnf]['rats'] != None:
@@ -765,8 +745,6 @@ class FPTASMapper(AbstractMapper):
             elif not all(map(lambda v_rat: v_rat in infra.nodes[host]['rats'],
                              ns.nodes[vnf]['rats'])):
                 return False
-
-        print('\t\t  -> YEP rats')
 
         return True 
 
@@ -818,8 +796,6 @@ class FPTASMapper(AbstractMapper):
             v0, first_vl = (None,True) if hop == 0 else (vls[hop-1][0],False)
             self.__log.info('mapping virtual link (' + str(v1) + ',' +\
                             str(v2) + ')')
-            print('mapping virtual link (' + str(v1) + ',' +\
-                            str(v2) + ')')
 
             to_visit = self.__aux_g.edges(data=True) if not first_vl else\
                        filter(lambda e: e[0][0] == endpoint and e[0][1] == 0,
@@ -827,14 +803,11 @@ class FPTASMapper(AbstractMapper):
 
             for ((c1,A),(c2,B),l_d) in filter(lambda e:\
                                             e[2]['bw'] >= vl_d['bw'], to_visit):
-
-                print('\tdeploy it over link ({},{})'.format((c1,A),(c2,B)))
                 need_cpu = ns.nodes[v2]['lv'] * vl_d['bw'] /\
                            (hop_delay[hop] - l_d['delay'])
                 incur_cost = infra.nodes[c2]['cost']['cpu'] * need_cpu +\
                              self.__aux_g[(c1,A)][(c2,B)]['cost'] *vl_d['bw']+\
                              (0 if first_vl else cost[(c1,A,v0,v1)])
-                print('\t  needed cpu={}'.format(need_cpu))
 
                 if curr_cpu[(c2,B,v1,v2)] >= need_cpu and\
                         incur_cost < cost[(c2,B,v1,v2)] and\
@@ -848,9 +821,6 @@ class FPTASMapper(AbstractMapper):
                             _,v3,__ = vls[hop+1]
                             curr_cpu[(c,B_,v2,v3)] =\
                                     curr_cpu[(c2,B,v1,v2)] - need_cpu
-                    print('\tYEEEp')
-                else:
-                    print('\tNOOO')
 
             # Check if delay relax is needed
             no_mapping = False
