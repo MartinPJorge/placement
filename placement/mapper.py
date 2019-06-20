@@ -689,12 +689,14 @@ class FPTASMapper(AbstractMapper):
         return vls
 
 
-    def __get_mapping(self, c_f, A_f: int, prev: dict, vls: list):
+    def __get_mapping(self, c_f, A_f: int, prev: dict, assigned_cpu: dict,
+                      vls: list):
         """Gets the mapping derived from the mapping.
 
         :c_f: last physical node ID
         :A_f: int: tau parameter of the last physical node
         :prev: dict: dictionary of previous physical nodes
+        :assigned_cpu: dict: dictionary of cpu assigned to each VNF
         :vls: list: ordered list of virtual links
         :returns: dictionary with the mappings
 
@@ -702,12 +704,18 @@ class FPTASMapper(AbstractMapper):
         self.__log.info('translating (c_f,A_f) into a mapping')
         curr_c, curr_A = c_f, A_f
         mapping = {}
+
         for vl in vls[::-1]:
             c_0, A_0 = prev[(curr_c,curr_A,vl[0],vl[1])]
             mapping[vl[0],vl[1]] = self.__aux_g[(c_0,A_0)][(curr_c,curr_A)]\
                                                 ['path']
-            mapping[vl[1]] = curr_c
+            mapping[vl[1]] = {
+                'host': curr_c,
+                'cpu': assigned_cpu[(curr_c,curr_A,vl[0],vl[1])]
+            }
             curr_c, curr_A = c_0, A_0
+
+        print('mapping: ', mapping)
 
         return mapping
 
@@ -781,6 +789,11 @@ class FPTASMapper(AbstractMapper):
             for c,A in self.__aux_g.nodes()
             for v1,v2,_ in vls
         }
+        needed_cpu = {
+            (c,A,v1,v2): 0
+            for c,A in self.__aux_g.nodes()
+            for v1,v2,_ in vls
+        }
         prev = {
             (c,A,v1,v2): None
             for c,A in self.__aux_g.nodes()
@@ -801,10 +814,14 @@ class FPTASMapper(AbstractMapper):
                        filter(lambda e: e[0][0] == endpoint and e[0][1] == 0,
                               self.__aux_g.edges(data=True))
 
+
             for ((c1,A),(c2,B),l_d) in filter(lambda e:\
                                             e[2]['bw'] >= vl_d['bw'], to_visit):
-                need_cpu = ns.nodes[v2]['lv'] * vl_d['bw'] /\
-                           (hop_delay[hop] - l_d['delay'])
+                # need_cpu = ns.nodes[v2]['lv'] * vl_d['bw'] /\
+                #            (hop_delay[hop] - l_d['delay'])
+                need_cpu = 0.02 * vl_d['bw'] /\
+                           (1 - ns.nodes[v2]['lv'] /\
+                                   (hop_delay[hop] - l_d['delay']))
                 incur_cost = infra.nodes[c2]['cost']['cpu'] * need_cpu +\
                              self.__aux_g[(c1,A)][(c2,B)]['cost'] *vl_d['bw']+\
                              (0 if first_vl else cost[(c1,A,v0,v1)])
@@ -814,6 +831,7 @@ class FPTASMapper(AbstractMapper):
                         self.__loc_rat_capable(infra, ns, v2, c2):
                     cost[(c2,B,v1,v2)] = incur_cost
                     prev[(c2,B,v1,v2)] = (c1,A)
+                    needed_cpu[(c2,B,v1,v2)] = need_cpu
 
                     if hop + 1 < len(vls): # refresh CPU status for next iters
                         for c,B_ in filter(lambda C: C[0]==c2,
@@ -829,7 +847,7 @@ class FPTASMapper(AbstractMapper):
                 self.__log.info('relax restriction for virtual link  (' +\
                                 str(v1) + ',' + str(v2) + ')')
                 no_mapping = True
-                possible_ds = [ns.nodes[v2]['vl'] * vl_d['bw'] /\
+                possible_ds = [ns.nodes[v2]['lv'] * vl_d['bw'] /\
                                curr_cpu[(c2,B,v1,v2)] +\
                                self.__aux_g[(c1,A)][(c2,B)]['delay']\
                                for ((c1,A),(c2,B)) in self.__aux_g.edges()]
@@ -854,5 +872,64 @@ class FPTASMapper(AbstractMapper):
             if cost[(c,A,vls[-1][0],vls[-1][1])] < min_cost:
                 c_f, A_f = c, A
 
-        return self.__get_mapping(c_f, A_f, prev, vls)
+        return self.__get_mapping(c_f, A_f, prev, needed_cpu, vls)
 
+
+    @staticmethod
+    def map_reliability(infra: nx.classes.digraph.DiGraph,
+                        mapping: dict) -> float:
+        """Retrieve the reliability of a ns mapping
+
+        :infra: nx.classes.digraph.DiGraph: infrastructure graph
+        :path: dict: mapping decissions dictionary
+        :returns: the reliability
+
+        """
+        reliab = 1
+
+        # Multiply by hosts reliability
+        for vnf in [k for k in mapping.keys()\
+                    if k != 'worked' and type(k) != tuple]:
+            reliab *= infra.nodes[mapping[vnf]['host']]['reliability']
+
+        # Multiply by links' reliability
+        for vl in [k for k in mapping.keys()\
+                   if k != 'worked' and type(k) == tuple]:
+            limits = [mapping[vl][0], mapping[vl][-1]]
+            for h1,h2 in zip(mapping[vl][:-1], mapping[vl][1:]):
+                if h1 not in limits:
+                    reliab *= infra.nodes[h1]['reliability']
+                if h2 not in limits:
+                    reliab *= infra.nodes[h2]['reliability']
+
+                reliab *= infra[h1][h2]['reliability']
+
+        return reliab
+
+
+    @staticmethod
+    def map_cost(infra: nx.classes.digraph.DiGraph,
+                 ns: nx.classes.digraph.DiGraph, mapping: dict) -> float:
+        """Retrieves the cost of a given mapping
+
+        :infra: nx.classes.digraph.DiGraph: infrastructure digraph instance
+        :ns: nx.classes.digraph.DiGraph: network service graph
+        :mapping: dict: dictionary with the result of map() method
+        :returns: cost of the given mapping
+
+        """
+        cost = 0
+
+        # VNF mapping cost
+        for vnf in [k for k in mapping.keys() if type(k) != tuple and\
+                                                 k != 'worked']:
+            for r in infra.nodes[mapping[vnf]['host']]['cost'].keys():
+                cost += infra.nodes[mapping[vnf]['host']]['cost'][r] *\
+                            mapping[vnf]['cpu']
+
+        # VL mapping cost
+        for vl in [k for k in mapping.keys() if type(k) == tuple]:
+            for h1,h2 in zip(mapping[vl], mapping[vl][1:]):
+                cost += infra[h1][h2]['cost'] * ns[vl[0]][vl[1]]['bw']
+
+        return cost
