@@ -439,26 +439,26 @@ class TestFPTASMapper(unittest.TestCase):
         :returns: None
 
         """
-        ## # e2e-delay=400, reliability=1
-        ## self.ns.nodes['e1']['delay'] = 400
-        ## self.ns.nodes['e1']['reliability'] = 0.99
-        ## self.mapping_d400_r1_k1_t3_rel099 = self.mapper.map(infra=self.infra,
-        ##                                                      ns=self.ns, k=1,
-        ##                                                      tau=3, relax=1)
+        # e2e-delay=400, reliability=1
+        self.ns.nodes['e1']['delay'] = 400
+        self.ns.nodes['e1']['reliability'] = 0.99
+        self.mapping_d400_r1_k1_t3_rel099 = self.mapper.map(infra=self.infra,
+                                                             ns=self.ns, k=1,
+                                                             tau=3, relax=1)
 
-        ## # e2e-delay=400, reliability=0.5
-        ## self.ns.nodes['e1']['delay'] = 400
-        ## self.ns.nodes['e1']['reliability'] = 0.5
-        ## self.mapping_d400_r1_k1_t3_rel05 = self.mapper.map(infra=self.infra,
-        ##                                                      ns=self.ns, k=1,
-        ##                                                      tau=3, relax=1)
+        # e2e-delay=400, reliability=0.5
+        self.ns.nodes['e1']['delay'] = 400
+        self.ns.nodes['e1']['reliability'] = 0.5
+        self.mapping_d400_r1_k1_t3_rel05 = self.mapper.map(infra=self.infra,
+                                                             ns=self.ns, k=1,
+                                                             tau=3, relax=1)
 
-        ## # e2e-delay=400, reliability=0.3
-        ## self.ns.nodes['e1']['delay'] = 400
-        ## self.ns.nodes['e1']['reliability'] = 0.3
-        ## self.mapping_d400_r1_k1_t3_rel03 = self.mapper.map(infra=self.infra,
-        ##                                                      ns=self.ns, k=1,
-        ##                                                      tau=3, relax=1)
+        # e2e-delay=400, reliability=0.3
+        self.ns.nodes['e1']['delay'] = 400
+        self.ns.nodes['e1']['reliability'] = 0.3
+        self.mapping_d400_r1_k1_t3_rel03 = self.mapper.map(infra=self.infra,
+                                                             ns=self.ns, k=1,
+                                                             tau=3, relax=1)
 
         #################################################
         ## SCENARIO USED FOR THE OPTIMIZATION SOLUTION ##
@@ -469,50 +469,48 @@ class TestFPTASMapper(unittest.TestCase):
         # e2e-delay=400, reliability=1
         self.ns_opt.nodes['e1']['delay'] = 400
         self.ns_opt.nodes['e1']['reliability'] = 0.99
-        #self.mapping_opt_d400_r1_k1_t3_rel099 = self.mapper.map(
-        #                                        infra=self.infra_opt,
-        #                                        ns=self.ns_opt, k=1,
-        #                                        tau=3, relax=1)
+        self.mapping_opt_d400_r1_k1_t3_rel099 = self.mapper.map(
+                                                infra=self.infra_opt,
+                                                ns=self.ns_opt, k=1,
+                                                tau=3, relax=1)
         # e2e-delay=400, reliability=0.5
         self.ns_opt.nodes['e1']['delay'] = 400
         self.ns_opt.nodes['e1']['reliability'] = 0.5
-        #self.mapping_opt_d400_r1_k1_t3_rel05 = self.mapper.map(
-        #                                        infra=self.infra_opt,
-        #                                        ns=self.ns_opt, k=1,
-        #                                        tau=3, relax=1)
+        self.mapping_opt_d400_r1_k1_t3_rel05 = self.mapper.map(
+                                                infra=self.infra_opt,
+                                                ns=self.ns_opt, k=1,
+                                                tau=3, relax=1)
         # e2e-delay=400, reliability=0.3
         self.ns_opt.nodes['e1']['delay'] = 400
         self.ns_opt.nodes['e1']['reliability'] = 0.45
-        #self.mapping_opt_d400_r1_k1_t3_rel03 = self.mapper.map(
-        #                                        infra=self.infra_opt,
-        #                                        ns=self.ns_opt, k=1,
-        #                                        tau=4, relax=1)
+        self.mapping_opt_d400_r1_k1_t3_rel03 = self.mapper.map(
+                                                infra=self.infra_opt,
+                                                ns=self.ns_opt, k=1,
+                                                tau=4, relax=1)
         # Fixed reliabilities, different delays
 
-        # e2e-delay=0.8e-3, reliability=0.1
+        # e2e-delay=1.6e-3, reliability=0.1
         self.ns_opt.nodes['e1']['delay'] = 2* 0.8e-3 # per two to ignore
                                                      # end delays
-        self.ns_opt.nodes['e1']['delay'] = 2* 1.2e-3
-        self.ns_opt.nodes['e1']['delay'] = 2* 1.4e-3
         self.ns_opt.nodes['e1']['reliability'] = 0.1
-        self.mapping_opt_d08em3_r1_k1_t3_rel01 = self.mapper.map(
+        self.mapping_opt_d16em3_r1_k1_t3_rel01 = self.mapper.map(
                                                 infra=self.infra_opt,
                                                 ns=self.ns_opt, k=1,
                                                 tau=3, relax=0)
-        ## # e2e-delay=0.12e-3, reliability=0.1
-        ## self.ns_opt.nodes['e1']['delay'] = 0.12e-3
-        ## self.ns_opt.nodes['e1']['reliability'] = 0.1
-        ## self.mapping_opt_d012em3_r1_k1_t3_rel01 = self.mapper.map(
-        ##                                         infra=self.infra_opt,
-        ##                                         ns=self.ns_opt, k=1,
-        ##                                         tau=3, relax=1)
-        ## # e2e-delay=0.14e-3, reliability=0.1
-        ## self.ns_opt.nodes['e1']['delay'] = 0.14e-3
-        ## self.ns_opt.nodes['e1']['reliability'] = 0.1
-        ## self.mapping_opt_d014em3_r1_k1_t3_rel01 = self.mapper.map(
-        ##                                         infra=self.infra_opt,
-        ##                                         ns=self.ns_opt, k=1,
-        ##                                         tau=4, relax=1)
+        # e2e-delay=0.24e-3, reliability=0.1
+        self.ns_opt.nodes['e1']['delay'] = 2* 1.2e-3
+        self.ns_opt.nodes['e1']['reliability'] = 0.1
+        self.mapping_opt_d24em3_r1_k1_t3_rel01 = self.mapper.map(
+                                                infra=self.infra_opt,
+                                                ns=self.ns_opt, k=1,
+                                                tau=3, relax=0)
+        # e2e-delay=2.8e-3, reliability=0.1
+        self.ns_opt.nodes['e1']['delay'] = 2* 1.4e-3
+        self.ns_opt.nodes['e1']['reliability'] = 0.1
+        self.mapping_opt_d28em3_r1_k1_t3_rel01 = self.mapper.map(
+                                                infra=self.infra_opt,
+                                                ns=self.ns_opt, k=1,
+                                                tau=3, relax=0)
 
     def setUp(self):
         self.__graphs_setup()
@@ -525,59 +523,50 @@ class TestFPTASMapper(unittest.TestCase):
         reliability
 
         """
-        ## rel099 = mapper.GreedyFogCostMapper.map_reliability(infra=self.infra,
-        ##                             mapping=self.mapping_d400_r1_k1_t3_rel099)
-        ## self.assertTrue(rel099 >= 0.99)
+        rel099 = mapper.FPTASMapper.map_reliability(infra=self.infra,
+                                    mapping=self.mapping_d400_r1_k1_t3_rel099)
+        self.assertTrue(rel099 >= 0.99)
 
-        ## rel05 = mapper.GreedyFogCostMapper.map_reliability(infra=self.infra,
-        ##                             mapping=self.mapping_d400_r1_k1_t3_rel05)
-        ## self.assertTrue(rel05 >= 0.5)
+        rel05 = mapper.FPTASMapper.map_reliability(infra=self.infra,
+                                    mapping=self.mapping_d400_r1_k1_t3_rel05)
+        self.assertTrue(rel05 >= 0.5)
 
-        ## rel03 = mapper.GreedyFogCostMapper.map_reliability(infra=self.infra,
-        ##                             mapping=self.mapping_d400_r1_k1_t3_rel03)
-        ## self.assertTrue(rel03 >= 0.3)
+        rel03 = mapper.FPTASMapper.map_reliability(infra=self.infra,
+                                    mapping=self.mapping_d400_r1_k1_t3_rel03)
+        self.assertTrue(rel03 >= 0.3)
 
         #################################################
         ## SCENARIO USED FOR THE OPTIMIZATION SOLUTION ##
         #################################################
 
-        ## rel_opt099 = mapper.FPTASMapper.map_reliability(
-        ##                      infra=self.infra_opt,
-        ##                      mapping=self.mapping_opt_d400_r1_k1_t3_rel099)
-        ## self.assertTrue(rel_opt099 >= 0.99)
-        ## print('cost for \eta=0.99: {}'.format(
-        ##     mapper.FPTASMapper.map_cost(infra=self.infra_opt,
-        ##             ns=self.ns_opt, mapping=self.mapping_opt_d400_r1_k1_t3_rel099)))
+        rel_opt099 = mapper.FPTASMapper.map_reliability(
+                             infra=self.infra_opt,
+                             mapping=self.mapping_opt_d400_r1_k1_t3_rel099)
+        self.assertTrue(rel_opt099 >= 0.99)
 
-        ## rel_opt05 = mapper.FPTASMapper.map_reliability(
-        ##                     infra=self.infra,
-        ##                     mapping=self.mapping_opt_d400_r1_k1_t3_rel05)
-        ## self.assertTrue(rel_opt05 >= 0.5)
-        ## print('cost for \eta=0.5: {}'.format(
-        ##     mapper.FPTASMapper.map_cost(infra=self.infra_opt,
-        ##             ns=self.ns_opt, mapping=self.mapping_opt_d400_r1_k1_t3_rel05)))
+        rel_opt05 = mapper.FPTASMapper.map_reliability(
+                            infra=self.infra,
+                            mapping=self.mapping_opt_d400_r1_k1_t3_rel05)
+        self.assertTrue(rel_opt05 >= 0.5)
 
-        ## rel_opt03 = mapper.FPTASMapper.map_reliability(
-        ##                     infra=self.infra,
-        ##                     mapping=self.mapping_opt_d400_r1_k1_t3_rel03)
-        ## self.assertTrue(rel_opt03 >= 0.3)
-        ## print('cost for \eta=0.3: {}'.format(
-        ##     mapper.FPTASMapper.map_cost(infra=self.infra_opt,
-        ##             ns=self.ns_opt, mapping=self.mapping_opt_d400_r1_k1_t3_rel03)))
+        rel_opt03 = mapper.FPTASMapper.map_reliability(
+                            infra=self.infra,
+                            mapping=self.mapping_opt_d400_r1_k1_t3_rel03)
+        self.assertTrue(rel_opt03 >= 0.3)
 
 
         # Check the varying end to end tests
-        ## del014em3 = mapper.FPTASMapper.map_delay(infra=self.infra_opt, ns=self.ns_opt,
-        ##                     mapping=self.mapping_opt_d014em3_r1_k1_t3_rel01)
-        ## print('delay required of 0.14ms, we obtain: {}ms'.format(del014em3))
+        del28em3 = mapper.FPTASMapper.map_delay(infra=self.infra_opt, ns=self.ns_opt,
+                            mapping=self.mapping_opt_d28em3_r1_k1_t3_rel01)
+        self.assertTrue(del28em3 <= 2.8e-3)
 
-        ## del012em3 = mapper.FPTASMapper.map_delay(infra=self.infra_opt, ns=self.ns_opt,
-        ##                     mapping=self.mapping_opt_d012em3_r1_k1_t3_rel01)
-        ## print('delay required of 0.12ms, we obtain: {}ms'.format(del012em3))
+        del24em3 = mapper.FPTASMapper.map_delay(infra=self.infra_opt, ns=self.ns_opt,
+                            mapping=self.mapping_opt_d24em3_r1_k1_t3_rel01)
+        self.assertTrue(del24em3 <= 2.4e-3)
 
-        del08em3 = mapper.FPTASMapper.map_delay(infra=self.infra_opt, ns=self.ns_opt,
-                            mapping=self.mapping_opt_d08em3_r1_k1_t3_rel01)
-        print('delay required of 0.8ms, we obtain: {}ms'.format(del08em3))
+        del16em3 = mapper.FPTASMapper.map_delay(infra=self.infra_opt, ns=self.ns_opt,
+                            mapping=self.mapping_opt_d16em3_r1_k1_t3_rel01)
+        self.assertTrue(del16em3 <= 1.6e-3)
 
 
     def test_map(self):

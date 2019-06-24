@@ -3,6 +3,7 @@ from haversine import haversine
 import copy
 import networkx as nx
 import sys
+import re
 import logging
 from itertools import islice
 from checker import AbstractChecker, CheckFogDigraphs
@@ -481,7 +482,7 @@ class GreedyFogCostMapper(AbstractMapper):
         # Multiply by hosts reliability
         for vnf in [k for k in mapping.keys()\
                     if k != 'worked' and type(k) != tuple]:
-            reliab *= infra.nodes[mapping[vnf]]['reliability']
+            reliab *= infra.nodes[mapping[vnf]['host']]['reliability']
 
         # Multiply by links' reliability
         for vl in [k for k in mapping.keys()\
@@ -716,8 +717,6 @@ class FPTASMapper(AbstractMapper):
             }
             curr_c, curr_A = c_0, A_0
 
-        print('mapping: ', mapping)
-
         return mapping
 
 
@@ -817,12 +816,8 @@ class FPTASMapper(AbstractMapper):
                               self.__aux_g.edges(data=True))
 
 
-            print('hop: {}'.format(hop))
-            print('=========vl {}<->{} hop delay {}'.format(v1,v2,hop_delay[hop]))
             for ((c1,A),(c2,B),l_d) in filter(lambda e:\
                                             e[2]['bw'] >= vl_d['bw'], to_visit):
-                # need_cpu = ns.nodes[v2]['lv'] * vl_d['bw'] /\
-                #            (hop_delay[hop] - l_d['delay'])
                 need_cpu = FPTASMapper.DELAY_FACTOR * vl_d['bw'] /\
                            (1 - ns.nodes[v2]['lv'] /\
                                    (hop_delay[hop] - l_d['delay'])) if\
@@ -831,20 +826,10 @@ class FPTASMapper(AbstractMapper):
                              self.__aux_g[(c1,A)][(c2,B)]['cost'] *vl_d['bw']+\
                              (0 if first_vl else cost[(c1,A,v0,v1)])
 
-                print('\tLINK ', ((c1,A), (c2,B)))
-                print('\t{} cpu={} needed for lv={} hop_delay={} UL={}'.format(c2, need_cpu, ns.nodes[v2]['lv'],
-                        hop_delay[hop], l_d['delay']))
-
-                print('\t\tneed cpu={} and there are {} cpus at {}'.format(
-                    need_cpu, curr_cpu[(c2,B,v1,v2)], c2))
-                print('\t\tincur_cost={} and cost[(c2,B,v1,v2)]={}'.format(
-                    incur_cost, cost[(c2,B,v1,v2)]))
-                print('\t\tlocation constraint: ', self.__loc_rat_capable(infra, ns, v2, c2))
                 if curr_cpu[(c2,B,v1,v2)] >= need_cpu and\
                         incur_cost < cost[(c2,B,v1,v2)] and\
                         self.__loc_rat_capable(infra, ns, v2, c2):
                     cost[(c2,B,v1,v2)] = incur_cost
-                    print('\t\t  I update cost')
                     prev[(c2,B,v1,v2)] = (c1,A)
                     needed_cpu[(c2,B,v1,v2)] = need_cpu
 
@@ -862,12 +847,6 @@ class FPTASMapper(AbstractMapper):
                 self.__log.info('relax restriction for virtual link  (' +\
                                 str(v1) + ',' + str(v2) + ')')
                 no_mapping = True
-                # DEPRECATED HOP DELAY UPDATE
-                # possible_ds = [ns.nodes[v2]['lv'] * vl_d['bw'] /\
-                #                curr_cpu[(c2,B,v1,v2)] +\
-                #                self.__aux_g[(c1,A)][(c2,B)]['delay']\
-                #                for ((c1,A),(c2,B)) in self.__aux_g.edges()\
-                #                if curr_cpu[(c2,B,v1,v2)] > 0]
                 possible_ds = []
                 for ((c1,A),(c2,B)) in self.__aux_g.edges():
                     if curr_cpu[(c2,B,v1,v2)] > 0:
@@ -877,15 +856,10 @@ class FPTASMapper(AbstractMapper):
                                      self.__aux_g[(c1,A)][(c2,B)]['delay']
                         if possible_d > hop_delay[hop] - l_d['delay']:
                             possible_ds += [possible_d]
-                        else:
-                            print('possible delay={} < allowed={}'.format(
-                                possible_d, hop_delay[hop] - l_d['delay']))
 
                 possible_ds = list(set(possible_ds))
                 possible_ds.sort()
-                print('possible_ds = ', possible_ds)
 
-                print('next delay: ', possible_ds[relax])
                 hop_delay[hop] = possible_ds[relax+relaxed]
                 self.__log.info('new delay=' + str(hop_delay[hop]))
                 relaxed += 1
@@ -988,21 +962,15 @@ class FPTASMapper(AbstractMapper):
         for vl in [k for k in mapping.keys() if type(k) == tuple]:
             # Propagation delay
             for h1,h2 in zip(mapping[vl], mapping[vl][1:]):
-                print('\tadd propagation delay for pair ({},{})={}'.format(
-                    h1,h2,infra[h1][h2]['delay']))
                 delay += infra[h1][h2]['delay']
 
             # Processing delay
-            assigned_cpu = mapping[vl[1]]['cpu']
-            pr_del = ns.nodes[vl[1]]['lv'] /\
-                     (1 - FPTASMapper.DELAY_FACTOR * ns[vl[0]][vl[1]]['bw']/\
-                                                     assigned_cpu)
-            print('\t{} cpus add processing delay {}'.format(assigned_cpu,pr_del))
-            delay += pr_del
-
-            #    need_cpu = FPTASMapper.DELAY_FACTOR * vl_d['bw'] /\
-            #               (1 - ns.nodes[v2]['lv'] /\
-            #                       (hop_delay[hop] - l_d['delay']))
+            if not re.match('^e\d+$', vl[1]):
+                assigned_cpu = mapping[vl[1]]['cpu']
+                pr_del = ns.nodes[vl[1]]['lv'] /\
+                         (1 - FPTASMapper.DELAY_FACTOR *
+                                 ns[vl[0]][vl[1]]['bw']/ assigned_cpu)
+                delay += pr_del
 
         return delay
 
