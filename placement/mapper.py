@@ -564,7 +564,7 @@ class GreedyFogCostMapper(AbstractMapper):
 
 
 class FPTASMapper(AbstractMapper):
-    DELAY_FACTOR = 1e-20
+    DELAY_FACTOR = 1/129
 
     """Maps a network service using a FPTAS modification of multiconstraint
        routing under path additive constraints. Algorithm 2 of [1]
