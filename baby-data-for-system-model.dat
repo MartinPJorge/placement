@@ -36,3 +36,15 @@ param prob_AP :        1        2       3       4       5       6       7       
          'accessPoint2' 0.85     0.85    0.95    0.95    0.95    0.95    0.95    0.95    0.95    0.95;
 
 param coverage_threshold := 0.9;
+
+param policy :          'accessPoint1' 'accessPoint2' 'robot1' 'robot2' 'server'
+          'robotMaster'       0               0           1         0       0
+          'robotSlave'        0               0           0         1       0
+          'vEPC'              0               0           0         0       1
+          'controller'        0               0           1         1       1;
+
+param max_used_battery 'robot1' 0.5
+                       'robot2' 0.3;
+param min_used_battery 'robot1' 0.9
+                       'robot2' 0.8;
+param battery_threshold 0.3;

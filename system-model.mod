@@ -27,6 +27,14 @@ param prob_AP {ap in APs, t_k in subintervals} >=0.0, <=1.0;
 # required coverage probability of the cluster
 param coverage_threshold >=0.0, <=1.0;
 
+# policies to map VNFs into infrastructure nodes
+param policy {v in vertices[serviceGraph], N in vertices[infraGraph]} binary;
+
+# battery parameters
+param max_used_battery {N in mobiles} >=0.0, <=1.0;
+param min_used_battery {N in mobiles} >=0.0, <=1.0;
+param battery_threshold >=0.0, <=1.0;
+
 # mapping variable: VNF v is mapped to infra node N
 var X {v in vertices[serviceGraph], N in vertices[infraGraph]} binary;
 # AP selection variable at time subinterval t_k
@@ -42,8 +50,14 @@ subject to Max_resources {N in vertices[infraGraph]}:
 subject to Map_to_one_place {v in vertices[serviceGraph]}:
     sum {N in vertices[infraGraph]}  X[v, N] = 1;
 
+subject to Map_to_policies {v in vertices[serviceGraph], N in vertices[infraGraph]}:
+    X[v, N] <= policy[v, N];
+
 subject to Single_AP_selection {t_k in subintervals}:
     sum {ap in APs} AP_x[ap, t_k] = 1;
 
 subject to AP_coverage_threshold {t_k in subintervals}:
     sum {ap in APs} AP_x[ap, t_k] *  prob_AP[ap, t_k] >= coverage_threshold;
+
+subject to battery {N in mobiles}:
+    max_used_battery[N] - ((sum {v in vertices[serviceGraph]}  X[v, N] * demands[v])/resources[N])*(max_used_battery-min_used_battery) >= battery_threshold;
