@@ -617,6 +617,8 @@ class FPTASMapper(AbstractMapper):
             src_paths[from_] = {}
             #for to_ in [c for c in comp_nodes if c != from_]:
             for to_ in comp_nodes:
+                if not nx.has_path(infra, from_, to_):
+                    continue
                 for path in k_shortest_paths(infra, from_, to_,
                                              k=k, weight='delay'):
                     if to_ not in src_paths[from_]:
@@ -657,6 +659,8 @@ class FPTASMapper(AbstractMapper):
         self.__log.info('connect nodes (c,A)--(c2,B) of auxiliary nodes')
         for (c1,A) in self.__aux_g.nodes():
             for (c2,B) in self.__aux_g.nodes():
+                if not nx.has_path(infra, c1, c2):
+                    continue
                 best_idx = src_paths[c1][c2]['reliability'].index(\
                                 min(src_paths[c1][c2]['reliability']))
                 w1 = -1 * tau * log(1 /\
