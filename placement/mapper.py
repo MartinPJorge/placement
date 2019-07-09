@@ -761,6 +761,89 @@ class FPTASMapper(AbstractMapper):
         return True 
 
 
+    def __remaining_cpu(self, vls: list, hop: int, curr_cpu: dict, prev: dict,
+                        needed_cpu: dict, asked_node, src_node, src_tau: int,
+                        infra: nx.classes.digraph.DiGraph) -> bool:
+        """Calculates the remaining CPU inside asked_node during the mapping
+
+        :vls: list: [(vnf1, vnf2, {...}), ...]
+        :hop: int: index of the asked hop
+        :curr_cpu: dict: of current CPU at each stage of the mapping
+        :prev: dict: dictionary of the previous infra nodes in the mapping
+        :needed_cpu: dict: dictionary of the needed CPU of mapping decisions
+        :asked_node: id of the node in the auxiliary graph
+        :src_node: node where last VNF was mapped
+        :src_tau: int: tau of the departing node
+        :infra: nx.classes.digraph.DiGraph: infrastructure graph of the mapping
+        :returns: bool
+
+        """
+        remain_cpu = infra.nodes[asked_node]['cpu']
+        curr_hop = hop - 1
+        curr_c = src_node
+        curr_tau = src_tau
+
+        while curr_hop >= 0:
+            v1,v2,_ = vls[curr_hop]
+            if curr_c == asked_node:
+                remain_cpu -= needed_cpu[(curr_c,curr_tau,v1,v2)]
+            if curr_hop > 0:
+                prev_pair = prev[(curr_c,curr_tau,v1,v2)]
+                if prev_pair != None:
+                    curr_c, curr_tau = prev_pair
+                else:
+                    curr_hop = 0
+            curr_hop -= 1
+
+        return remain_cpu
+
+
+    def __prune_excess(self, vls: list, prev: dict, needed_cpu: dict,
+                       cost: dict, infra: nx.classes.digraph.DiGraph):
+        """Set to inf the cost of those solutions that excess CPU resources
+
+        :vls: list: [(vnf1, vnf2, {...}), ...]
+        :prev: dict: dictionary of the previous infra nodes in the mapping
+        :needed_cpu: dict: dictionary of the needed CPU of mapping decisions
+        :cost: dict: dictionary of mappings' costs
+        :infra: nx.classes.digraph.DiGraph: infrastructure graph of the mapping
+        :returns: Nothing
+
+        """
+        # Feasible solutions
+        candidates = [(c,A) for (c,A) in self.__aux_g.nodes\
+                      if cost[(c,A,vls[-1][0],vls[-1][1])] != float('inf')]
+
+        for c,A in candidates:
+            consumed_cpu = {}
+            hop = -1
+            curr_c = c
+            curr_A = A
+
+            # Store CPU consumed by each VNF
+            while hop >= -1*len(vls):
+                v1,v2,_ = vls[hop]
+                if curr_c not in consumed_cpu:
+                    consumed_cpu[curr_c] = 0
+                
+                consumed_cpu[curr_c] += needed_cpu[(curr_c,curr_A,v1,v2)]
+
+                curr_c, curr_A = prev[(curr_c,curr_A,v1,v2)]
+                hop -= 1
+
+            for c_ in consumed_cpu:
+                print('({},{})[{}]={}'.format(c,A,c_,consumed_cpu[c_]))
+
+            # Check if CPU resources is exceeded at some infra node
+            for c_ in consumed_cpu:
+                if infra.nodes[c_]['cpu'] < consumed_cpu[c_]:
+                    print('{} CPUs in {}, but {} consumed'.format(
+                        infra.nodes[c_]['cpu'], c_,consumed_cpu[c_]))
+                    cost[(c,A,vls[-1][0],vls[-1][1])] = float('inf')
+                    break
+            print('::')
+                
+
     def map(self, infra: nx.classes.digraph.DiGraph,
             ns: nx.classes.digraph.DiGraph, k: int, tau: int,
             relax: int) -> dict:
@@ -819,28 +902,40 @@ class FPTASMapper(AbstractMapper):
                        filter(lambda e: e[0][0] == endpoint and e[0][1] == 0,
                               self.__aux_g.edges(data=True))
 
-
             for ((c1,A),(c2,B),l_d) in filter(lambda e:\
                                             e[2]['bw'] >= vl_d['bw'], to_visit):
                 need_cpu = FPTASMapper.DELAY_FACTOR * vl_d['bw'] /\
                            (1 - ns.nodes[v2]['lv'] /\
                                    (hop_delay[hop] - l_d['delay'])) if\
-                             l_d['delay'] < hop_delay[hop] else float('inf')
+                             l_d['delay'] <= hop_delay[hop] else float('inf')
                 incur_cost = infra.nodes[c2]['cost']['cpu'] * need_cpu +\
                              self.__aux_g[(c1,A)][(c2,B)]['cost'] *vl_d['bw']+\
                              (0 if first_vl else cost[(c1,A,v0,v1)])
 
-                if curr_cpu[(c2,B,v1,v2)] >= need_cpu and\
+                # Obtain remaining CPU ar c2 along the taken path
+                remaining_cpu = self.__remaining_cpu(vls, hop, curr_cpu, prev,
+                                                     needed_cpu, c2, c1, A,
+                                                     infra)
+
+                if remaining_cpu >= need_cpu and\
                         incur_cost < cost[(c2,B,v1,v2)] and\
                         self.__loc_rat_capable(infra, ns, v2, c2):
+                    print('\t\tdeploying {} at {} costs {} for {} CPUs'.format(
+                        v2, (c2,B), incur_cost, need_cpu))
+                    # print('>>> c2={},B={} can host v2={}'.format(c2,B, v2))
                     cost[(c2,B,v1,v2)] = incur_cost
                     prev[(c2,B,v1,v2)] = (c1,A)
                     needed_cpu[(c2,B,v1,v2)] = need_cpu
+                    
+                    # Consume its current CPU
+                    # curr_cpu[(c2,B,v1,v2)] = remaining_cpu - need_cpu
+
+
 
                     if hop + 1 < len(vls): # refresh CPU status for next iters
+                        _,v3,__ = vls[hop+1]
                         for c,B_ in filter(lambda C: C[0]==c2,
                                            self.__aux_g.nodes()):
-                            _,v3,__ = vls[hop+1]
                             curr_cpu[(c,B_,v2,v3)] =\
                                     curr_cpu[(c2,B,v1,v2)] - need_cpu
 
@@ -875,12 +970,15 @@ class FPTASMapper(AbstractMapper):
                                             len(hop_delay[hop+1:])\
                                          for hd in hop_delay[hop+1:]]
 
+        # Prune non-feasible solutions
+        #self.__prune_excess(vls, prev, needed_cpu, cost, infra)
 
         # Get the best solution
         self.__log.info('looking for best candidates')
         candidates = [(c,A) for (c,A) in self.__aux_g.nodes\
                       if cost[(c,A,vls[-1][0],vls[-1][1])] != float('inf')]
         min_cost, c_f, A_f = float('inf'), None, None
+        print('\t\t\tThere are {} candidate mappings'.format(len(candidates)))
         for c,A in candidates:
             if cost[(c,A,vls[-1][0],vls[-1][1])] < min_cost:
                 c_f, A_f = c, A
