@@ -751,6 +751,8 @@ class FPTASMapper(AbstractMapper):
 
         # Check RAT constraints
         if 'rats' in ns.nodes[vnf] and ns.nodes[vnf]['rats'] != None:
+            # if vnf == 'AP' and host in ['femto', 'pico_down', 'pico_top', 'micro']:
+            #     print('VNF.rats={}  host.rats={}'.format(ns.nodes[vnf]['rats'], infra.nodes[host]['rats']))
             if 'rats' not in infra.nodes[host] or\
                     infra.nodes[host]['rats'] == None:
                 return False
@@ -902,12 +904,13 @@ class FPTASMapper(AbstractMapper):
                        filter(lambda e: e[0][0] == endpoint and e[0][1] == 0,
                               self.__aux_g.edges(data=True))
 
+            print('\t\tmapping: {}'.format((v1,v2)))
             for ((c1,A),(c2,B),l_d) in filter(lambda e:\
                                             e[2]['bw'] >= vl_d['bw'], to_visit):
                 need_cpu = FPTASMapper.DELAY_FACTOR * vl_d['bw'] /\
                            (1 - ns.nodes[v2]['lv'] /\
                                    (hop_delay[hop] - l_d['delay'])) if\
-                             l_d['delay'] <= hop_delay[hop] else float('inf')
+                             l_d['delay'] < hop_delay[hop] else float('inf')
                 incur_cost = infra.nodes[c2]['cost']['cpu'] * need_cpu +\
                              self.__aux_g[(c1,A)][(c2,B)]['cost'] *vl_d['bw']+\
                              (0 if first_vl else cost[(c1,A,v0,v1)])
@@ -916,20 +919,29 @@ class FPTASMapper(AbstractMapper):
                 remaining_cpu = self.__remaining_cpu(vls, hop, curr_cpu, prev,
                                                      needed_cpu, c2, c1, A,
                                                      infra)
+                # print('\t\trequires {}CPUs for vnf={} in host={}'.format(need_cpu, v2, c2))
+                # print('\t\t  remains={}'.format(remaining_cpu))
+                # if v2 == 'AP' and c2 in ['femto', 'pico_down', 'pico_top', 'micro']:
+                #     loc_cap = self.__loc_rat_capable(infra, ns, v2, c2)
+                #     print('\n\t{} is {} loc_rat_capable for vnf {}'.format(c2,
+                #         loc_cap, v2))
+                #     print('\tneeded_cpu={}, remaining={}'.format(need_cpu,
+                #         remaining_cpu))
+                #     print('\tincured_cost={} -- current cost={}'.format(incur_cost,cost[(c2,B,v1,v2)]))
+                #     print('(c1,A)=({},{})  (c2,B)=({},{})  (v0,v1)=({},{})'.format(
+                #                 c1,A,c2,B,v0,v1))
+                #     print('cost[(c1,A,v0,v1)]={}'.format(cost[(c1,A,v0,v1)]))
 
                 if remaining_cpu >= need_cpu and\
                         incur_cost < cost[(c2,B,v1,v2)] and\
                         self.__loc_rat_capable(infra, ns, v2, c2):
-                    print('\t\tdeploying {} at {} costs {} for {} CPUs'.format(
-                        v2, (c2,B), incur_cost, need_cpu))
-                    # print('>>> c2={},B={} can host v2={}'.format(c2,B, v2))
                     cost[(c2,B,v1,v2)] = incur_cost
                     prev[(c2,B,v1,v2)] = (c1,A)
                     needed_cpu[(c2,B,v1,v2)] = need_cpu
                     
                     # Consume its current CPU
                     # curr_cpu[(c2,B,v1,v2)] = remaining_cpu - need_cpu
-
+                    # print('\thost {} can have vnf {}'.format(c2,v2))
 
 
                     if hop + 1 < len(vls): # refresh CPU status for next iters
@@ -978,7 +990,6 @@ class FPTASMapper(AbstractMapper):
         candidates = [(c,A) for (c,A) in self.__aux_g.nodes\
                       if cost[(c,A,vls[-1][0],vls[-1][1])] != float('inf')]
         min_cost, c_f, A_f = float('inf'), None, None
-        print('\t\t\tThere are {} candidate mappings'.format(len(candidates)))
         for c,A in candidates:
             if cost[(c,A,vls[-1][0],vls[-1][1])] < min_cost:
                 c_f, A_f = c, A
@@ -1035,13 +1046,19 @@ class FPTASMapper(AbstractMapper):
         for vnf in [k for k in mapping.keys() if type(k) != tuple and\
                                                  k != 'worked']:
             for r in infra.nodes[mapping[vnf]['host']]['cost'].keys():
-                cost += infra.nodes[mapping[vnf]['host']]['cost'][r] *\
+                vnf_r_cost = infra.nodes[mapping[vnf]['host']]['cost'][r] *\
                             mapping[vnf]['cpu']
+                mapping[vnf]['cost'] = vnf_r_cost
+                cost += vnf_r_cost
+        cpu_cost = cost
 
         # VL mapping cost
         for vl in [k for k in mapping.keys() if type(k) == tuple]:
             for h1,h2 in zip(mapping[vl], mapping[vl][1:]):
                 cost += infra[h1][h2]['cost'] * ns[vl[0]][vl[1]]['bw']
+        print('\t\t  ==CPU cost={}, BW cost={}'.format(cpu_cost,
+            cost - cpu_cost))
+        mapping['link_cost'] = cost - cpu_cost
 
         return cost
 
