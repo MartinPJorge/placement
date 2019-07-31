@@ -8,7 +8,7 @@ import logging
 from itertools import islice
 from checker import AbstractChecker, CheckFogDigraphs
 from functools import reduce
-from utils import k_shortest_paths
+from utils import k_shortest_paths, k_reasonable_paths
 from math import log
 
 class AbstractMapper(metaclass=ABCMeta):
@@ -620,8 +620,10 @@ class FPTASMapper(AbstractMapper):
             for to_ in comp_nodes:
                 if not nx.has_path(infra, from_, to_):
                     continue
-                for path in k_shortest_paths(infra, from_, to_,
-                                             k=k, weight='delay'):
+                #for path in k_shortest_paths(infra, from_, to_,
+                #                             k=k, weight='delay'):
+                for path in k_reasonable_paths(infra, from_, to_,
+                        k, 'delay'):
                     if to_ not in src_paths[from_]:
                         src_paths[from_][to_] = {
                             'paths': [],
@@ -660,24 +662,59 @@ class FPTASMapper(AbstractMapper):
                 self.__aux_g.add_node((comp_node,tau_),
                                       **infra.nodes[comp_node])
 
+        # for c2 in src_paths['e1']:
+        #     print('from {} to {}:'.format('e1',c2))
+        #     for i in range(len(src_paths['e1'][c2]['paths'])):
+        #         w1 = -1 * tau * log(1 /\
+        #                 (src_paths['e1'][c2]['reliability'][i]*\
+        #                     infra.nodes[c2]['reliability'])) /\
+        #                         log(ereliab)
+        #         print('  path={}'.format(src_paths['e1'][c2]['paths'][i]))
+        #         print('    w1={}'.format(w1))
+        #         print('    reliab={}'.format(src_paths['e1'][c2]['reliability'][i]))
+        #         print('    delay={}'.format(src_paths['e1'][c2]['delays'][i]))
+
         # Connect the auxiliary graph nodes
         self.__log.info('connect nodes (c,A)--(c2,B) of auxiliary nodes')
         for (c1,A) in self.__aux_g.nodes():
             for (c2,B) in self.__aux_g.nodes():
                 if not nx.has_path(infra, c1, c2):
                     continue
-                best_idx = src_paths[c1][c2]['reliability'].index(\
-                                max(src_paths[c1][c2]['reliability']))
-                w1 = -1 * tau * log(1 /\
-                        (src_paths[c1][c2]['reliability'][best_idx]*\
-                                infra.nodes[c2]['reliability'])) /\
-                            log(ereliab)
+
+                # GET PATH WITH LOWEST DELAY SATISFYING A+W1<=B
+                delay, w1, idx = float('inf'), float('inf'), 0
+                for i in range(len(src_paths[c1][c2]['paths'])):
+                    curr_w1 = -1 * tau * log(1 /\
+                                 (src_paths[c1][c2]['reliability'][i]*\
+                                     infra.nodes[c2]['reliability'])) /\
+                                         log(ereliab)
+                    curr_delay = src_paths[c1][c2]['delays'][i]
+                    if curr_delay < delay and A+curr_w1<=B:
+                        delay, w1, idx = curr_delay, curr_w1, i
+                    
+                # RETRIEVE PATH WITH MAXIMUM RELIABILITY
+                # idx = src_paths[c1][c2]['reliability'].index(\
+                #         max(src_paths[c1][c2]['reliability']))
+                # w1 = -1 * tau * log(1 /\
+                #         (src_paths[c1][c2]['reliability'][idx]*\
+                #             infra.nodes[c2]['reliability'])) /\
+                #                 log(ereliab)
+
+                # if c1 == 'e1' and A + w1 <= B:
+                #     print('link {} -- {}'.format((c1,A), (c2,B)))
+                #     for i in range(len(src_paths[c1][c2]['reliability'])):
+                #         print('  idx={}'.format(i))
+                #         print('  path={}, reliab={}, delay={}'.format(
+                #             src_paths[c1][c2]['paths'][idx],
+                #             src_paths[c1][c2]['reliability'][idx],
+                #             src_paths[c1][c2]['delays'][idx]))
+
                 if A + w1 <= B:
                     self.__aux_g.add_edge((c1,A), (c2,B), w1=w1,
-                                delay=src_paths[c1][c2]['delays'][best_idx],
-                                path=src_paths[c1][c2]['paths'][best_idx],
-                                bw=src_paths[c1][c2]['bw'][best_idx],
-                                cost=src_paths[c1][c2]['cost'][best_idx])
+                                delay=src_paths[c1][c2]['delays'][idx],
+                                path=src_paths[c1][c2]['paths'][idx],
+                                bw=src_paths[c1][c2]['bw'][idx],
+                                cost=src_paths[c1][c2]['cost'][idx])
 
 
     @staticmethod
@@ -871,6 +908,7 @@ class FPTASMapper(AbstractMapper):
         self.__log.info('setting auxiliary variables')
         vls = FPTASMapper.ordered_vls(ns)
         hop_delay = [ns.nodes[endpoint]['delay']/len(ns.edges)] * len(ns.edges)
+        print('FPTAS: end_delay={}'.format(ns.nodes[endpoint]['delay']))
 
         # Dictionaries to store cost and cpu as mapping advances
         cost = {
@@ -910,30 +948,42 @@ class FPTASMapper(AbstractMapper):
                               self.__aux_g.edges(data=True))
             to_visit = list(to_visit)
 
-            print('\t\tmapping: {}[\'bw\']={}'.format((v1,v2),vl_d['bw']))
+            # for ((c1,A),(c2,B),l_d) in to_visit:
+            #     if 'ower' in c2 or 'enter' in c2:
+            #         print('\tto visit {}'.format((c2,B)))
+            #         print('\tdelay={}'.format(l_d['delay']))
+            #         print('\t{}'.format(l_d['path']))
+
+            # print('\t\tmapping: {}[\'bw\']={}'.format((v1,v2),vl_d['bw']))
             # print('imposing hop delay={}'.format(hop_delay[hop]))
             # print('there are {} candidates'.format(list(set(map(lambda v: v[1][0],
             #     to_visit)))))
-            # print('and the bw for {} is {} Mbps'.format((v1,v2),
-            #     vl_d['bw']))
-            # print('to visit: {}'.format(list(to_visit)))
+            print('and the bw for {} is {} Mbps'.format((v1,v2),
+                vl_d['bw']))
+            # print('to visit: {}\n'.format(list(to_visit)))
             for ((c1,A),(c2,B),l_d) in filter(lambda e:\
                                             e[2]['bw'] >= vl_d['bw'], to_visit):
-                # print('\t\t==>==>lv={},hop_{}_delay={},{},LL_delay={}'.format(
+                # if any(map(lambda h: infra.nodes[h]['type'] == 'pico_cell',
+                #             self.__aux_g[(c1,A)][(c2,B)]['path'])) or\
+                #         'Azure' in c2:
+                # print('\t\t==>==>lv={},hop_{}_delay={},(c2,B)={},LL_delay={}'.format(
                 #     ns.nodes[v2]['lv'], hop, hop_delay[hop], (c2,B), l_d['delay']))
                 # print('\t\tpath={}'.format(self.__aux_g[(c1,A)][(c2,B)]['path']))
                 # DEPRECATED WRONG WAY TO OBTAIN IT
-                need_cpu = FPTASMapper.DELAY_FACTOR * vl_d['bw'] /\
-                           (1 - ns.nodes[v2]['lv'] /\
-                                   (hop_delay[hop] - l_d['delay'])) if\
-                             l_d['delay'] < hop_delay[hop] else float('inf')
+                # need_cpu = FPTASMapper.DELAY_FACTOR * vl_d['bw'] /\
+                #            (1 - ns.nodes[v2]['lv'] /\
+                #                    (hop_delay[hop] - l_d['delay'])) if\
+                #              l_d['delay'] < hop_delay[hop] else float('inf')
 
                 # use the PS approach
                 need_cpu = (1 / (hop_delay[hop] - l_d['delay']) +\
-                        ns.nodes[v2]['lv']) / 129\
+                        ns[v1][v2]['bw']*1e-3) / 20\
                         if l_d['delay'] < hop_delay[hop] else float('inf')
                 #print('\t\twe\'ll need {} cpus'.format(need_cpu))
-                #print('  host {} requires {} CPUs'.format(c2,need_cpu))
+                print('\t\thost {} requires {} CPUs\n'.format(c2,need_cpu))
+                print('\t\t  hop delay={}, LL_delay = {}'.format(
+                    hop_delay[hop], l_d['delay']))
+                print('\t\t  for allowed delay={}'.format(hop_delay[hop] - l_d['delay']))
 
                 incur_cost = infra.nodes[c2]['cost']['cpu'] * need_cpu +\
                              self.__aux_g[(c1,A)][(c2,B)]['cost'] *vl_d['bw']+\
@@ -986,14 +1036,14 @@ class FPTASMapper(AbstractMapper):
                 for ((c1,A),(c2,B),l_d) in self.__aux_g.edges(data=True):
                     if curr_cpu[(c2,B,v1,v2)] > 0:
                         # DEPRECATED WRONG FORMULA
-                        possible_d = ns.nodes[v2]['lv'] / (1 -
-                                     FPTASMapper.DELAY_FACTOR * vl_d['bw'] /\
-                                     curr_cpu[(c2,B,v1,v2)]) +\
-                                     self.__aux_g[(c1,A)][(c2,B)]['delay']
+                        # possible_d = ns.nodes[v2]['lv'] / (1 -
+                        #              FPTASMapper.DELAY_FACTOR * vl_d['bw'] /\
+                        #              curr_cpu[(c2,B,v1,v2)]) +\
+                        #              self.__aux_g[(c1,A)][(c2,B)]['delay']
 
                         # use this one for large scenario
-                        possible_d = 1/ (curr_cpu[(c2,B,v1,v2)]*129 -\
-                                ns.nodes[v2]['lv']) +\
+                        possible_d = 1/ (curr_cpu[(c2,B,v1,v2)]*20 -\
+                                ns[v1][v2]['bw']*1e-3) +\
                                 self.__aux_g[(c1,A)][(c2,B)]['delay']
 
                         if possible_d > hop_delay[hop] - l_d['delay']:
@@ -1118,13 +1168,13 @@ class FPTASMapper(AbstractMapper):
             if not re.match('^e\d+$', vl[1]):
                 assigned_cpu = mapping[vl[1]]['cpu']
                 # DEPRECATED AND WRONG PROCESSING DELAY
-                pr_del = ns.nodes[vl[1]]['lv'] /\
-                         (1 - FPTASMapper.DELAY_FACTOR *
-                                 ns[vl[0]][vl[1]]['bw']/ assigned_cpu)
+                # pr_del = ns.nodes[vl[1]]['lv'] /\
+                #          (1 - FPTASMapper.DELAY_FACTOR *
+                #                  ns[vl[0]][vl[1]]['bw']/ assigned_cpu)
 
                 # use this one for large scenario
-                lamb, lv = ns[vl[0]][vl[1]]['bw'], ns.nodes[vl[1]]['lv']
-                pr_del = 1 / (assigned_cpu*129 - lv)
+                lamb = ns[vl[0]][vl[1]]['bw']
+                pr_del = 1 / (assigned_cpu*20 - lamb*1e-3)
 
                 delay += pr_del
 
