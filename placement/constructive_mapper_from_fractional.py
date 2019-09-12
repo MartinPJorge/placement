@@ -155,12 +155,12 @@ class ConstructiveMapperFromFractional(mapper.AbstractMapper):
         self.pruning_steps_collection = [PruneLocalityConstraints()]
         self.objective_value_of_fractional_opt = None
         self.objective_value_of_integer_solution = None
-        self.log = logging.getLogger(self.__class__.__name__)
+        self.log = logging.Logger(self.__class__.__name__)
         handler = RainbowLoggingHandler(sys.stderr, color_funcName=('black', 'yellow', True))
         formatter = logging.Formatter('%(asctime)s(%(name).6s)%(levelname).3s: %(message)s')
         handler.setFormatter(formatter)
         self.log.addHandler(handler)
-        self.log.setLevel(logging.DEBUG)
+        self.log.setLevel(logging.INFO)
 
         # these might not be needed if we override the functions with other heuristics.
         self.epsilon = 1e-3
@@ -355,7 +355,7 @@ class ConstructiveMapperFromFractional(mapper.AbstractMapper):
                     if item in all_items:
                         all_items.remove(item)
                     else:
-                        raise Exception("Wrong item mapping structure!")
+                        raise Exception("Wrong item mapping structure, each item must be in exactly one bin!")
                 self.objective_value_of_integer_solution += bin['fixed_cost']
         if len(all_items) != 0:
             raise Exception("Item not found in mapped_here structure in any bin!")

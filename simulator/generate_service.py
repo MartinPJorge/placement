@@ -94,7 +94,7 @@ class ServiceGMLGraph(nx.DiGraph):
                 G.add_edge(u, v)
         for u in G.nodes:
             # TODO: add parameters
-            self.add_node(u, weight=self.random.uniform(1, 10))
+            self.add_node(u, weight=self.random.uniform(35, 100))
         for u,v,k in G.edges:
             if u != v and not self.has_edge(u, v):
                 # TODO: add parameters
