@@ -24,8 +24,16 @@ class GMLGraph(nx.DiGraph):
 
 class InfrastructureGMLGraph(GMLGraph):
 
-    def __init__(self, incoming_graph_data=None, gml_file=None, label='label', **attr):
+    def __init__(self, incoming_graph_data=None, gml_file=None, label='label', seed=0, **attr):
         super(InfrastructureGMLGraph, self).__init__(incoming_graph_data, gml_file=gml_file, label=label, **attr)
+        # NOTE: duplication of information storage should be avoided (do not store information in class attributes, which can de
+        # directly accessed at the network x dicts of the class. Only create attributes, if if they need calculation based on the
+        # input information in the GML file (i.e. mobility pattern)
+        # TODO: calculate coverage probabilities from the created mobility pattern
+        self.random = random.Random(seed)
+        for n, node_dict in self.nodes(data=True):
+            node_dict['fixed_cost'] = self.random.uniform(0, 10)
+            node_dict['unit_cost'] = self.random.uniform(1, 2)
 
     def check_graph(self):
         """
@@ -55,7 +63,7 @@ class ServiceGMLGraph(nx.DiGraph):
         self.random = random.Random(seed)
         self.current_node_id = 1
         self.series_parallel_ratio = series_parallel_ratio
-        # self._generate_structure()
+        self._generate_structure()
 
     def generate_series_parallel_graph(self, n):
         """
@@ -86,7 +94,7 @@ class ServiceGMLGraph(nx.DiGraph):
                 G.add_edge(u, v)
         for u in G.nodes:
             # TODO: add parameters
-            self.add_node(u)
+            self.add_node(u, weight=self.random.uniform(1, 10))
         for u,v,k in G.edges:
             if u != v and not self.has_edge(u, v):
                 # TODO: add parameters
