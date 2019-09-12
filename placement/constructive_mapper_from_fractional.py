@@ -1,4 +1,7 @@
 from abc import ABCMeta, abstractmethod
+import logging
+from rainbow_logging_handler import RainbowLoggingHandler
+import sys
 
 from placement import mapper
 from placement import checker
@@ -54,6 +57,9 @@ class Item(dict):
         self.mapped_to = mapped_to
         self.possible_bins = possible_bins
 
+    def __repr__(self):
+        return "Item(id={}, weight={}, mapped_to={})".format(self['id'], self['weight'], self.mapped_to)
+
 
 class Bin(dict):
 
@@ -96,6 +102,9 @@ class Bin(dict):
 
     def get_variable_cost_of_mapping(self, item):
         return item['weight'] * self['unit_cost']
+
+    def __repr__(self):
+        return "Bin(id={}, capacity={})".format(self['id'], self['capacity'])
 
 
 class BasePruningStep(metaclass=ABCMeta):
@@ -144,6 +153,14 @@ class ConstructiveMapperFromFractional(mapper.AbstractMapper):
         self.bins = []
         self.items = []
         self.pruning_steps_collection = [PruneLocalityConstraints()]
+        self.objective_value_of_fractional_opt = None
+        self.objective_value_of_integer_solution = None
+        self.log = logging.getLogger(self.__class__.__name__)
+        handler = RainbowLoggingHandler(sys.stderr, color_funcName=('black', 'yellow', True))
+        formatter = logging.Formatter('%(asctime)s(%(name).6s)%(levelname).3s: %(message)s')
+        handler.setFormatter(formatter)
+        self.log.addHandler(handler)
+        self.log.setLevel(logging.DEBUG)
 
         # these might not be needed if we override the functions with other heuristics.
         self.epsilon = 1e-3
@@ -185,15 +202,18 @@ class ConstructiveMapperFromFractional(mapper.AbstractMapper):
     def set_initial_bin_preferences(self, original_best_bins, total_bin_capacity):
         # sets the preference to the same ordering which is given by the fractional mapping variables for the best bins
         min_pref = float('inf')
+        self.objective_value_of_fractional_opt = 0.0
         for bin in original_best_bins:
             if bin is original_best_bins[-1]:
                 # the last item has less preference than its capacity
-                bin.preference = total_bin_capacity - self.total_item_weight
+                bin.preference = self.total_item_weight - (total_bin_capacity - bin['capacity'])
             else:
                 bin.preference = bin['capacity']
+            self.objective_value_of_fractional_opt += bin['fixed_cost'] + bin.preference * bin['unit_cost']
             if bin.preference < min_pref:
                 min_pref = bin.preference
         self.min_bin_preference = min_pref
+        self.log.debug("Minimum bin preference set to {}".format(self.min_bin_preference))
 
     def get_fist_best_bins(self):
         """
@@ -211,6 +231,9 @@ class ConstructiveMapperFromFractional(mapper.AbstractMapper):
             if total_bin_capacity >= self.total_item_weight:
                 self.set_initial_bin_preferences(best_bins, total_bin_capacity)
                 return best_bins
+        else:
+            raise UnfeasibleBinPacking("Total item weight {} is more than all the bin capacities {}".
+                                       format(self.total_item_weight, total_bin_capacity))
 
     def map_all_items_to_bins(self, best_bins, infra, ns):
         """
@@ -255,7 +278,7 @@ class ConstructiveMapperFromFractional(mapper.AbstractMapper):
             item_to_be_moved = None
             for item in overloading_items:
                 for bin in best_bins:
-                    if bin.does_item_fit(item):
+                    if bin.does_item_fit(item) and bin is not item.mapped_to:
                         # Difference between the current mapping and the possible relocation.
                         # This value might be even negative, if the rounding did not consider taking the first fitting bin in the
                         # ordered best bin list.
@@ -266,8 +289,13 @@ class ConstructiveMapperFromFractional(mapper.AbstractMapper):
                             target_bin = bin
                             item_to_be_moved = item
             if target_bin is not None:
+                self.log.debug("Improving mapping by moving item {} to target bin {}".
+                               format(item_to_be_moved, target_bin))
                 # delete the mapping of the foudn item from its current mapping
+                if item_to_be_moved not in item_to_be_moved.mapped_to.mapped_here:
+                    raise Exception("Item is not foudn in mapped_to of a bin where it should have been!")
                 item_to_be_moved.mapped_to.mapped_here.remove(item_to_be_moved)
+                target_bin.mapped_here.append(item_to_be_moved)
                 # set its mapping to the target bin
                 item_to_be_moved.mapped_to = target_bin
                 # NOTE: even if this is the very last improvement, it will turn out in the next call of this function
@@ -296,6 +324,7 @@ class ConstructiveMapperFromFractional(mapper.AbstractMapper):
                     # all later introduced bins are less and less preferred
                     bin.preference = self.min_bin_preference - self.epsilon
                     self.min_bin_preference = bin.preference
+                    self.log.debug("Introducing next new bin {} with minimal preference {}".format(bin, bin.preference))
                     # we return with the first one right away
                     return best_bins, True
             else:
@@ -305,15 +334,31 @@ class ConstructiveMapperFromFractional(mapper.AbstractMapper):
     def check_bin_mapping(self):
         """
         Checks if the constructed solution for the bin packing is valid.
+        Also calculates the objective_value_of_integer_solution if the solution is valid.
 
         :return:
         """
+        self.objective_value_of_integer_solution = 0.0
         for item in self.items:
             if item.mapped_to is None:
+                self.objective_value_of_integer_solution = None
                 return False
+            else:
+                self.objective_value_of_integer_solution += item.mapped_to.get_variable_cost_of_mapping(item)
+        all_items = list(self.items)
         for bin in self.bins:
             if bin.is_overloaded:
+                self.objective_value_of_integer_solution = None
                 return False
+            elif len(bin.mapped_here) > 0:
+                for item in bin.mapped_here:
+                    if item in all_items:
+                        all_items.remove(item)
+                    else:
+                        raise Exception("Wrong item mapping structure!")
+                self.objective_value_of_integer_solution += bin['fixed_cost']
+        if len(all_items) != 0:
+            raise Exception("Item not found in mapped_here structure in any bin!")
         return True
 
     def construct_output_mapping(self, mapping):
@@ -357,6 +402,7 @@ class ConstructiveMapperFromFractional(mapper.AbstractMapper):
                 # get new bin : if there is nothing left to improve with the current bins, we can introduce new ones
                 best_bins, can_add_next_bin = self.get_new_best_bins(best_bins, infra, ns)
         except UnfeasibleBinPacking as ubp:
+            self.log.exception(ubp.msg)
             raise ubp
             # TODO: for development keep it raised!
             # mapping['worked'] = False
@@ -365,6 +411,8 @@ class ConstructiveMapperFromFractional(mapper.AbstractMapper):
         if not self.check_bin_mapping():
             return mapping
         else:
+            self.log.info("Bin packing solution found with objective value {}, while fractional optimal value is {}".
+                          format(self.objective_value_of_integer_solution, self.objective_value_of_fractional_opt))
             mapping = self.construct_output_mapping(mapping)
 
         return mapping
