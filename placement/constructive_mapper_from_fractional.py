@@ -188,16 +188,24 @@ class ConstructiveMapperFromFractional(mapper.AbstractMapper):
         :param ns:
         :return:
         """
-        for n, node_dict in infa.nodes(data=True):
-            # TODO: fill in from values of the node based on checker.
-            self.bins.append(Bin(n, node_dict[self.infra_node_capacity_str],
-                                    node_dict[self.infra_fixed_cost_str],
-                                    node_dict[self.infra_unit_cost_str], node_dict, mapped_here=[]))
         for n, node_dict in ns.nodes(data=True):
             # TODO: fill in from values of the node based on checker.
             # TODO (we might filter out APs and endpoints here already -- If we know what exactly will be their 'type' fields)
             # initialize the problem with all possible bins
-            self.items.append(Item(n, node_dict[self.nf_demand_str], node_dict, self.bins))
+            self.items.append(Item(n, node_dict[self.nf_demand_str], node_dict, possible_bins=[]))
+        min_weighted_item = min(self.items, key=lambda i: i['weight'])
+        for n, node_dict in infa.nodes(data=True):
+            # TODO: fill in from values of the node based on checker.
+            bin = Bin(n, node_dict[self.infra_node_capacity_str], node_dict[self.infra_fixed_cost_str],
+                      node_dict[self.infra_unit_cost_str], node_dict, mapped_here=[])
+            if bin['capacity'] >= min_weighted_item['weight']:
+                self.bins.append(bin)
+            else:
+                self.log.info("Discarding bin {} because it cannot fit even the smallest item".format(bin))
+        if len(self.bins) == 0:
+            raise UnfeasibleBinPacking("None of the bins can host the smallest item!")
+        for item in self.items:
+            item.possible_bins = self.bins
 
     def set_initial_bin_preferences(self, original_best_bins, total_bin_capacity):
         # sets the preference to the same ordering which is given by the fractional mapping variables for the best bins
@@ -324,7 +332,7 @@ class ConstructiveMapperFromFractional(mapper.AbstractMapper):
                     # all later introduced bins are less and less preferred
                     bin.preference = self.min_bin_preference - self.epsilon
                     self.min_bin_preference = bin.preference
-                    self.log.debug("Introducing next new bin {} with minimal preference {}".format(bin, bin.preference))
+                    self.log.info("Introducing next new bin {} with minimal preference {}".format(bin, bin.preference))
                     # we return with the first one right away
                     return best_bins, True
             else:
@@ -409,6 +417,7 @@ class ConstructiveMapperFromFractional(mapper.AbstractMapper):
             # return mapping
 
         if not self.check_bin_mapping():
+            self.log.info("Bin packing solution not found by the heuristic!")
             return mapping
         else:
             self.log.info("Bin packing solution found with objective value {}, while fractional optimal value is {}".

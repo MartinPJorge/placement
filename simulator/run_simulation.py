@@ -9,10 +9,15 @@ if __name__ == '__main__':
     for seed in range(10):
         for spd_prob in range(1,10):
             try:
-                service_instance = gs.ServiceGMLGraph(substrate_network, [50,15,50,40,100], seed, spd_prob/10.0)
+                service_instance = gs.ServiceGMLGraph(substrate_network, [50,15,40], seed, spd_prob/10.0)
                 print("\n\nSEED: {}, series-parallel ratio: {}".format(seed, spd_prob/10.0))
                 checker = cmf.VolatileResourcesChecker()
                 mapper = cmf.ConstructiveMapperFromFractional(checker)
                 mapper.map(substrate_network, service_instance)
             except cmf.UnfeasibleBinPacking:
-                pass
+                print("Bin packing is infeasible")
+    # NOTE: forcing the algorithm to introduce new bin example: setting all item cost to 900, setting node 42 from 780 to 1200 cap, and node 47 from 10000 to 1000
+    # service_instance = gs.ServiceGMLGraph(substrate_network, [7], 0, 0.5)
+    # checker = cmf.VolatileResourcesChecker()
+    # mapper = cmf.ConstructiveMapperFromFractional(checker)
+    # mapper.map(substrate_network, service_instance)
