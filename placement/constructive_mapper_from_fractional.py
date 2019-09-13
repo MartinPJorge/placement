@@ -200,7 +200,7 @@ class ConstructiveMapperFromFractional(mapper.AbstractMapper):
                       node_dict[self.infra_unit_cost_str], node_dict, mapped_here=[])
             if bin['capacity'] >= min_weighted_item['weight']:
                 self.bins.append(bin)
-            else:
+            elif bin['capacity'] > self.epsilon:
                 self.log.info("Discarding bin {} because it cannot fit even the smallest item".format(bin))
         if len(self.bins) == 0:
             raise UnfeasibleBinPacking("None of the bins can host the smallest item!")
