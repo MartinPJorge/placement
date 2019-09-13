@@ -9,8 +9,9 @@ if __name__ == '__main__':
     for seed in range(10):
         for spd_prob in range(1,10):
             try:
-                service_instance = gs.ServiceGMLGraph(substrate_network, [50,15,40], seed, spd_prob/10.0)
                 print("\n\nSEED: {}, series-parallel ratio: {}".format(seed, spd_prob/10.0))
+                service_instance = gs.ServiceGMLGraph(substrate_network,  connected_component_sizes=[50,15,40], sfc_delays=[0.01, 0.015],
+                                                      seed=seed, series_parallel_ratio=spd_prob/10.0)
                 checker = cmf.VolatileResourcesChecker()
                 mapper = cmf.ConstructiveMapperFromFractional(checker)
                 mapper.map(substrate_network, service_instance)

@@ -5,7 +5,7 @@ import sys
 
 from placement import mapper
 from placement import checker
-
+from simulator.generate_service import ServiceGMLGraph, InfrastructureGMLGraph
 
 class UnfeasibleBinPacking(Exception):
 
@@ -128,8 +128,22 @@ class BasePruningStep(metaclass=ABCMeta):
 
 class PruneLocalityConstraints(BasePruningStep):
 
-    def prune_possible_mappings(self, infra, ns, items : list, bins : list):
-        # TODO: remove possible bins which contradict the locality constraints stored in the VNF/their corresponding Item.
+    def prune_possible_mappings(self, infra : InfrastructureGMLGraph, ns : ServiceGMLGraph, items : list, bins : list):
+        """
+        Remove possible bins which contradict the locality constraints stored in the VNF/their corresponding Item.
+
+        :param infra:
+        :param ns:
+        :param items:
+        :param bins:
+        :return:
+        """
+        for item in items:
+            if ns.location_constr_str in item['node_dict']:
+                # we need to make a list from the bins, otherwise we couldnt remove from it
+                for bin in list(item.possible_bins):
+                    if bin['id'] not in item['node_dict'][ns.location_constr_str]:
+                        item.possible_bins.remove(bin)
         return items, bins
 
 
@@ -166,13 +180,6 @@ class ConstructiveMapperFromFractional(mapper.AbstractMapper):
         self.epsilon = 1e-3
         self.min_bin_preference = None
 
-        # TODO: move these info to the checker
-        self.infra_node_capacity_str = 'cpu'
-        self.infra_fixed_cost_str = 'fixed_cost'
-        self.infra_unit_cost_str = 'unit_cost'
-        self.nf_demand_str = 'weight'
-
-
     @property
     def total_item_weight(self):
          return sum(map(lambda i: i['weight'], self.items))
@@ -180,11 +187,11 @@ class ConstructiveMapperFromFractional(mapper.AbstractMapper):
     def get_bins_sorted_by_filled_unit_cost(self):
         return sorted(self.bins, key=lambda b: b.filled_unit_cost)
 
-    def get_base_bin_packing_problem(self, infa, ns):
+    def get_base_bin_packing_problem(self, infra, ns):
         """
         Constructs a base binpacking problem without filtering out any of the possible mappings.
 
-        :param infa:
+        :param infra:
         :param ns:
         :return:
         """
@@ -192,12 +199,12 @@ class ConstructiveMapperFromFractional(mapper.AbstractMapper):
             # TODO: fill in from values of the node based on checker.
             # TODO (we might filter out APs and endpoints here already -- If we know what exactly will be their 'type' fields)
             # initialize the problem with all possible bins
-            self.items.append(Item(n, node_dict[self.nf_demand_str], node_dict, possible_bins=[]))
+            self.items.append(Item(n, node_dict[ns.nf_demand_str], node_dict, possible_bins=[]))
         min_weighted_item = min(self.items, key=lambda i: i['weight'])
-        for n, node_dict in infa.nodes(data=True):
+        for n, node_dict in infra.nodes(data=True):
             # TODO: fill in from values of the node based on checker.
-            bin = Bin(n, node_dict[self.infra_node_capacity_str], node_dict[self.infra_fixed_cost_str],
-                      node_dict[self.infra_unit_cost_str], node_dict, mapped_here=[])
+            bin = Bin(n, node_dict[infra.infra_node_capacity_str], node_dict[infra.infra_fixed_cost_str],
+                      node_dict[infra.infra_unit_cost_str], node_dict, mapped_here=[])
             if bin['capacity'] >= min_weighted_item['weight']:
                 self.bins.append(bin)
             elif bin['capacity'] > self.epsilon:
@@ -205,7 +212,9 @@ class ConstructiveMapperFromFractional(mapper.AbstractMapper):
         if len(self.bins) == 0:
             raise UnfeasibleBinPacking("None of the bins can host the smallest item!")
         for item in self.items:
-            item.possible_bins = self.bins
+            # important to have a separate list for the possible bins for each item
+            # (removing from one, Must not be reflected in another item's possible bins)
+            item.possible_bins.extend(self.bins)
 
     def set_initial_bin_preferences(self, original_best_bins, total_bin_capacity):
         # sets the preference to the same ordering which is given by the fractional mapping variables for the best bins
@@ -258,10 +267,16 @@ class ConstructiveMapperFromFractional(mapper.AbstractMapper):
         """
         for item in self.items:
             best_and_possible_bins = [b for b in best_bins if b in item.possible_bins]
-            if len(best_and_possible_bins):
+            if len(best_and_possible_bins) > 0:
                 chosen_bin = max(best_and_possible_bins, key=lambda b: b.preference)
                 item.mapped_to = chosen_bin
                 chosen_bin.mapped_here.append(item)
+            elif len(item.possible_bins) == 1:
+                item.mapped_to = item.possible_bins[0]
+                item.possible_bins[0].mapped_here.append(item)
+            elif len(item.possible_bins) > 1:
+                raise NotImplementedError("Bin packing heuristic is not implemented for unambiguous initial mapping outside of the "
+                                          "best bins provided by the fractional optimal solution")
             else:
                 raise UnfeasibleBinPacking("Item {} cannot be mapped anywhere".format(item))
 
@@ -369,6 +384,19 @@ class ConstructiveMapperFromFractional(mapper.AbstractMapper):
             raise Exception("Item not found in mapped_here structure in any bin!")
         return True
 
+    def check_other_constraints(self, infra : InfrastructureGMLGraph, ns : ServiceGMLGraph):
+        """
+        Checks whether the output indeed satisfies all volatile resources constraints (capacity, can be checked by
+        the check_bin_mapping function)
+
+        :return:
+        """
+        for item in self.items:
+            if ns.location_constr_str in item['node_dict']:
+                if item.mapped_to['id'] not in item['node_dict'][ns.location_constr_str]:
+                    return False
+        return True
+
     def construct_output_mapping(self, mapping):
         """
 
@@ -419,6 +447,9 @@ class ConstructiveMapperFromFractional(mapper.AbstractMapper):
         if not self.check_bin_mapping():
             self.log.info("Bin packing solution not found by the heuristic!")
             return mapping
+        elif not self.check_other_constraints(infra, ns):
+            self.log.error("Bin packing result does not respect some constraint!")
+            raise Exception("Bin packing result does not respect some constraint!")
         else:
             self.log.info("Bin packing solution found with objective value {}, while fractional optimal value is {}".
                           format(self.objective_value_of_integer_solution, self.objective_value_of_fractional_opt))
