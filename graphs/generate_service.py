@@ -35,7 +35,9 @@ class InfrastructureGMLGraph(GMLGraph):
         self.infra_unit_cost_str = 'unit_cost'
         self.endpoint_type_str = 'endpoint'
         self.type_str = 'type'
-        # self.access_point_str = TODO: These might have multiple types, just like the switches and servers!
+        # TODO: These might have multiple types, just like the switches and servers!
+        self.access_point_strs = ['pico_cell', 'micro_cell', 'macro_cell']
+        self.server_strs = ['m{}_server'.format(i) for i in range(1,4)]
 
         super(InfrastructureGMLGraph, self).__init__(incoming_graph_data, gml_file=gml_file, label=label, **attr)
         # NOTE: duplication of information storage should be avoided (do not store information in class attributes, which can de
@@ -43,7 +45,12 @@ class InfrastructureGMLGraph(GMLGraph):
         # input information in the GML file (i.e. mobility pattern)
         # TODO: calculate coverage probabilities from the created mobility pattern
         self.random = random.Random(seed)
+
+        # store ID-s of all relevant node types
+        # TODO: do the same with fog nodes/ mobile nodes
         self.endpoint_ids = []
+        self.access_point_ids = []
+        self.server_ids = []
         for n, node_dict in self.nodes(data=True):
             # TODO: read or generate or set statically the costs of each nodes?
             node_dict[self.infra_fixed_cost_str] = self.random.uniform(0, 10)
@@ -51,6 +58,10 @@ class InfrastructureGMLGraph(GMLGraph):
 
             if node_dict[self.type_str] == self.endpoint_type_str:
                 self.endpoint_ids.append(n)
+            elif node_dict[self.type_str] in self.access_point_strs:
+                self.access_point_ids.append(n)
+            elif node_dict[self.type_str] in self.server_strs:
+                self.server_ids.append(n)
 
     def check_graph(self):
         """
