@@ -5,7 +5,6 @@ import sys
 
 from placement import mapper
 from placement import checker
-from simulator.generate_service import ServiceGMLGraph, InfrastructureGMLGraph
 
 class UnfeasibleBinPacking(Exception):
 
@@ -128,7 +127,7 @@ class BasePruningStep(metaclass=ABCMeta):
 
 class PruneLocalityConstraints(BasePruningStep):
 
-    def prune_possible_mappings(self, infra : InfrastructureGMLGraph, ns : ServiceGMLGraph, items : list, bins : list):
+    def prune_possible_mappings(self, infra, ns, items : list, bins : list):
         """
         Remove possible bins which contradict the locality constraints stored in the VNF/their corresponding Item.
 
@@ -384,7 +383,7 @@ class ConstructiveMapperFromFractional(mapper.AbstractMapper):
             raise Exception("Item not found in mapped_here structure in any bin!")
         return True
 
-    def check_other_constraints(self, infra : InfrastructureGMLGraph, ns : ServiceGMLGraph):
+    def check_other_constraints(self, infra, ns):
         """
         Checks whether the output indeed satisfies all volatile resources constraints (capacity, can be checked by
         the check_bin_mapping function)
