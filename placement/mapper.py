@@ -4,8 +4,9 @@ import copy
 import networkx as nx
 import sys
 from itertools import islice
-from placement.checker import AbstractChecker, CheckFogDigraphs
+from .checker import AbstractChecker, CheckFogDigraphs
 from functools import reduce
+
 
 class AbstractMapper(metaclass=ABCMeta):
 

@@ -3,9 +3,10 @@ import logging
 from rainbow_logging_handler import RainbowLoggingHandler
 import sys
 
-from placement import mapper
-from placement import checker
+from .mapper import AbstractMapper
+from .checker import AbstractChecker
 from graphs.generate_service import ServiceGMLGraph, InfrastructureGMLGraph
+
 
 class UnfeasibleBinPacking(Exception):
 
@@ -14,7 +15,7 @@ class UnfeasibleBinPacking(Exception):
         self.msg = msg
 
 
-class VolatileResourcesChecker(checker.AbstractChecker):
+class VolatileResourcesChecker(AbstractChecker):
 
     def __init__(self):
         super(VolatileResourcesChecker, self).__init__()
@@ -151,9 +152,9 @@ class PruneLocalityConstraints(BasePruningStep):
 # class ASDSDASDAS(BasePruningStep)
 
 
-class ConstructiveMapperFromFractional(mapper.AbstractMapper):
+class ConstructiveMapperFromFractional(AbstractMapper):
 
-    def __init__(self, checker: checker.AbstractChecker):
+    def __init__(self, checker: AbstractChecker):
         """
         Constructs a solution for the volatile resources problem based on the fractional optimal solution
         for the inherent bin packing problem as defined by Cambazard, et. al. -- Bin Packing with Linear Usage
