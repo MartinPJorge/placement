@@ -9,10 +9,11 @@ InfraTypes = {
     'servers': "server",
     'mobiles': "mobile"
 }
-
+# TODO: refactor the loading to a class to avoid parameter multiplication and/or global variables
 infra_type_sets = {itype: [] for itype in InfraTypes.values()}
 
 def fill_service(ampl: AMPL, service: nx.classes.graph.Graph) -> None:
+    # TODO: add edges
     vnfs, demands = [], []
     service_graph = ampl.param['serviceGraph'].value()
 
@@ -33,6 +34,7 @@ def fill_service(ampl: AMPL, service: nx.classes.graph.Graph) -> None:
 
 
 def fill_infra(ampl: AMPL, infra: nx.classes.graph.Graph) -> None:
+    # TODO: add edges
     infra_graph = ampl.param['infraGraph'].value()
     infra_set = []
     resources = {}
