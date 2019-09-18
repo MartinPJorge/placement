@@ -6,7 +6,7 @@ import heuristic.placement.constructive_mapper_from_fractional as cmf
 
 
 if __name__ == '__main__':
-    substrate_network = gs.InfrastructureGMLGraph(gml_file="../infras/large-infra.gml", label='id')
+    substrate_network = gs.InfrastructureGMLGraph(gml_file="../graphs/large-infra.gml", label='id')
     # TODO: simulator repeats this cycle multiple times with different service generation parameters.
     for seed in range(10):
         for spd_prob in range(1,10):
