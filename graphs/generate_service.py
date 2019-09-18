@@ -51,6 +51,7 @@ class InfrastructureGMLGraph(GMLGraph):
         self.endpoint_ids = []
         self.access_point_ids = []
         self.server_ids = []
+        self.mobile_ids = []
         for n, node_dict in self.nodes(data=True):
             # TODO: read or generate or set statically the costs of each nodes?
             node_dict[self.infra_fixed_cost_str] = self.random.uniform(0, 10)

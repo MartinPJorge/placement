@@ -6,22 +6,19 @@ import argparse
 
 import graphs.generate_service as gs
 
-InfraTypes = {
-    'APs': "AP",
-    'servers': "server",
-    'mobiles': "mobile"
-}
-# TODO: refactor the loading to a class to avoid parameter multiplication and/or global variables
-infra_type_sets = {itype: [] for itype in InfraTypes.values()}
+AMPLInfraTypes = ['APs', 'servers', 'mobiles']
 
-def fill_service(ampl: AMPL, service: nx.classes.graph.Graph) -> None:
+# TODO: refactor the loading to a class to avoid parameter multiplication and/or global variables
+infra_type_sets = {itype: [] for itype in AMPLInfraTypes}
+
+def fill_service(ampl: AMPL, service: gs.ServiceGMLGraph) -> None:
     # TODO: add edges
     vnfs, demands = [], []
     service_graph = ampl.param['serviceGraph'].value()
 
     for vnf_id, vnf_data in service.nodes(data=True):
-        vnfs += [vnf_data['name']]
-        demands += [vnf_data['demand']]
+        vnfs += [vnf_id]
+        demands += [vnf_data[service.nf_demand_str]]
 
     # Set the VNFs
     ampl.set['vertices'][service_graph] = vnfs
@@ -35,22 +32,26 @@ def fill_service(ampl: AMPL, service: nx.classes.graph.Graph) -> None:
     ampl.setData(df)
 
 
-def fill_infra(ampl: AMPL, infra: nx.classes.graph.Graph) -> None:
+def fill_infra(ampl: AMPL, infra: gs.InfrastructureGMLGraph) -> None:
     # TODO: add edges
     infra_graph = ampl.param['infraGraph'].value()
     infra_set = []
     resources = {}
     cost_unit_demand = {}
-    for infra_id, infra_data in infra.nodes(data=True):
-        infra_name = infra_data['name']
-        infra_set.append(infra_name)
-        infra_type_sets[infra_data['type']].append(infra_name)
-        resources[infra_name] = infra_data['resource']
-        cost_unit_demand[infra_name] = infra_data['cost']
+    for ampl_infra_type, id_list in zip(AMPLInfraTypes,
+                                        [infra.access_point_ids, infra.server_ids, infra.mobile_ids]):
+        for infra_id in id_list:
+            infra_data = infra.node[infra_id]
+            infra_name = infra_data['name']
+            # NOTE: maybe we should use ID-s instead of names (ID uniqueness is ensured by the networkx structure, name not surely unique)
+            infra_set.append(infra_name)
+            infra_type_sets[ampl_infra_type].append(infra_name)
+            resources[infra_name] = infra_data[infra.infra_node_capacity_str]
+            cost_unit_demand[infra_name] = infra_data[infra.infra_unit_cost_str]
 
     # Set AMPL object
-    for itype, infra_set_name in InfraTypes.items():
-        ampl.set[itype] = infra_type_sets[infra_set_name]
+    for ampl_infra_type in AMPLInfraTypes:
+        ampl.set[ampl_infra_type] = infra_type_sets[ampl_infra_type]
 
     ampl.set['vertices'][infra_graph] = infra_set
     df = DataFrame('vertices', 'resources')
@@ -64,13 +65,13 @@ def fill_infra(ampl: AMPL, infra: nx.classes.graph.Graph) -> None:
 
 def fill_AP_coverage_probabilities(ampl: AMPL, interval_length: int) -> None:
     subintervals = [i for i in range(1, interval_length + 1)]
-    APs = infra_type_sets[InfraTypes['APs']]
+    APs = infra_type_sets[AMPLInfraTypes['APs']]
     df = DataFrame(('AP_name', 'subinterval'), 'prob')
     df.setValues({(AP, subint): 0.9 for AP in APs for subint in subintervals})
     ampl.param['prob_AP'].setValues(df)
 
 
-def get_complete_ampl_model_data(service : gs.ServiceGMLGraph, infra : gs.InfrastructureGMLGraph) -> AMPL:
+def get_complete_ampl_model_data(ampl_model_path, service : gs.ServiceGMLGraph, infra : gs.InfrastructureGMLGraph) -> AMPL:
     """
     Reads all service and infrastructure information to AMPL python data structure
 
@@ -79,6 +80,10 @@ def get_complete_ampl_model_data(service : gs.ServiceGMLGraph, infra : gs.Infras
     :return:
     """
     ampl = AMPL()
+    ampl.read(ampl_model_path)
+    ampl.set['graph'] = [infra.name, service.name]
+    ampl.param['infraGraph'] = infra.name
+    ampl.param['serviceGraph'] = service.name
     fill_service(ampl, service)
     fill_infra(ampl, infra)
     # TODO: read infraGraph interval_length serviceGraph etc. from the service and infra
