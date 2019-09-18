@@ -1,0 +1,3 @@
+[submodule "heuristic"]
+	path = heuristic
+	url = git@github.com:MartinPJorge/placement-fork-bme-uc3m.git
