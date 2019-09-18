@@ -4,6 +4,8 @@ import networkx as nx
 from amplpy import AMPL, DataFrame
 import argparse
 
+import graphs.generate_service as gs
+
 InfraTypes = {
     'APs': "AP",
     'servers': "server",
@@ -66,6 +68,21 @@ def fill_AP_coverage_probabilities(ampl: AMPL, interval_length: int) -> None:
     df = DataFrame(('AP_name', 'subinterval'), 'prob')
     df.setValues({(AP, subint): 0.9 for AP in APs for subint in subintervals})
     ampl.param['prob_AP'].setValues(df)
+
+
+def get_complete_ampl_model_data(service : gs.ServiceGMLGraph, infra : gs.InfrastructureGMLGraph) -> AMPL:
+    """
+    Reads all service and infrastructure information to AMPL python data structure
+
+    :param service:
+    :param infra:
+    :return:
+    """
+    ampl = AMPL()
+    fill_service(ampl, service)
+    fill_infra(ampl, infra)
+    # TODO: read infraGraph interval_length serviceGraph etc. from the service and infra
+    return ampl
 
 
 if __name__ == '__main__':
