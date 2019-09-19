@@ -129,11 +129,12 @@ class InfrastructureGMLGraph(GMLGraph):
                 # there must be at least one endpoint in each cluster
                 endpoint = filter(lambda m: m in self.endpoint_ids, connected_comp.nodes).__next__()
                 self.cluster_endpoint_ids.append(endpoint)
-                master_mobile = self.random.choice([filter(lambda m: m in self.mobile_ids, connected_comp.nodes)])
+                master_mobile = self.random.choice([m for m in filter(lambda m: m in self.mobile_ids, connected_comp.nodes)])
                 mobile_cluster_id = self.mobile_cluster_prefix + str(master_mobile)
+                self.ap_coverage_probabilities[mobile_cluster_id] = {}
                 move_distance = cluster_move_distances.pop()
                 dist_in_one_interval = 2 * move_distance / float(self.time_interval_count)
-                init_master_coordinates = (self.nodes[master_mobile]['lat'], self.nodes['lon'])
+                init_master_coordinates = (self.nodes[master_mobile]['lat'], self.nodes[master_mobile]['lon'])
                 best_move_vector = self.minimize_direction_of_move(init_master_coordinates, dist_in_one_interval)
                 # e.g. direction_multiplier_list = [0, 1, 2, 3, 2, 1], where time_interval_count = 6 OR 7
                 direction_multiplier_list = list(range(0, self.time_interval_count//2))
@@ -147,7 +148,7 @@ class InfrastructureGMLGraph(GMLGraph):
                 for dir_mul in direction_multiplier_list:
                     current_p = push_point(init_master_coordinates, best_move_vector, dir_mul * dist_in_one_interval)
                     time_interval_idx = time_intervald_indexes.pop()
-                    self.ap_coverage_probabilities[mobile_cluster_id] = {time_interval_idx: {}}
+                    self.ap_coverage_probabilities[mobile_cluster_id][time_interval_idx] = {}
                     for ap_id in self.access_point_ids:
                         self.ap_coverage_probabilities[mobile_cluster_id][time_interval_idx][ap_id] = \
                             self.get_coverage_probability(current_p, ap_id)
@@ -164,11 +165,14 @@ class InfrastructureGMLGraph(GMLGraph):
         """
         Pjx, Pjy = self.relative_coordinates(current_mobile_pos, self.nodes[ap_id])
         dist = math.sqrt(Pjx ** 2 + Pjy ** 2)
-        reach = self.nodes[ap_id][self.ap_reach_str]
+        if self.ap_reach_str not in self.nodes[ap_id]:
+            reach = 0.02
+        else:
+            reach = self.nodes[ap_id][self.ap_reach_str]
         # TODO: get better model for coverage probability dropping based on research
         # drops to 0.0 probability somewhere after 20% beyond the reach of the AP, decreases squared from 1.0
         probability = 1.0
-        raw_probability = - (dist / (reach * 1.2)) ** 2 + 1.1
+        raw_probability = - (dist / (reach)) ** 2 + 1.0
         if raw_probability < 0.0:
             probability = 0.0
         elif raw_probability < 1.0:
@@ -212,7 +216,7 @@ class InfrastructureGMLGraph(GMLGraph):
 
     def evaluate_total_distance_of_aps_from_line(self, init_master_coordinates, alpha):
         """
-        Calculates the function: sum_{j for all AP} |sin(alpha)Pjx - Pjy|, which gives the sum of the distances of each AP
+        Calculates the function: sum_{j for all AP} cos(aplha)|tan(alpha)Pjx - Pjy|, which gives the sum of the distances of each AP
         from a line identified by init_master_coordinates and alpha.
 
         :param alpha:
@@ -220,7 +224,7 @@ class InfrastructureGMLGraph(GMLGraph):
         """
         total_dist = 0.0
         for Pjx, Pjy in self.relative_ap_coordinates(init_master_coordinates):
-            total_dist += math.fabs(math.sin(alpha) * Pjx - Pjy)
+            total_dist += math.cos(alpha) * math.fabs(math.tan(alpha) * Pjx - Pjy)
         return total_dist
 
     def get_best_alpha(self, init_master_coordinates):
@@ -229,8 +233,9 @@ class InfrastructureGMLGraph(GMLGraph):
         of distances from all AP. alpha in (-pi/2, pi/2)
         Set origo to init_master_coordinates, line: y = tan (alpha) x
         Coordinate of APj in this system: Pjx, Pjy
-        Line point distance d(e, APj) = |sin(aplha) Pjx - Pjy|
-        Summing up for all APj, the minimum can only be at one of aplha_j = arcsin(Pjy/Pjx)
+        Line 0 = Ax + By + C distance from point P=(x0,y0): |Ax0 + By0 + C| / sqrt(A**2 + B**2)
+        Line point distance d(e, APj) = cos(alpha) |tan(aplha) Pjx - Pjy|
+        Summing up for all APj, the minimum can only be at one of aplha_j = arctan(Pjy/Pjx)
 
         :param init_master_coordinates:
         :return:
@@ -239,24 +244,15 @@ class InfrastructureGMLGraph(GMLGraph):
         best_alpha = None
         for Pjx, Pjy in self.relative_ap_coordinates(init_master_coordinates):
             if Pjx == 0.0:
-                # This AP contributes a constant to the sum, so its corresponding zerus cannot be min place
-                continue
-            elif math.fabs(Pjy) > math.fabs(Pjx):
-                # we cannot calculate arcsin, this components does not have a zerus
-                if Pjx > 0.0:
-                    # the component's min is at the beginning of the interval
-                    alpha_j = - math.pi / 2.0
-                else: # Pjx < 0.0
-                    # the component's min is at the end of the interval
-                    alpha_j = math.pi / 2.0
+                # This AP contributes a constant to the sum, so its corresponding zerus should not be min place
+                alpha_j = math.pi / 2
             else:
-                alpha_j = math.asin(Pjy / Pjx)
+                # This components zerus place might be a minimal place for the whole function
+                alpha_j = math.atan(Pjy / Pjx)
             total_dist = self.evaluate_total_distance_of_aps_from_line(init_master_coordinates, alpha_j)
             if total_dist < mindist:
                 best_alpha = alpha_j
-        if best_alpha is None:
-            # it means all APs are lined up and parallel with the x axis
-            best_alpha = 0.0
+                mindist = total_dist
         return best_alpha
 
     def minimize_direction_of_move(self, init_master_coordinates, dist_in_one_interval):

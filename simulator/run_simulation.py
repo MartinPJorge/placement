@@ -31,7 +31,8 @@ def run_some_tests(substrate_network):
 
 
 if __name__ == '__main__':
-    substrate_network = gs.InfrastructureGMLGraph(gml_file="../graphs/infra-2-clusters-20-cells.gml", label='id', name='infra')
+    substrate_network = gs.InfrastructureGMLGraph(gml_file="../graphs/infra-2-clusters-20-cells.gml", label='id', name='infra',
+                                                  cluster_move_distances=[0.002, 0.005], time_interval_count=12)
 
     # NOTE: forcing the algorithm to introduce new bin example: setting all item cost to 900, setting node 42 from 780 to 1200 cap, and node 47 from 10000 to 1000
     service_instance = gs.ServiceGMLGraph(substrate_network, [7], [0.01, 0.015], 0, 0.5, name='service')
