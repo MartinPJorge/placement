@@ -349,7 +349,7 @@ class ServiceGMLGraph(GMLGraph):
                 G.add_edge(u, v)
         for u in G.nodes:
             # TODO: add parameters
-            self.add_node(u, weight=self.random.uniform(35, 100), name=self.get_node_name(u))
+            self.add_node(u, weight=self.random.uniform(0.5, 1.05), name=self.get_node_name(u))
         for u,v,k in G.edges:
             if u != v and not self.has_edge(u, v):
                 # TODO: add parameters
@@ -375,6 +375,8 @@ class ServiceGMLGraph(GMLGraph):
         non_cluster_endpoints = [e for e in self.infra.endpoint_ids if e not in self.infra.cluster_endpoint_ids]
         self.random.shuffle(non_cluster_endpoints)
         infra_endpoints.extend(non_cluster_endpoints)
+        if len(self.connected_component_sizes) > len(infra_endpoints):
+            raise Exception("There are more components in the service graph than enpoints in the infra")
         loop_sfc_count = 0
         for connected_subgraph in self.get_connected_components():
             try:

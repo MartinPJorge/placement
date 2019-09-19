@@ -11,7 +11,7 @@ def run_some_tests(substrate_network):
         for spd_prob in range(1,10):
             try:
                 print("\n\nSEED: {}, series-parallel ratio: {}".format(seed, spd_prob/10.0))
-                service_instance = gs.ServiceGMLGraph(substrate_network,  connected_component_sizes=[50,15,40], sfc_delays=[0.01, 0.015],
+                service_instance = gs.ServiceGMLGraph(substrate_network, connected_component_sizes=[50,15], sfc_delays=[0.01, 0.015],
                                                       seed=seed, series_parallel_ratio=spd_prob/10.0, name='service')
                 checker = cmf.VolatileResourcesChecker()
                 mapper = cmf.ConstructiveMapperFromFractional(checker)
@@ -43,10 +43,10 @@ if __name__ == '__main__':
     except cmf.UnfeasibleBinPacking:
         print("Bin packing is infeasible")
 
-    ampl_object = graph2ampl.get_complete_ampl_model_data('../ampl/system-model.mod',
-                                                          service_instance, substrate_network)
+    # ampl_object = graph2ampl.get_complete_ampl_model_data('../ampl/system-model.mod',
+    #                                                       service_instance, substrate_network)
 
-    # run_some_tests(substrate_network)
+    run_some_tests(substrate_network)
 
 
 
