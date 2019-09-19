@@ -26,6 +26,7 @@ class GMLGraph(nx.DiGraph):
         nx.write_gml(self, file_path)
 
     def get_connected_components(self):
+        # NOTE: this is nasty, if causes problems anywhere else, we can figure out a better way to call weakly_connected_component_subgraphs
         tmp_class_name = self.__class__
         self.__class__ = nx.DiGraph
         cc = list(nx.weakly_connected_component_subgraphs(self))
@@ -296,7 +297,6 @@ class ServiceGMLGraph(GMLGraph):
         # =====================  attribute strings =================== #
         self.nf_demand_str = 'weight'
         self.location_constr_str = 'location_constraints'   # list of node ids, where an NF may be mapped
-        self.sfc_delays_list_str = 'sfc_delays'             # list of (delay, edge path) tuples containing chain delays.
 
         super(ServiceGMLGraph, self).__init__(incoming_graph_data=incoming_graph_data, **attr)
         self.connected_component_sizes = connected_component_sizes
@@ -311,9 +311,12 @@ class ServiceGMLGraph(GMLGraph):
         handler.setFormatter(formatter)
         self.log.addHandler(handler)
         self.log.setLevel(logging.DEBUG)
+        self.sfc_delays_list = []             # list of (delay, edge path) tuples containing chain delays.
         self._generate_structure()
-        # TODO: maybe use ID-s instead of 'name'
-        self.vnfs= [v['name'] for _,v in self.nodes(data=True)]
+        self.vnfs= [v['name'] for _, v in self.nodes(data=True)]
+
+    def get_node_name(self, id):
+        return 'nf' + str(id)
 
     def generate_series_parallel_graph(self, n):
         """
@@ -346,7 +349,7 @@ class ServiceGMLGraph(GMLGraph):
                 G.add_edge(u, v)
         for u in G.nodes:
             # TODO: add parameters
-            self.add_node(u, weight=self.random.uniform(35, 100))
+            self.add_node(u, weight=self.random.uniform(35, 100), name=self.get_node_name(u))
         for u,v,k in G.edges:
             if u != v and not self.has_edge(u, v):
                 # TODO: add parameters
@@ -363,26 +366,30 @@ class ServiceGMLGraph(GMLGraph):
 
     def _add_service_function_loops(self):
         """
-
+        Add an SFC with generated end to end delay starting from an endpoint and ending in one.
+        Cluster endpoints are always used.
 
         :return:
         """
-        # NOTE: this is nasty, if causes problems anywhere else, we can figure out a better way to call weakly_connected_component_subgraphs
+        infra_endpoints = list(self.infra.cluster_endpoint_ids)
+        non_cluster_endpoints = [e for e in self.infra.endpoint_ids if e not in self.infra.cluster_endpoint_ids]
+        self.random.shuffle(non_cluster_endpoints)
+        infra_endpoints.extend(non_cluster_endpoints)
+        loop_sfc_count = 0
         for connected_subgraph in self.get_connected_components():
             try:
                 loop = nx.find_cycle(connected_subgraph)
                 # assign the first node in the loop as the endpoint of the circular chain
                 endpoint_vnf_id = loop[0][0]
-                # TODO: add at least one SFC anchored to each cluster endpoint
-                endpoint_infra_id = self.random.choice(self.infra.endpoint_ids)
+                # first endpoint_infra_ids are from the clusters, so we start adding SFC-s from their endpoints
+                endpoint_infra_id = infra_endpoints[loop_sfc_count]
+                loop_sfc_count += 1
                 self.nodes[endpoint_vnf_id][self.location_constr_str] = [endpoint_infra_id]
                 # endpoints do not have resources
                 self.nodes[endpoint_vnf_id][self.nf_demand_str] = 0
-
-                # save chain latency info to .graph dict
                 sfc_delay = self.random.choice(self.sfc_delays)
-                # TODO: store in variable instead of gprahs dict! (more direct, NOTE: now only saves one, not all!!
-                self.graph[self.sfc_delays_list_str] = (sfc_delay, loop)
+                # Save SFC-s as tuples of delay and their vnf id path
+                self.sfc_delays_list.append((sfc_delay, loop))
                 self.log.debug("Adding SFC from VNF {} to endpoint {} with delay {} on path {}".
                                format(endpoint_vnf_id, endpoint_infra_id, sfc_delay, loop))
             except nx.NetworkXNoCycle:

@@ -37,8 +37,11 @@ if __name__ == '__main__':
     # NOTE: forcing the algorithm to introduce new bin example: setting all item cost to 900, setting node 42 from 780 to 1200 cap, and node 47 from 10000 to 1000
     service_instance = gs.ServiceGMLGraph(substrate_network, [7], [0.01, 0.015], 0, 0.5, name='service')
     checker = cmf.VolatileResourcesChecker()
-    mapper = cmf.ConstructiveMapperFromFractional(checker)
-    mapper.map(substrate_network, service_instance)
+    try:
+        mapper = cmf.ConstructiveMapperFromFractional(checker)
+        mapper.map(substrate_network, service_instance)
+    except cmf.UnfeasibleBinPacking:
+        print("Bin packing is infeasible")
 
     ampl_object = graph2ampl.get_complete_ampl_model_data('../ampl/system-model.mod',
                                                           service_instance, substrate_network)
