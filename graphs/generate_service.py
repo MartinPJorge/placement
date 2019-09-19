@@ -24,26 +24,48 @@ class GMLGraph(nx.DiGraph):
     def serialize(self, file_path):
         nx.write_gml(self, file_path)
 
+    def get_connected_components(self):
+        tmp_class_name = self.__class__
+        self.__class__ = nx.DiGraph
+        cc = list(nx.weakly_connected_component_subgraphs(self))
+        self.__class__ = tmp_class_name
+        return cc
+
 
 class InfrastructureGMLGraph(GMLGraph):
 
-    def __init__(self, incoming_graph_data=None, gml_file=None, label='label', seed=0, **attr):
+    def __init__(self, incoming_graph_data=None, gml_file=None, label='label', seed=0, cluster_move_distances=None,
+                 time_interval_count=None, **attr):
+        """
+        Reads a gml file constructed by mec-gen and generates the additional parameters.
+
+        :param time_interval_count: how many time frames are simulated
+        :param incoming_graph_data:
+        :param gml_file:
+        :param label:
+        :param seed:
+        :param cluster_move_distances: list of lengths of each cluster's line mobility pattern where the cluster goes there and back
+                                       during the simulated time interval.
+        :param attr:
+        """
 
         # =====================  attribute strings =================== #
+        self.time_interval_count = time_interval_count
         self.infra_node_capacity_str = 'cpu'
         self.infra_fixed_cost_str = 'fixed_cost'
         self.infra_unit_cost_str = 'unit_cost'
         self.endpoint_type_str = 'endpoint'
         self.type_str = 'type'
         # TODO: These might have multiple types, just like the switches and servers!
-        self.access_point_strs = ['pico_cell', 'micro_cell', 'macro_cell']
+        self.access_point_strs = ['pico_cell', 'micro_cell', 'macro_cell', 'cell']
         self.server_strs = ['m{}_server'.format(i) for i in range(1,4)]
+        self.server_strs.append('server')
+        self.mobile_node_str = 'fogNode'
 
         super(InfrastructureGMLGraph, self).__init__(incoming_graph_data, gml_file=gml_file, label=label, **attr)
         # NOTE: duplication of information storage should be avoided (do not store information in class attributes, which can de
         # directly accessed at the network x dicts of the class. Only create attributes, if if they need calculation based on the
         # input information in the GML file (i.e. mobility pattern)
-        # TODO: calculate coverage probabilities from the created mobility pattern
         self.random = random.Random(seed)
 
         # store ID-s of all relevant node types
@@ -63,6 +85,12 @@ class InfrastructureGMLGraph(GMLGraph):
                 self.access_point_ids.append(n)
             elif node_dict[self.type_str] in self.server_strs:
                 self.server_ids.append(n)
+            elif node_dict[self.type_str] == self.mobile_node_str:
+                self.mobile_ids.append(n)
+        self.cluster_endpoint_ids = []
+        # TODO: calculate coverage probabilities from the created mobility pattern
+        if cluster_move_distances is not None:
+            self.generate_mobility_pattern(cluster_move_distances)
 
     def check_graph(self):
         """
@@ -72,8 +100,36 @@ class InfrastructureGMLGraph(GMLGraph):
         """
         return True
 
+    def generate_mobility_pattern(self, cluster_move_distances):
+        """
+        Calculates the coverage probabilities of each cluster in each time instance by each AP.
+        A simple pattern is used: the cluster moves in a line distance specified in cluster_move_distances and moves back to the
+        starting point by the end of the simulated time interval.
 
-class ServiceGMLGraph(nx.DiGraph):
+        :return:
+        """
+        for connected_comp in self.get_connected_components():
+            # see if this is a mobile node cluster
+            if any(m in connected_comp for m in self.mobile_ids):
+                # there must be at least one endpoint in each cluster
+                endpoint = filter(lambda m: m in self.endpoint_ids, connected_comp.nodes).__next__()
+                self.cluster_endpoint_ids.append(endpoint)
+                master_mobile = self.random.choice([filter(lambda m: m in self.mobile_ids, connected_comp.nodes)])
+                move_distance = cluster_move_distances.pop()
+                init_master_coordinates = (self.nodes[master_mobile]['lat'], self.nodes['lon'])
+                best_move_vector = self.minimize_direction_of_move(init_master_coordinates, move_distance)
+
+    def minimize_direction_of_move(self, init_master_coordinates, move_distance):
+        """
+
+
+        :param init_master_coordinates:
+        :param move_distance:
+        :return:
+        """
+
+
+class ServiceGMLGraph(GMLGraph):
 
     def __init__(self, infra: InfrastructureGMLGraph, connected_component_sizes, sfc_delays, seed, series_parallel_ratio, incoming_graph_data=None, **attr):
         """
@@ -160,14 +216,12 @@ class ServiceGMLGraph(nx.DiGraph):
         :return:
         """
         # NOTE: this is nasty, if causes problems anywhere else, we can figure out a better way to call weakly_connected_component_subgraphs
-        self.__class__ = nx.DiGraph
-        cc = list(nx.weakly_connected_component_subgraphs(self))
-        self.__class__ = ServiceGMLGraph
-        for connected_subgraph in cc:
+        for connected_subgraph in self.get_connected_components():
             try:
                 loop = nx.find_cycle(connected_subgraph)
                 # assign the first node in the loop as the endpoint of the circular chain
                 endpoint_vnf_id = loop[0][0]
+                # TODO: add at least one SFC anchored to each cluster endpoint
                 endpoint_infra_id = self.random.choice(self.infra.endpoint_ids)
                 self.nodes[endpoint_vnf_id][self.location_constr_str] = [endpoint_infra_id]
                 # endpoints do not have resources
