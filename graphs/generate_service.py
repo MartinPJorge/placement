@@ -119,14 +119,32 @@ class InfrastructureGMLGraph(GMLGraph):
                 init_master_coordinates = (self.nodes[master_mobile]['lat'], self.nodes['lon'])
                 best_move_vector = self.minimize_direction_of_move(init_master_coordinates, move_distance)
 
+    def get_best_alpha(self, init_master_coordinates):
+        """
+        Uses trigonometric equation of a line fitting to init_master_coordinates to find an angle minimizing the sum
+        of distances from all AP.
+        Set origo to init_master_coordinates, line: y = tan (alpha) x
+        Coordinate of APj in this system: Pjx, Pjy
+        Line point distance d(e, APj) = |sin(aplha) Pjx - Pjy|
+        Summing up for all APj, the minimum can only be at one of aplha_j = arcsin(Pjy/Pjx)
+
+        :param init_master_coordinates:
+        :return:
+        """
+        mindist = float('inf')
+        best_aplha = None
+        # for
+        return best_aplha
+
     def minimize_direction_of_move(self, init_master_coordinates, move_distance):
         """
-
+        Calculates a direction which minimizes the sum of total distances from each access point.
 
         :param init_master_coordinates:
         :param move_distance:
-        :return:
+        :return: relative vector to init_master_coordinates
         """
+        alpha = self.get_best_alpha(init_master_coordinates)
 
 
 class ServiceGMLGraph(GMLGraph):
