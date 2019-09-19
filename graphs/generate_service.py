@@ -35,6 +35,9 @@ class InfrastructureGMLGraph(GMLGraph):
         self.infra_unit_cost_str = 'unit_cost'
         self.endpoint_type_str = 'endpoint'
         self.type_str = 'type'
+        self.server_type_str = 'server'
+        self.access_point_type_str = 'cell'
+        self.fog_nodes_type_str = 'fogNode'
         # TODO: These might have multiple types, just like the switches and servers!
         self.access_point_strs = ['pico_cell', 'micro_cell', 'macro_cell']
         self.server_strs = ['m{}_server'.format(i) for i in range(1,4)]
@@ -46,12 +49,15 @@ class InfrastructureGMLGraph(GMLGraph):
         # TODO: calculate coverage probabilities from the created mobility pattern
         self.random = random.Random(seed)
 
-        # store ID-s of all relevant node types
-        # TODO: do the same with fog nodes/ mobile nodes
-        self.endpoint_ids = []
-        self.access_point_ids = []
-        self.server_ids = []
-        self.mobile_ids = []
+        # store ID-s of all relevant node types 
+        self.endpoint_ids = [v['name'] for _,v in self.nodes(data=True)\
+                        if v[self.type_str] == self.endpoint_type_str]
+        self.access_point_ids = [v['name'] for _,v in self.nodes(data=True)\
+                        if v[self.type_str] == self.access_point_type_str]
+        self.server_ids = [v['name'] for _,v in self.nodes(data=True)\
+                        if v[self.type_str] in self.server_type_str]
+        self.mobile_ids = [v['name'] for _,v in self.nodes(data=True)\
+                        if v[self.type_str] == self.fog_nodes_type_str]
         for n, node_dict in self.nodes(data=True):
             # TODO: read or generate or set statically the costs of each nodes?
             node_dict[self.infra_fixed_cost_str] = self.random.uniform(0, 10)
@@ -106,6 +112,7 @@ class ServiceGMLGraph(nx.DiGraph):
         self.log.addHandler(handler)
         self.log.setLevel(logging.DEBUG)
         self._generate_structure()
+        self.vnfs= [v['name'] for _,v in self.nodes(data=True)]
 
     def generate_series_parallel_graph(self, n):
         """
