@@ -12,65 +12,40 @@ AMPLInfraTypes = ['APs', 'servers', 'mobiles']
 infra_type_sets = {itype: [] for itype in AMPLInfraTypes}
 
 def fill_service(ampl: AMPL, service: gs.ServiceGMLGraph) -> None:
-    # TODO: add edges
-    vnfs, demands = [], []
-    service_graph = ampl.param['serviceGraph'].value()
+    ampl.param['vertices']['service'] = service.vnfs
+    ampl.set['edges']['service'] = [(c1,c2) in service.edges()]
 
-    for vnf_id, vnf_data in service.nodes(data=True):
-        vnfs += [vnf_id]
-        demands += [vnf_data[service.nf_demand_str]]
-
-    # Set the VNFs
-    ampl.set['vertices'][service_graph] = vnfs
-
-    # Set their demands
-    df = DataFrame('vertices', 'demands')
-    df.setValues({
-        vnf: demand
-        for vnf, demand in zip(vnfs, demands)
+    # set the CPU demands
+    ampl.getParameter('demands').setValues({
+        vnf: props['cpu']
+        for vnf,props in service.nodes(data=True)
     })
-    ampl.setData(df)
 
 
 def fill_infra(ampl: AMPL, infra: gs.InfrastructureGMLGraph) -> None:
+    # All the infra graph vertices
+    ampl.set['vertices']['infra'] = infra.endpoint_ids +\
+            infra.access_point_ids + infra.server_ids + infra.mobile_ids
+    ampl.set['APs'] = infra.access_point_ids
+    ampl.set['servers'] = infra.server_ids
+    ampl.set['mobiles'] = infra.mobile_ids
+
+    # Infrastructure edges
+    ampl.set['edges']['infra'] = [(c1,c2) in infra.edges()]
     
+    # set the CPU capabilities
+    ampl.getParameter('resources').setValues({
+        node: props['cpu']
+        for node,props in infra.nodes(data=True)
+    })
 
+    # TODO: put the cost unit demand
+    ampl.getParameter('cost_unit_demand').setValues({
+        node: props['unit_cost']
+        for node,props in infra.nodes(data=True)
+    })
 
-
-
-
-    # vvvvvvvv WHAT WAS BEFORE vvvvvvvvv
-
-
-
-    # TODO: add edges
-    infra_graph = ampl.param['infraGraph'].value()
-    infra_set = []
-    resources = {}
-    cost_unit_demand = {}
-    for ampl_infra_type, id_list in zip(AMPLInfraTypes,
-                                        [infra.access_point_ids, infra.server_ids, infra.mobile_ids]):
-        for infra_id in id_list:
-            infra_data = infra.node[infra_id]
-            infra_name = infra_data['name']
-            # NOTE: maybe we should use ID-s instead of names (ID uniqueness is ensured by the networkx structure, name not surely unique)
-            infra_set.append(infra_name)
-            infra_type_sets[ampl_infra_type].append(infra_name)
-            resources[infra_name] = infra_data[infra.infra_node_capacity_str]
-            cost_unit_demand[infra_name] = infra_data[infra.infra_unit_cost_str]
-
-    # Set AMPL object
-    for ampl_infra_type in AMPLInfraTypes:
-        ampl.set[ampl_infra_type] = infra_type_sets[ampl_infra_type]
-
-    ampl.set['vertices'][infra_graph] = infra_set
-    df = DataFrame('vertices', 'resources')
-    df.setValues(resources)
-    ampl.setData(df)
-
-    df = DataFrame('vertices', 'cost_unit_demand')
-    df.setValues(cost_unit_demand)
-    ampl.setData(df)
+    # TODO: fill the battery probability constraints
 
 
 def fill_AP_coverage_probabilities(ampl: AMPL, interval_length: int) -> None:
@@ -79,6 +54,7 @@ def fill_AP_coverage_probabilities(ampl: AMPL, interval_length: int) -> None:
     df = DataFrame(('AP_name', 'subinterval'), 'prob')
     df.setValues({(AP, subint): 0.9 for AP in APs for subint in subintervals})
     ampl.param['prob_AP'].setValues(df)
+    # TODO: refine this method to actually fill with the coverage prob
 
 
 def get_complete_ampl_model_data(ampl_model_path, service : gs.ServiceGMLGraph, infra : gs.InfrastructureGMLGraph) -> AMPL:
@@ -91,16 +67,20 @@ def get_complete_ampl_model_data(ampl_model_path, service : gs.ServiceGMLGraph, 
     """
     ampl = AMPL()
     ampl.read(ampl_model_path)
-    ampl.set['graph'] = infra.endpoint_ids + infra.access_point_ids +\
-            infra.server_ids + infra.mobile_ids + service.vnfs
+    ampl.set['graph'] = ['infra', 'service']
+    ampl.param['infraGraph'] = 'infra'
+    ampl.param['serviceGraph'] = 'service'
 
-    ampl.param['infraGraph'] = infra.endpoint_ids + infra.access_point_ids +\
-            infra.server_ids + infra.mobile_ids
-    ampl.param['serviceGraph'] = service.vnfs
+    # TODO: interval_length 
+    interval_length = 10
+
+    fill_AP_coverage_probabilities(ampl, interval_length)
+
     # TODO @Jorge: continue from here on
+        # fill the affinity variable
+
     fill_service(ampl, service)
     fill_infra(ampl, infra)
-    # TODO: read infraGraph interval_length serviceGraph etc. from the service and infra
     return ampl
 
 
