@@ -1,5 +1,6 @@
 import networkx as nx
 import random
+import math
 import sys
 import logging
 from rainbow_logging_handler import RainbowLoggingHandler
@@ -59,6 +60,10 @@ class InfrastructureGMLGraph(GMLGraph):
         self.server_type_str = 'server'
         self.access_point_type_str = 'cell'
         self.fog_nodes_type_str = 'fogNode'
+        # the distance which the AP wireless connectivity reaches with high reliability
+        self.ap_reach_str = 'reach'
+        # used in self.ap_coverage_probabilities dictionary to name (as dict key) the mobile clusters
+        self.mobile_cluster_prefix = 'mobile_cluster_'
         # TODO: These might have multiple types, just like the switches and servers!
         self.access_point_strs = ['pico_cell', 'micro_cell', 'macro_cell', 'cell']
         self.server_strs = ['m{}_server'.format(i) for i in range(1,4)]
@@ -71,15 +76,17 @@ class InfrastructureGMLGraph(GMLGraph):
         # input information in the GML file (i.e. mobility pattern)
         self.random = random.Random(seed)
 
-        # store ID-s of all relevant node types 
-        self.endpoint_ids = [v['name'] for _,v in self.nodes(data=True)\
-                        if v[self.type_str] == self.endpoint_type_str]
-        self.access_point_ids = [v['name'] for _,v in self.nodes(data=True)\
-                        if v[self.type_str] == self.access_point_type_str]
-        self.server_ids = [v['name'] for _,v in self.nodes(data=True)\
-                        if v[self.type_str] in self.server_type_str]
-        self.mobile_ids = [v['name'] for _,v in self.nodes(data=True)\
-                        if v[self.type_str] == self.fog_nodes_type_str]
+        # store ID-s of all relevant node types
+        # TODO: name is not much helpful for processing the data of the nodes, ID-s are used as keys in the networkx graph (see next for cycle)
+        self.endpoint_ids, self.access_point_ids, self.server_ids, self.mobile_ids = [], [], [], []
+        # self.endpoint_ids = [v['name'] for _,v in self.nodes(data=True)\
+        #                 if v[self.type_str] == self.endpoint_type_str]
+        # self.access_point_ids = [v['name'] for _,v in self.nodes(data=True)\
+        #                 if v[self.type_str] == self.access_point_type_str]
+        # self.server_ids = [v['name'] for _,v in self.nodes(data=True)\
+        #                 if v[self.type_str] in self.server_type_str]
+        # self.mobile_ids = [v['name'] for _,v in self.nodes(data=True)\
+        #                 if v[self.type_str] == self.fog_nodes_type_str]
         for n, node_dict in self.nodes(data=True):
             # TODO: read or generate or set statically the costs of each nodes?
             node_dict[self.infra_fixed_cost_str] = self.random.uniform(0, 10)
@@ -94,7 +101,9 @@ class InfrastructureGMLGraph(GMLGraph):
             elif node_dict[self.type_str] == self.mobile_node_str:
                 self.mobile_ids.append(n)
         self.cluster_endpoint_ids = []
-        # TODO: calculate coverage probabilities from the created mobility pattern
+        # contains dictionary for each mobile cluster which is a dict of each time instance which is
+        # a dict of each AP_id to their coverage probability.
+        self.ap_coverage_probabilities = {}
         if cluster_move_distances is not None:
             self.generate_mobility_pattern(cluster_move_distances)
 
@@ -121,14 +130,103 @@ class InfrastructureGMLGraph(GMLGraph):
                 endpoint = filter(lambda m: m in self.endpoint_ids, connected_comp.nodes).__next__()
                 self.cluster_endpoint_ids.append(endpoint)
                 master_mobile = self.random.choice([filter(lambda m: m in self.mobile_ids, connected_comp.nodes)])
+                mobile_cluster_id = self.mobile_cluster_prefix + str(master_mobile)
                 move_distance = cluster_move_distances.pop()
+                dist_in_one_interval = 2 * move_distance / float(self.time_interval_count)
                 init_master_coordinates = (self.nodes[master_mobile]['lat'], self.nodes['lon'])
-                best_move_vector = self.minimize_direction_of_move(init_master_coordinates, move_distance)
+                best_move_vector = self.minimize_direction_of_move(init_master_coordinates, dist_in_one_interval)
+                # e.g. direction_multiplier_list = [0, 1, 2, 3, 2, 1], where time_interval_count = 6 OR 7
+                direction_multiplier_list = list(range(0, self.time_interval_count//2))
+                direction_multiplier_list.extend(range(self.time_interval_count//2, 0, -1))
+                if self.time_interval_count % 2 == 1:
+                    # as a last step return to initial point in case of odd number of intervals
+                    direction_multiplier_list.append(0)
+                # shifts p in direction of v by d units
+                push_point = lambda p, v, d: (p[0] + v[0]*d, p[1] + v[1]*d)
+                time_intervald_indexes = list(reversed(list(range(1, self.time_interval_count+1))))
+                for dir_mul in direction_multiplier_list:
+                    current_p = push_point(init_master_coordinates, best_move_vector, dir_mul * dist_in_one_interval)
+                    time_interval_idx = time_intervald_indexes.pop()
+                    self.ap_coverage_probabilities[mobile_cluster_id] = {time_interval_idx: {}}
+                    for ap_id in self.access_point_ids:
+                        self.ap_coverage_probabilities[mobile_cluster_id][time_interval_idx][ap_id] = \
+                            self.get_coverage_probability(current_p, ap_id)
+
+    def get_coverage_probability(self, current_mobile_pos, ap_id):
+        """
+        Calculates the probabilty of covering the mobile node in its current position by the given AP.
+        Uses the reach of the AP to get the probability. If the mobile position is on the border of the reach the
+        probability drastically drops.
+
+        :param current_mobile_pos:
+        :param ap_id:
+        :return:
+        """
+        Pjx, Pjy = self.relative_coordinates(current_mobile_pos, self.nodes[ap_id])
+        dist = math.sqrt(Pjx ** 2 + Pjy ** 2)
+        reach = self.nodes[ap_id][self.ap_reach_str]
+        # TODO: get better model for coverage probability dropping based on research
+        # drops to 0.0 probability somewhere after 20% beyond the reach of the AP, decreases squared from 1.0
+        probability = 1.0
+        raw_probability = - (dist / (reach * 1.2)) ** 2 + 1.1
+        if raw_probability < 0.0:
+            probability = 0.0
+        elif raw_probability < 1.0:
+            # use the values of the function between 0.0 and 1.0
+            probability = raw_probability
+        return probability
+
+    def relative_coordinates(self, init_master_coordinates, ap_data):
+        """
+        Coordinates of AP in the system where init_master_coordinates is the origo
+
+        :param init_master_coordinates:
+        :param ap_data:
+        :return:
+        """
+        return ap_data['lat'] - init_master_coordinates[0], ap_data['lon'] - init_master_coordinates[1]
+
+    def relative_ap_coordinates(self, point):
+        """
+        Iterator on the coordinates of ALL APs in the system where point is the origo.
+
+        :param point:
+        :return:
+        """
+        for ap_id in self.access_point_ids:
+            # convert AP coordinates to init_master_coordinates centered system
+            Pjx, Pjy = self.relative_coordinates(point, self.nodes[ap_id])
+            yield Pjx, Pjy
+
+    def total_ap_distance_from_point(self, point):
+        """
+        Total distance of all APs from the input point.
+
+        :param point:
+        :return:
+        """
+        sum_dist = 0.0
+        for Pjx, Pjy in self.relative_ap_coordinates(point):
+            sum_dist += math.sqrt(Pjx ** 2 + Pjy ** 2)
+        return sum_dist
+
+    def evaluate_total_distance_of_aps_from_line(self, init_master_coordinates, alpha):
+        """
+        Calculates the function: sum_{j for all AP} |sin(alpha)Pjx - Pjy|, which gives the sum of the distances of each AP
+        from a line identified by init_master_coordinates and alpha.
+
+        :param alpha:
+        :return:
+        """
+        total_dist = 0.0
+        for Pjx, Pjy in self.relative_ap_coordinates(init_master_coordinates):
+            total_dist += math.fabs(math.sin(alpha) * Pjx - Pjy)
+        return total_dist
 
     def get_best_alpha(self, init_master_coordinates):
         """
         Uses trigonometric equation of a line fitting to init_master_coordinates to find an angle minimizing the sum
-        of distances from all AP.
+        of distances from all AP. alpha in (-pi/2, pi/2)
         Set origo to init_master_coordinates, line: y = tan (alpha) x
         Coordinate of APj in this system: Pjx, Pjy
         Line point distance d(e, APj) = |sin(aplha) Pjx - Pjy|
@@ -138,19 +236,51 @@ class InfrastructureGMLGraph(GMLGraph):
         :return:
         """
         mindist = float('inf')
-        best_aplha = None
-        # for
-        return best_aplha
+        best_alpha = None
+        for Pjx, Pjy in self.relative_ap_coordinates(init_master_coordinates):
+            if Pjx == 0.0:
+                # This AP contributes a constant to the sum, so its corresponding zerus cannot be min place
+                continue
+            elif math.fabs(Pjy) > math.fabs(Pjx):
+                # we cannot calculate arcsin, this components does not have a zerus
+                if Pjx > 0.0:
+                    # the component's min is at the beginning of the interval
+                    alpha_j = - math.pi / 2.0
+                else: # Pjx < 0.0
+                    # the component's min is at the end of the interval
+                    alpha_j = math.pi / 2.0
+            else:
+                alpha_j = math.asin(Pjy / Pjx)
+            total_dist = self.evaluate_total_distance_of_aps_from_line(init_master_coordinates, alpha_j)
+            if total_dist < mindist:
+                best_alpha = alpha_j
+        if best_alpha is None:
+            # it means all APs are lined up and parallel with the x axis
+            best_alpha = 0.0
+        return best_alpha
 
-    def minimize_direction_of_move(self, init_master_coordinates, move_distance):
+    def minimize_direction_of_move(self, init_master_coordinates, dist_in_one_interval):
         """
         Calculates a direction which minimizes the sum of total distances from each access point.
+        # NOTE: ignores Earth curveture (unecessarily more difficult maths)
+        # NOTE: best direction, i.e. line, does not neccesarily minimizes the distance from a vector, in a more
+        sophisticated version best alpha could take move_distance as input too.
 
         :param init_master_coordinates:
         :param move_distance:
         :return: relative vector to init_master_coordinates
         """
         alpha = self.get_best_alpha(init_master_coordinates)
+        vec_len = math.sqrt(math.tan(alpha) ** 2 + 1.0)
+        unit_direction = (1 / vec_len, math.tan(alpha) / vec_len)
+        # we need to figure out which of the two direction is TOWARDS the majority of the APs
+        # shifts p in direction of v by d units
+        push_point = lambda p, v, d: (p[0] + v[0]*d, p[1] + v[1]*d)
+        # check which direction should we move, by calculating the two possible directions total distance
+        if self.total_ap_distance_from_point(push_point(init_master_coordinates, unit_direction, dist_in_one_interval)) > \
+            self.total_ap_distance_from_point(push_point(init_master_coordinates, (-unit_direction[0], -unit_direction[1]), dist_in_one_interval)):
+            unit_direction = (-unit_direction[0], -unit_direction[1])
+        return unit_direction
 
 
 class ServiceGMLGraph(GMLGraph):
@@ -186,6 +316,7 @@ class ServiceGMLGraph(GMLGraph):
         self.log.addHandler(handler)
         self.log.setLevel(logging.DEBUG)
         self._generate_structure()
+        # TODO: maybe use ID-s instead of 'name'
         self.vnfs= [v['name'] for _,v in self.nodes(data=True)]
 
     def generate_series_parallel_graph(self, n):
@@ -254,6 +385,7 @@ class ServiceGMLGraph(GMLGraph):
 
                 # save chain latency info to .graph dict
                 sfc_delay = self.random.choice(self.sfc_delays)
+                # TODO: store in variable instead of gprahs dict! (more direct, NOTE: now only saves one, not all!!
                 self.graph[self.sfc_delays_list_str] = (sfc_delay, loop)
                 self.log.debug("Adding SFC from VNF {} to endpoint {} with delay {} on path {}".
                                format(endpoint_vnf_id, endpoint_infra_id, sfc_delay, loop))
