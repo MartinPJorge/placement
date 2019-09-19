@@ -33,6 +33,16 @@ def fill_service(ampl: AMPL, service: gs.ServiceGMLGraph) -> None:
 
 
 def fill_infra(ampl: AMPL, infra: gs.InfrastructureGMLGraph) -> None:
+    
+
+
+
+
+
+    # vvvvvvvv WHAT WAS BEFORE vvvvvvvvv
+
+
+
     # TODO: add edges
     infra_graph = ampl.param['infraGraph'].value()
     infra_set = []
@@ -81,9 +91,13 @@ def get_complete_ampl_model_data(ampl_model_path, service : gs.ServiceGMLGraph, 
     """
     ampl = AMPL()
     ampl.read(ampl_model_path)
-    ampl.set['graph'] = [infra.name, service.name]
-    ampl.param['infraGraph'] = infra.name
-    ampl.param['serviceGraph'] = service.name
+    ampl.set['graph'] = infra.endpoint_ids + infra.access_point_ids +\
+            infra.server_ids + infra.mobile_ids + service.vnfs
+
+    ampl.param['infraGraph'] = infra.endpoint_ids + infra.access_point_ids +\
+            infra.server_ids + infra.mobile_ids
+    ampl.param['serviceGraph'] = service.vnfs
+    # TODO @Jorge: continue from here on
     fill_service(ampl, service)
     fill_infra(ampl, infra)
     # TODO: read infraGraph interval_length serviceGraph etc. from the service and infra
