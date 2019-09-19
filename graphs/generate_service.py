@@ -60,11 +60,11 @@ class InfrastructureGMLGraph(GMLGraph):
         self.type_str = 'type'
         self.server_type_str = 'server'
         self.access_point_type_str = 'cell'
-        self.fog_nodes_type_str = 'fogNode'
+        # TODO: add delays to the GML graphs LINKS AND APS
+        self.access_point_delay_str = 'delay'
+        self.link_delay_str = 'distance'
         # the distance which the AP wireless connectivity reaches with high reliability
         self.ap_reach_str = 'reach'
-        # used in self.ap_coverage_probabilities dictionary to name (as dict key) the mobile clusters
-        self.mobile_cluster_prefix = 'mobile_cluster_'
         # TODO: These might have multiple types, just like the switches and servers!
         self.access_point_strs = ['pico_cell', 'micro_cell', 'macro_cell', 'cell']
         self.server_strs = ['m{}_server'.format(i) for i in range(1,4)]
@@ -102,11 +102,17 @@ class InfrastructureGMLGraph(GMLGraph):
             elif node_dict[self.type_str] == self.mobile_node_str:
                 self.mobile_ids.append(n)
         self.cluster_endpoint_ids = []
+        # stores lists of the contained mobile ID-s for each cluster.
+        # Its key is the same as the outer key of the self.ap_coverage_probabilities
+        self.mobile_cluster_id_to_node_ids = {}
         # contains dictionary for each mobile cluster which is a dict of each time instance which is
-        # a dict of each AP_id to their coverage probability.
+        # a dict of each AP_id to their coverage probability. A mobile cluster is identified by one of its nodes (master node)
         self.ap_coverage_probabilities = {}
         if cluster_move_distances is not None:
             self.generate_mobility_pattern(cluster_move_distances)
+
+        # Calculate on all unconnected components (i.e between the nodes of each clusters and the fixed part)
+        self.shortest_paths_fixed_part = dict(nx.all_pairs_dijkstra_path_length(self, weight=self.link_delay_str))
 
     def check_graph(self):
         """
@@ -115,6 +121,56 @@ class InfrastructureGMLGraph(GMLGraph):
         :return:
         """
         return True
+
+    def delay_distance(self, u, v, time_interval_index, coverage_prob=0.0001):
+        """
+        Reads the precalculated distances measured in delay between any two nodes of the infrastructure. 
+        # TODO: add other version of this function, where we can specify which AP to use, no matter the coverage (required for the AMPL constraint)
+
+        :param time_interval_index: 
+        :param u:
+        :param v:
+        :param coverage_prob: provides a filter on the AP-s which might be used for the delay calculation
+        :return:
+        """
+        all_cluster_ids = self.cluster_endpoint_ids + self.mobile_ids
+        if v in self.shortest_paths_fixed_part[u]:
+            # if we are between two nodes of the same component (inside cluster or inside fixed infrastructure), no AP-s need to be used.
+            return self.shortest_paths_fixed_part[u][v]
+        elif u in all_cluster_ids and v in all_cluster_ids:
+            # mobile clusters cannot communicate with each other (for now)
+            return float('inf')
+        else:
+            # we are between a mobile cluster and the fixed infra
+            # It is symmetric for the direction so make u: mobile and v: fixed
+            if v in all_cluster_ids:
+                tmp_u = u
+                u = v
+                v =tmp_u
+            # find which cluster are we in with the 'u'
+            affected_master_mobile_id = None
+            for master_mobile_id in self.mobile_cluster_id_to_node_ids.keys():
+                if u in self.mobile_cluster_id_to_node_ids[master_mobile_id]:
+                    affected_master_mobile_id = master_mobile_id
+                    break
+            # find the AP with the lowest delay, which is above the given coverage threshold
+            min_allowed_ap_delay = float('inf')
+            min_delay_ap_id = None
+            for ap_id in self.access_point_ids:
+                # TODO: read properly the delay from the infra
+                # ap_delay = self.nodes[ap_id][self.access_point_delay_str]
+                ap_delay = self.random.random()
+                if coverage_prob < self.ap_coverage_probabilities[affected_master_mobile_id][time_interval_index][ap_id] and\
+                    min_allowed_ap_delay > ap_delay:
+                        min_allowed_ap_delay = ap_delay
+                        min_delay_ap_id = ap_id
+            # if no allowed AP ID is found, distance is infinite
+            if min_delay_ap_id == None:
+                return float('inf')
+            # the final distance is given by the sum of the three minimized parts.
+            return self.shortest_paths_fixed_part[u][affected_master_mobile_id] +\
+                    min_allowed_ap_delay +\
+                    self.shortest_paths_fixed_part[min_delay_ap_id][v]
 
     def generate_mobility_pattern(self, cluster_move_distances):
         """
@@ -131,8 +187,8 @@ class InfrastructureGMLGraph(GMLGraph):
                 endpoint = filter(lambda m: m in self.endpoint_ids, connected_comp.nodes).__next__()
                 self.cluster_endpoint_ids.append(endpoint)
                 master_mobile = self.random.choice([m for m in filter(lambda m: m in self.mobile_ids, connected_comp.nodes)])
-                mobile_cluster_id = self.mobile_cluster_prefix + str(master_mobile)
-                self.ap_coverage_probabilities[mobile_cluster_id] = {}
+                self.mobile_cluster_id_to_node_ids[master_mobile] = list(connected_comp.nodes()) + [endpoint]
+                self.ap_coverage_probabilities[master_mobile] = {}
                 move_distance = cluster_move_distances.pop()
                 dist_in_one_interval = 2 * move_distance / float(self.time_interval_count)
                 init_master_coordinates = (self.nodes[master_mobile]['lat'], self.nodes[master_mobile]['lon'])
@@ -149,9 +205,9 @@ class InfrastructureGMLGraph(GMLGraph):
                 for dir_mul in direction_multiplier_list:
                     current_p = push_point(init_master_coordinates, best_move_vector, dir_mul * dist_in_one_interval)
                     time_interval_idx = time_intervald_indexes.pop()
-                    self.ap_coverage_probabilities[mobile_cluster_id][time_interval_idx] = {}
+                    self.ap_coverage_probabilities[master_mobile][time_interval_idx] = {}
                     for ap_id in self.access_point_ids:
-                        self.ap_coverage_probabilities[mobile_cluster_id][time_interval_idx][ap_id] = \
+                        self.ap_coverage_probabilities[master_mobile][time_interval_idx][ap_id] = \
                             self.get_coverage_probability(current_p, ap_id)
 
     def get_coverage_probability(self, current_mobile_pos, ap_id):

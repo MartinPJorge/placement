@@ -30,9 +30,18 @@ def run_some_tests(substrate_network):
                 print("Bin packing is infeasible")
 
 
+def test_delay_calc(substrate_network, time_interval_count):
+    # tests the delay calculation
+    for t in range(1,time_interval_count + 1):
+        for u in substrate_network.nodes():
+            for v in substrate_network.nodes():
+                print(u, v, t, substrate_network.delay_distance(u, v, t, coverage_prob=0.5))
+
+
 if __name__ == '__main__':
+    time_interval_count = 12
     substrate_network = gs.InfrastructureGMLGraph(gml_file="../graphs/infra-2-clusters-20-cells.gml", label='id', name='infra',
-                                                  cluster_move_distances=[0.002, 0.005], time_interval_count=12)
+                                                  cluster_move_distances=[0.002, 0.005], time_interval_count=time_interval_count)
 
     # NOTE: forcing the algorithm to introduce new bin example: setting all item cost to 900, setting node 42 from 780 to 1200 cap, and node 47 from 10000 to 1000
     service_instance = gs.ServiceGMLGraph(substrate_network, [7], [0.01, 0.015], 0, 0.5, name='service')
@@ -43,11 +52,12 @@ if __name__ == '__main__':
     except cmf.UnfeasibleBinPacking:
         print("Bin packing is infeasible")
 
-    # ampl_object = graph2ampl.get_complete_ampl_model_data('../ampl/system-model.mod',
-    #                                                       service_instance, substrate_network)
+    test_delay_calc(substrate_network, time_interval_count)
+
+    ampl_object = graph2ampl.get_complete_ampl_model_data('../ampl/system-model.mod',
+                                                          service_instance, substrate_network)
 
     run_some_tests(substrate_network)
-
 
 
 
