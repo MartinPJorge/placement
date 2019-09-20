@@ -1,4 +1,6 @@
-import networkx as nx
+import sys
+import argparse
+import yaml
 
 import ampl.graph2ampl as graph2ampl
 import graphs.generate_service as gs
@@ -40,7 +42,7 @@ def test_delay_calc(substrate_network, time_interval_count):
                     print(u, v, t, ap_id, substrate_network.delay_distance(u, v, t, through_ap_id=ap_id))
 
 
-if __name__ == '__main__':
+def run_without_config_file():
     time_interval_count = 12
     substrate_network = gs.InfrastructureGMLGraph(gml_file="../graphs/infra-2-clusters-20-cells.gml", label='id', name='infra',
                                                   cluster_move_distances=[0.002, 0.005], time_interval_count=time_interval_count)
@@ -62,7 +64,25 @@ if __name__ == '__main__':
                                                           service_instance, substrate_network)
 
 
+if __name__ == '__main__':
+    if len(sys.argv) == 1:
+        run_without_config_file()
+    else:
+        parser = argparse.ArgumentParser(description="Invokes volatile resources optimization task generation and "
+                                                     "solves it with heuristic and AMPL formulation.")
+        parser.add_argument('config', metavar='CONFIG_PATH', type=str)
+        args = parser.parse_args()
 
+        with open(args.config) as f:
+            config = yaml.load(f.read())
 
+            substrate_network = gs.InfrastructureGMLGraph(**config['infrastructure'])
 
+            service_instance = gs.ServiceGMLGraph(substrate_network, **config['service'])
+
+            # TODO: config['optimization'] is a python dictionary of optimization configuration parameters.
+
+            checker = cmf.VolatileResourcesChecker()
+            mapper = cmf.ConstructiveMapperFromFractional(checker)
+            mapping_result_dict = mapper.map(substrate_network, service_instance)
 

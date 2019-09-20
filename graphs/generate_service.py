@@ -62,7 +62,7 @@ class InfrastructureGMLGraph(GMLGraph):
         self.access_point_type_str = 'cell'
         # TODO: add delays to the GML graphs LINKS AND APS
         self.access_point_delay_str = 'delay'
-        self.link_delay_str = 'distance'
+        self.link_delay_str = 'distance'            # --- TODO: currently distance because this is already in the GML examples
         # the distance which the AP wireless connectivity reaches with high reliability
         self.ap_reach_str = 'reach'
         # TODO: These might have multiple types, just like the switches and servers!
@@ -87,10 +87,15 @@ class InfrastructureGMLGraph(GMLGraph):
             if node_dict[self.type_str] == self.endpoint_type_str:
                 self.endpoint_ids.append(n)
             elif node_dict[self.type_str] in self.access_point_strs:
+                # TODO this info should already be in the GML!
+                node_dict[self.ap_reach_str] = 100
+                # TODO this info should already be in the GML!
+                node_dict[self.access_point_delay_str] = 0.001
                 self.access_point_ids.append(n)
             elif node_dict[self.type_str] in self.server_strs:
                 self.server_ids.append(n)
             elif node_dict[self.type_str] == self.mobile_node_str:
+                #
                 self.mobile_ids.append(n)
         self.cluster_endpoint_ids = []
         # stores lists of the contained mobile ID-s for each cluster.
@@ -186,6 +191,8 @@ class InfrastructureGMLGraph(GMLGraph):
 
         :return:
         """
+        # so we wont modify the input parameter by .pop()
+        cluster_move_distances = list(cluster_move_distances)
         for connected_comp in self.get_connected_components():
             # see if this is a mobile node cluster
             if any(m in connected_comp for m in self.mobile_ids):
