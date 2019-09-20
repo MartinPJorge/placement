@@ -344,7 +344,8 @@ class InfrastructureGMLGraph(GMLGraph):
 
 class ServiceGMLGraph(GMLGraph):
 
-    def __init__(self, infra: InfrastructureGMLGraph, connected_component_sizes, sfc_delays, seed, series_parallel_ratio, incoming_graph_data=None, **attr):
+    def __init__(self, infra: InfrastructureGMLGraph, connected_component_sizes, sfc_delays, seed, series_parallel_ratio,
+                 mobile_nfs_per_sfc=0, incoming_graph_data=None, **attr):
         """
         Generates a service using series parallel graph structures with SFC-s on its paths on top of infra with parameters given.
 
@@ -354,6 +355,8 @@ class ServiceGMLGraph(GMLGraph):
         :param infra:
         :param incoming_graph_data: If it is given, additional elements are created at the nx.DiGraph
         :param connected_component_sizes: list of integers describing the number and size of the connected service graph components
+        :param mobile_nfs_per_sfc: The number of NFs in each SFC which must be located in the corresponding mobile cluster
+                                   (if a chain is shorter, at most all of the NFs are set but not more).
         :param attr:
         """
         # =====================  attribute strings =================== #
@@ -374,6 +377,7 @@ class ServiceGMLGraph(GMLGraph):
         self.log.addHandler(handler)
         self.log.setLevel(logging.DEBUG)
         self.sfc_delays_list = []             # list of (delay, edge path) tuples containing chain delays.
+        self.mobile_nfs_per_sfc = mobile_nfs_per_sfc
         self._generate_structure()
         self.vnfs= [v['name'] for _, v in self.nodes(data=True)]
 
@@ -426,6 +430,34 @@ class ServiceGMLGraph(GMLGraph):
         # TODO: use strings of the class about the input structure.
         return True
 
+    def _set_location_constraints(self, edge_list_of_loop, endpoint_infra_id):
+        """
+        Sets location bounds for the first/last self.mobile_nfs_per_sfc pieces of NFs to be only mappable to the
+        corresponding mobile node cluster, identified by endpoint_infra_id.
+
+        :param edge_list_of_loop:
+        :param endpoint_infra_id:
+        :return:
+        """
+        for cluster_node_ids in self.infra.mobile_cluster_id_to_node_ids.values():
+            if endpoint_infra_id in cluster_node_ids:
+                location_bound_nfs = 0
+                node_list = [u for u, v in edge_list_of_loop]
+                # the first element is mapped (with location constraints) to the endpoint
+                loop_nf_ids = list(node_list)[1:]
+                for begin_end_tuple in zip(loop_nf_ids, reversed(loop_nf_ids)):
+                    # add NFs from beginning and ending of the chain alternating
+                    for nf_id in begin_end_tuple:
+                        # keep adding location bounds until we reach the required amount AND we have any more NF which are not set.
+                        if location_bound_nfs < self.mobile_nfs_per_sfc and len(loop_nf_ids) - location_bound_nfs > 0:
+                            # NOTE: make a copy of the list for every location bound node
+                            self.nodes[nf_id][self.location_constr_str] = list(cluster_node_ids)
+                            location_bound_nfs += 1
+                        else:
+                            return
+                # after we found the correspoing cluster we have nothing left to do
+                return
+
     def _add_service_function_loops(self):
         """
         Add an SFC with generated end to end delay starting from an endpoint and ending in one.
@@ -452,6 +484,7 @@ class ServiceGMLGraph(GMLGraph):
                 # endpoints do not have resources
                 self.nodes[endpoint_vnf_id][self.nf_demand_str] = 0
                 sfc_delay = self.random.choice(self.sfc_delays)
+                self._set_location_constraints(loop, endpoint_infra_id)
                 # Save SFC-s as tuples of delay and their vnf id path
                 self.sfc_delays_list.append((sfc_delay, loop))
                 self.log.debug("Adding SFC from VNF {} to endpoint {} with delay {} on path {}".
