@@ -35,7 +35,9 @@ def test_delay_calc(substrate_network, time_interval_count):
     for t in range(1,time_interval_count + 1):
         for u in substrate_network.nodes():
             for v in substrate_network.nodes():
-                print(u, v, t, substrate_network.delay_distance(u, v, t, coverage_prob=0.5))
+                print(u, v, t, 0.5, substrate_network.delay_distance(u, v, t, coverage_prob=0.5))
+                for ap_id in substrate_network.access_point_ids:
+                    print(u, v, t, ap_id, substrate_network.delay_distance(u, v, t, through_ap_id=ap_id))
 
 
 if __name__ == '__main__':

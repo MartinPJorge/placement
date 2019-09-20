@@ -78,18 +78,9 @@ class InfrastructureGMLGraph(GMLGraph):
         self.random = random.Random(seed)
 
         # store ID-s of all relevant node types
-        # TODO: name is not much helpful for processing the data of the nodes, ID-s are used as keys in the networkx graph (see next for cycle)
         self.endpoint_ids, self.access_point_ids, self.server_ids, self.mobile_ids = [], [], [], []
-        # self.endpoint_ids = [v['name'] for _,v in self.nodes(data=True)\
-        #                 if v[self.type_str] == self.endpoint_type_str]
-        # self.access_point_ids = [v['name'] for _,v in self.nodes(data=True)\
-        #                 if v[self.type_str] == self.access_point_type_str]
-        # self.server_ids = [v['name'] for _,v in self.nodes(data=True)\
-        #                 if v[self.type_str] in self.server_type_str]
-        # self.mobile_ids = [v['name'] for _,v in self.nodes(data=True)\
-        #                 if v[self.type_str] == self.fog_nodes_type_str]
         for n, node_dict in self.nodes(data=True):
-            # TODO: read or generate or set statically the costs of each nodes?
+            # TODO: read these info from the GML file!
             node_dict[self.infra_fixed_cost_str] = self.random.uniform(0, 10)
             node_dict[self.infra_unit_cost_str] = self.random.uniform(1, 2)
 
@@ -122,15 +113,17 @@ class InfrastructureGMLGraph(GMLGraph):
         """
         return True
 
-    def delay_distance(self, u, v, time_interval_index, coverage_prob=0.0001):
+    def delay_distance(self, u, v, time_interval_index, coverage_prob=None, through_ap_id=None):
         """
-        Reads the precalculated distances measured in delay between any two nodes of the infrastructure. 
-        # TODO: add other version of this function, where we can specify which AP to use, no matter the coverage (required for the AMPL constraint)
+        Reads the precalculated distances measured in delay between any two nodes of the infrastructure.
+        'through_ap_id' and 'coverage_prob' can be specified in any combination.
+        E.g.: if u and v are both in the fixed infrastructure, through_ap_id and coverage_prob are ignored.
 
-        :param time_interval_index: 
+        :param time_interval_index:
         :param u:
         :param v:
         :param coverage_prob: provides a filter on the AP-s which might be used for the delay calculation
+        :param through_ap_id: ID of the AP, which should be used for communication if u and v are separated by wireless connections
         :return:
         """
         all_cluster_ids = self.cluster_endpoint_ids + self.mobile_ids
@@ -153,24 +146,37 @@ class InfrastructureGMLGraph(GMLGraph):
                 if u in self.mobile_cluster_id_to_node_ids[master_mobile_id]:
                     affected_master_mobile_id = master_mobile_id
                     break
-            # find the AP with the lowest delay, which is above the given coverage threshold
-            min_allowed_ap_delay = float('inf')
-            min_delay_ap_id = None
-            for ap_id in self.access_point_ids:
+            if through_ap_id is not None:
+                # if a coverage probability is given, only return the delay, if the given AP's coverage meets the specified threshold
+                if coverage_prob is not None:
+                    if coverage_prob > self.ap_coverage_probabilities[affected_master_mobile_id][time_interval_index][through_ap_id]:
+                        return float('inf')
                 # TODO: read properly the delay from the infra
-                # ap_delay = self.nodes[ap_id][self.access_point_delay_str]
-                ap_delay = self.random.random()
-                if coverage_prob < self.ap_coverage_probabilities[affected_master_mobile_id][time_interval_index][ap_id] and\
-                    min_allowed_ap_delay > ap_delay:
-                        min_allowed_ap_delay = ap_delay
-                        min_delay_ap_id = ap_id
-            # if no allowed AP ID is found, distance is infinite
-            if min_delay_ap_id == None:
-                return float('inf')
+                # chosen_ap_delay = self.nodes[through_ap_id][self.access_point_delay_str]
+                chosen_ap_delay = self.random.random()
+                chosen_ap_id = through_ap_id
+            else:
+                # find the AP with the lowest delay, which is above the given coverage threshold
+                chosen_ap_delay = float('inf')
+                chosen_ap_id = None
+                for ap_id in self.access_point_ids:
+                    # TODO: read properly the delay from the infra
+                    # ap_delay = self.nodes[ap_id][self.access_point_delay_str]
+                    current_ap_delay = self.random.random()
+                    if coverage_prob is not None:
+                        # if coverage is given, skip the ones which are lower.
+                        if coverage_prob > self.ap_coverage_probabilities[affected_master_mobile_id][time_interval_index][ap_id]:
+                            continue
+                    if chosen_ap_delay > current_ap_delay:
+                        chosen_ap_delay = current_ap_delay
+                        chosen_ap_id = ap_id
+                # if no allowed AP ID is found, distance is infinite
+                if chosen_ap_id is None:
+                    return float('inf')
             # the final distance is given by the sum of the three minimized parts.
             return self.shortest_paths_fixed_part[u][affected_master_mobile_id] +\
-                    min_allowed_ap_delay +\
-                    self.shortest_paths_fixed_part[min_delay_ap_id][v]
+                    chosen_ap_delay +\
+                    self.shortest_paths_fixed_part[chosen_ap_id][v]
 
     def generate_mobility_pattern(self, cluster_move_distances):
         """
