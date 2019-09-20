@@ -53,6 +53,7 @@ class InfrastructureGMLGraph(GMLGraph):
 
         # =====================  attribute strings =================== #
         self.time_interval_count = time_interval_count
+        self.node_name_str = 'name'
         self.infra_node_capacity_str = 'cpu'
         self.infra_fixed_cost_str = 'fixed_cost'
         self.infra_unit_cost_str = 'unit_cost'
@@ -352,6 +353,7 @@ class ServiceGMLGraph(GMLGraph):
         """
         # =====================  attribute strings =================== #
         self.nf_demand_str = 'weight'
+        self.node_name_str = 'name'
         self.location_constr_str = 'location_constraints'   # list of node ids, where an NF may be mapped
 
         super(ServiceGMLGraph, self).__init__(incoming_graph_data=incoming_graph_data, **attr)
@@ -369,7 +371,7 @@ class ServiceGMLGraph(GMLGraph):
         self.log.setLevel(logging.DEBUG)
         self.sfc_delays_list = []             # list of (delay, edge path) tuples containing chain delays.
         self._generate_structure()
-        self.vnfs= [v['name'] for _, v in self.nodes(data=True)]
+        self.vnfs= [v[self.node_name_str] for _, v in self.nodes(data=True)]
 
     def get_node_name(self, id):
         return 'nf' + str(id)

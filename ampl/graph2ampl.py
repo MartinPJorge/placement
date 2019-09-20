@@ -12,36 +12,49 @@ AMPLInfraTypes = ['APs', 'servers', 'mobiles']
 infra_type_sets = {itype: [] for itype in AMPLInfraTypes}
 
 def fill_service(ampl: AMPL, service: gs.ServiceGMLGraph) -> None:
-    ampl.param['vertices']['service'] = service.vnfs
-    ampl.set['edges']['service'] = [(c1,c2) in service.edges()]
+    ampl.param['vertices'][service.name] = service.vnfs
+    ampl.set['edges'][service.name] = [
+        (service.nodes[c1][service.node_name_str],
+            service[c2][service.node_name_str] for c1,c2 in service.edges()]
 
     # set the CPU demands
     ampl.getParameter('demands').setValues({
-        vnf: props['cpu']
+        vnf: props[service.node_name_str]
         for vnf,props in service.nodes(data=True)
     })
 
 
 def fill_infra(ampl: AMPL, infra: gs.InfrastructureGMLGraph) -> None:
+    # Get the infrastructure nodes' names
+    endpoint_names = [infra.nodes[id_][infra.node_name_str]
+        for id_ in infra.endpoint_ids]
+    access_point_names = [infra.nodes[id_][infra.node_name_str]
+        for id_ in infra.access_point_ids]
+    server_names = [infra.nodes[id_][infra.node_name_str]
+        for id_ in infra.server_ids]
+    mobile_names = [infra.nodes[id_][infra.node_name_str]
+        for id_ in infra.mobile_ids]
+
     # All the infra graph vertices
-    ampl.set['vertices']['infra'] = infra.endpoint_ids +\
-            infra.access_point_ids + infra.server_ids + infra.mobile_ids
-    ampl.set['APs'] = infra.access_point_ids
-    ampl.set['servers'] = infra.server_ids
-    ampl.set['mobiles'] = infra.mobile_ids
+    ampl.set['vertices'][infra.name] = endpoint_names + access_point_names +\
+            server_names + mobile_names
+    ampl.set['APs'] = access_point_names
+    ampl.set['servers'] = server_names
+    ampl.set['mobiles'] = mobile_names
 
     # Infrastructure edges
-    ampl.set['edges']['infra'] = [(c1,c2) in infra.edges()]
+    ampl.set['edges'][infra.name] = [(infra.nodes[c1][infra.node_name_str],
+        infra.nodes[c2][infra.node_name_str]) for c1,c2 in infra.edges()]
     
     # set the CPU capabilities
     ampl.getParameter('resources').setValues({
-        node: props['cpu']
+        node: props[infra.]
         for node,props in infra.nodes(data=True)
     })
 
     # TODO: put the cost unit demand
     ampl.getParameter('cost_unit_demand').setValues({
-        node: props['unit_cost']
+        node: props[infra.infra_unit_cost_str]
         for node,props in infra.nodes(data=True)
     })
 
@@ -67,9 +80,9 @@ def get_complete_ampl_model_data(ampl_model_path, service : gs.ServiceGMLGraph, 
     """
     ampl = AMPL()
     ampl.read(ampl_model_path)
-    ampl.set['graph'] = ['infra', 'service']
-    ampl.param['infraGraph'] = 'infra'
-    ampl.param['serviceGraph'] = 'service'
+    ampl.set['graph'] = [infra.name, service.name]
+    ampl.param['infraGraph'] = infra.name
+    ampl.param['serviceGraph'] = service.name
 
     # TODO: interval_length 
     interval_length = 10
