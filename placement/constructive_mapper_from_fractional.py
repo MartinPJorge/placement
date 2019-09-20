@@ -302,7 +302,7 @@ class ConstructiveMapperFromFractional(AbstractMapper):
             item_to_be_moved = None
             for item in overloading_items:
                 for bin in best_bins:
-                    if bin.does_item_fit(item) and bin is not item.mapped_to:
+                    if bin.does_item_fit(item) and bin is not item.mapped_to and bin in item.possible_bins:
                         # Difference between the current mapping and the possible relocation.
                         # This value might be even negative, if the rounding did not consider taking the first fitting bin in the
                         # ordered best bin list.
@@ -449,8 +449,8 @@ class ConstructiveMapperFromFractional(AbstractMapper):
             self.log.info("Bin packing solution not found by the heuristic!")
             return mapping
         elif not self.check_other_constraints(infra, ns):
-            self.log.error("Bin packing result does not respect some constraint!")
-            raise Exception("Bin packing result does not respect some constraint!")
+            self.log.error("Bin packing result does not respect some non-bin packing constraint!")
+            raise Exception("Bin packing result does not respect some non-bin packing constraint!")
         else:
             self.log.info("Bin packing solution found with objective value {}, while fractional optimal value is {}".
                           format(self.objective_value_of_integer_solution, self.objective_value_of_fractional_opt))
