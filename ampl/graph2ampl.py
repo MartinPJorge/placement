@@ -34,10 +34,11 @@ def fill_infra(ampl: AMPL, infra: gs.InfrastructureGMLGraph) -> None:
         for id_ in infra.server_ids]
     mobile_names = [infra.nodes[id_][infra.node_name_str]
         for id_ in infra.mobile_ids]
+    infra_names = endpoint_names + access_point_names + server_names +\
+            mobile_names
 
     # All the infra graph vertices
-    ampl.set['vertices'][infra.name] = endpoint_names + access_point_names +\
-            server_names + mobile_names
+    ampl.set['vertices'][infra.name] = infra_names
     ampl.set['APs'] = access_point_names
     ampl.set['servers'] = server_names
     ampl.set['mobiles'] = mobile_names
@@ -48,17 +49,25 @@ def fill_infra(ampl: AMPL, infra: gs.InfrastructureGMLGraph) -> None:
     
     # set the CPU capabilities
     ampl.getParameter('resources').setValues({
-        node: props[infra.]
+        props[infra.node_name_str]: props[infra.infra_node_capacity_str]
         for node,props in infra.nodes(data=True)
     })
 
     # TODO: put the cost unit demand
     ampl.getParameter('cost_unit_demand').setValues({
-        node: props[infra.infra_unit_cost_str]
+        props[infra.node_name_str]: props[infra.infra_unit_cost_str]
         for node,props in infra.nodes(data=True)
     })
 
-    # TODO: fill the battery probability constraints
+    # fill the battery probability constraints
+    ampl.getParameter('max_used_battery').setValues({
+        mobile_node: infra.full_loaded_battery_alive_prob
+        for mobile_node in mobile_names
+    })
+    ampl.getParameter('min_used_battery').setValues({
+        mobile_node: infra.unloaded_battery_alive_prob
+        for mobile_node in mobile_names
+    })
 
 
 def fill_AP_coverage_probabilities(ampl: AMPL, interval_length: int) -> None:
@@ -84,8 +93,8 @@ def get_complete_ampl_model_data(ampl_model_path, service : gs.ServiceGMLGraph, 
     ampl.param['infraGraph'] = infra.name
     ampl.param['serviceGraph'] = service.name
 
-    # TODO: interval_length 
-    interval_length = 10
+    # interval_length 
+    ampl.param['interval_length'] = infra.time_interval_count
 
     fill_AP_coverage_probabilities(ampl, interval_length)
 
