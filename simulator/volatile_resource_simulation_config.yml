@@ -7,7 +7,9 @@ infrastructure:
   cluster_move_distances: [0.002, 0.005]              # list of lengths of each cluster's line mobility pattern where the cluster goes there and back
                                                       # during the simulated time interval. The list's length identifies the number of clusters.
                                                       # Measured in 'GPS coordinate' lengths
-
+  unloaded_battery_alive_prob: 0.99                   # Probability having a not completly depleted battery by the end of the optimization
+                                                      # time interval if no capacity is used on the mobile node. Same value is set for all mobile nodes
+  full_loaded_battery_alive_prob: 0.2                 # Like above, but with fully loaded mobile node.
   seed: 0                                             # randomization seed
 #================= Service description section =================#
 service:

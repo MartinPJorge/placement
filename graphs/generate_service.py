@@ -37,7 +37,7 @@ class GMLGraph(nx.DiGraph):
 class InfrastructureGMLGraph(GMLGraph):
 
     def __init__(self, incoming_graph_data=None, gml_file=None, label='label', seed=0, cluster_move_distances=None,
-                 time_interval_count=None, **attr):
+                 time_interval_count=None, unloaded_battery_alive_prob=0.99, full_loaded_battery_alive_prob=0.2, **attr):
         """
         Reads a gml file constructed by mec-gen and generates the additional parameters.
 
@@ -76,6 +76,8 @@ class InfrastructureGMLGraph(GMLGraph):
         # directly accessed at the network x dicts of the class. Only create attributes, if if they need calculation based on the
         # input information in the GML file (i.e. mobility pattern)
         self.random = random.Random(seed)
+        self.unloaded_battery_alive_prob = unloaded_battery_alive_prob
+        self.full_loaded_battery_alive_prob = full_loaded_battery_alive_prob
 
         # store ID-s of all relevant node types
         self.endpoint_ids, self.access_point_ids, self.server_ids, self.mobile_ids = [], [], [], []
