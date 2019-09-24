@@ -163,9 +163,13 @@ for (i in 1:nrow(cell_nodes)) {
     micro_nodes <- c(micro_nodes, as.character(cell_nodes[i,]$id))
 }
 newNodes <- addNodeProps(nodes = frames$nodes, id_ = pico_nodes,
-                     properties = list(size=rep('pico', length(pico_nodes))))
+                     properties = list(size=rep('pico', length(pico_nodes)),
+                                       coverageRadius=
+                                         rep(100, length(pico_nodes))))
 newNodes <- addNodeProps(nodes = newNodes, id_ = micro_nodes,
-                     properties = list(size=rep('micro', length(micro_nodes))))
+                     properties = list(size=rep('micro', length(micro_nodes)),
+                                       coverageRadius=
+                                         rep(400, length(micro_nodes))))
 frames$nodes <- newNodes
 
 
