@@ -60,5 +60,5 @@ subject to AP_coverage_threshold {t_k in subintervals}:
     sum {ap in APs} AP_x[ap, t_k] *  prob_AP[ap, t_k] >= coverage_threshold;
 
 # TODO: syntax error here somewhere
-#subject to battery {N in mobiles}:
-#    max_used_battery[N] - ((sum {v in vertices[serviceGraph]}  X[v, N] * demands[v])/resources[N])*(max_used_battery-min_used_battery) >= battery_threshold;
+subject to battery {N in mobiles}:
+    max_used_battery[N] - ((sum {v in vertices[serviceGraph]}  X[v, N] * demands[v])/resources[N])*(max_used_battery[N] - min_used_battery[N]) >= battery_threshold;
