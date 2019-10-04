@@ -45,9 +45,8 @@ param min_used_battery {N in mobiles} >=0.0, <=1.0;
 param battery_threshold >=0.0, <=1.0;
 
 # delay parameters
-param APdelay {ap in APs} >= 0;
+param AP_mobile_delay {ap in APs} >= 0;
 param AP_server_delay {ap in APs, s in servers} >= 0;
-param AP_mobile_delay {ap in APs, m in mobiles} >= 0;
 param server_server_delay {s in servers, r in servers} >= 0;
 param mobile_mobile_delay {m in mobiles, n in mobiles} >= 0;
 
@@ -57,7 +56,7 @@ var X {v in vertices[serviceGraph], N in vertices[infraGraph]} binary;
 var AP_x {ap in APs, t_k in subintervals} binary;
 
 # delay variables for each of the three cases: mobile2mobile, mobile2server, server2server
-var delay_mobile_fixed {m in mobiles, s in servers, t_k in subintervals} = mobile_mobile_delay[m,master] + sum {ap in APs} AP_x[ap, t_k]*(APdelay[ap] + AP_server_delay[ap,s]);
+var delay_mobile_fixed {m in mobiles, s in servers, t_k in subintervals} = mobile_mobile_delay[m,master] + sum {ap in APs} AP_x[ap, t_k]*(AP_mobile_delay[ap] + AP_server_delay[ap,s]);
 var delay {N1 in vertices[infraGraph], N2 in vertices[infraGraph], t_k in subintervals} = 
 	if N1 in mobiles and N2 in servers then delay_mobile_fixed[N1, N2, t_k]
 	else if N1 in servers and N2 in mobiles then delay_mobile_fixed[N2, N1, t_k]

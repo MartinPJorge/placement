@@ -48,7 +48,7 @@ param cost_using_AP := 'accessPoint1' 1
 param interval_length := 10;
 
 #coverage probabilities of the mobile cluster by the APs at subintervals
-param prob_AP :        1        2       3       4       5       6       7       8       9       10   :=
+param prob_AP :        	 1        2       3       4       5       6       7       8       9       10   :=
          'accessPoint1' 0.95     0.95    0.85    0.85    0.95    0.95    0.95    0.95    0.95    0.95
          'accessPoint2' 0.85     0.85    0.95    0.95    0.95    0.95    0.95    0.95    0.95    0.95;
 
@@ -70,3 +70,13 @@ param min_used_battery 'robot1' 0.9
 param battery_threshold 0.3;
 
 # delay parameters
+param AP_mobile_delay := 'accessPoint1' 1
+                 		 'accessPoint2' 2;
+param AP_server_delay : 			   'server' :=
+						'accessPoint1' 	   1
+                 	  	'accessPoint2' 	   2;
+param server_server_delay : 		'server' :=
+							'server' 	1;
+param mobile_mobile_delay : 		'robot1' 'robot2' :=
+							'robot1' 	1		 1
+							'robot2'	1 		 1;
