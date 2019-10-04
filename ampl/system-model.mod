@@ -1,7 +1,7 @@
 set graph;
 # we meed to specify the which graphs we want to work with
-param serviceGraph in graph, symbolic;
 param infraGraph in graph, symbolic;
+param serviceGraph in graph, symbolic;
 
 #general graph functions
 set vertices {graph};
@@ -12,18 +12,19 @@ set APs within vertices[infraGraph];
 set servers within vertices[infraGraph];
 set mobiles within vertices[infraGraph];
 
+# defining the master robot inside the cluster
+param master in mobiles, symbolic;
+
 # subsets of service
 set SFCs;
 set SFC_paths {sfc in SFCs} within edges[serviceGraph];
 param SFC_max_delays {sfc in SFCs} >= 0;
 
-# defining the master robot inside the cluster
-param master in mobiles, symbolic;
-
 # parameters defining input
 param resources {N in vertices[infraGraph]} >= 0;
 param demands {v in vertices[serviceGraph]} >= 0;
 param cost_unit_demand {N in vertices[infraGraph]} >= 0;
+param cost_using_AP {ap in APs} >= 0;
 
 # temporal parameters
 # interval length between t0 and t1
@@ -66,7 +67,8 @@ var delay {N1 in vertices[infraGraph], N2 in vertices[infraGraph], t_k in subint
 
 minimize Total_cost:
     sum {v in vertices[serviceGraph], N in vertices[infraGraph]}
-         X[v, N] * demands[v] * cost_unit_demand[N];
+         X[v, N] * demands[v] * cost_unit_demand[N] + 
+    sum {ap in APs, t_k in subintervals} AP_x[ap, t_k] * cost_using_AP[ap];
 
 subject to Max_resources {N in vertices[infraGraph]}:
     sum {v in vertices[serviceGraph]}  X[v, N] * demands[v] <= resources[N];

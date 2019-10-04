@@ -8,13 +8,21 @@ set vertices['infraGraph'] := 'accessPoint1' 'accessPoint2' 'robot1' 'robot2' 's
 set edges['infraGraph'] := ('robot1', 'robot2') ('robot2', 'accessPoint1') ('accessPoint1', 'server');
 set vertices['serviceGraph'] := 'robotMaster' 'robotSlave' 'vEPC' 'controller';
 set edges['serviceGraph'] := ('robotMaster', 'robotSlave') ('robotMaster', 'vEPC') ('vEPC', 'controller');
-set SFCs := 'sfc1';
-set SFC_paths['sfc1'] := ('robotMaster', 'robotSlave') ('robotMaster', 'vEPC') ('vEPC', 'controller');
-param SFC_delays['sfc1'] := 10;
+
+#subsets of infastructure
 set APs := 'accessPoint1' 'accessPoint2';
 set servers := 'server';
 set mobiles := 'robot1' 'robot2';
 
+# defining the master robot inside the cluster
+param master := 'robot1';
+
+# subsets of service
+set SFCs := 'sfc1';
+set SFC_paths['sfc1'] := ('robotMaster', 'robotSlave') ('robotMaster', 'vEPC') ('vEPC', 'controller');
+param SFC_max_delays := 'sfc1' 10;
+
+# parameters defining input
 param resources :=  'accessPoint1' 0
                     'accessPoint2' 0
                     'robot1' 1
@@ -31,23 +39,34 @@ param cost_unit_demand :=   'accessPoint1' 0
                             'robot1' 10
                             'robot2' 10
                             'server' 1;
+                            
+param cost_using_AP := 'accessPoint1' 1
+                       'accessPoint2' 2;
 
+# temporal parameters
+# interval length between t0 and t1
 param interval_length := 10;
 
+#coverage probabilities of the mobile cluster by the APs at subintervals
 param prob_AP :        1        2       3       4       5       6       7       8       9       10   :=
          'accessPoint1' 0.95     0.95    0.85    0.85    0.95    0.95    0.95    0.95    0.95    0.95
          'accessPoint2' 0.85     0.85    0.95    0.95    0.95    0.95    0.95    0.95    0.95    0.95;
 
+# required coverage probability of the cluster
 param coverage_threshold := 0.9;
 
+# policies to map VNFs into infrastructure nodes
 param policy :          'accessPoint1' 'accessPoint2' 'robot1' 'robot2' 'server' :=
           'robotMaster'       0               0           1         0       0
           'robotSlave'        0               0           0         1       0
           'vEPC'              0               0           0         0       1
           'controller'        0               0           1         1       1;
 
+# battery parameters
 param max_used_battery 'robot1' 0.5
                        'robot2' 0.3;
 param min_used_battery 'robot1' 0.9
                        'robot2' 0.8;
 param battery_threshold 0.3;
+
+# delay parameters
