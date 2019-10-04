@@ -83,12 +83,12 @@ if __name__ == '__main__':
 
             service_instance = gs.ServiceGMLGraph(substrate_network, **config['service'])
 
-            # TODO: config['optimization'] is a python dictionary of optimization configuration parameters.
-
             checker = cmf.VolatileResourcesChecker()
             mapper = cmf.ConstructiveMapperFromFractional(checker)
             mapping_result_dict = mapper.map(substrate_network, service_instance)
 
+            # TODO: config['optimization'] is a python dictionary of optimization configuration parameters.
             ampl_object = graph2ampl.get_complete_ampl_model_data('../ampl/system-model.mod',
                                                                   service_instance, substrate_network)
-
+            # TODO: make this work
+            # ampl_object.solve()
