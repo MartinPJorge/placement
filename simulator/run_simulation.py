@@ -1,6 +1,9 @@
 import sys
 import argparse
 import yaml
+import os
+sys.path.append(os.path.abspath(".."))
+
 
 import ampl.graph2ampl as graph2ampl
 import graphs.generate_service as gs

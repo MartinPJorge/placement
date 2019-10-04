@@ -1,6 +1,6 @@
 #================= Infrastructure description section =================#
 infrastructure:
-  gml_file: "../graphs/infra-2-clusters-20-cells.gml"
+  gml_file: "../graphs/infras/cobo-calleja/pico-and-micro-cobo-calleja.gml"
   name: "infra"                                       # name of the graph object
   label: "id"                                         # GML node attribute to be used as graph node id
   time_interval_count: 12                             # the number of time frames for the optimization t \in (t0, t1)
