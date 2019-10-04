@@ -37,7 +37,7 @@ param prob_AP :        1        2       3       4       5       6       7       
 
 param coverage_threshold := 0.9;
 
-param policy :          'accessPoint1' 'accessPoint2' 'robot1' 'robot2' 'server'
+param policy :          'accessPoint1' 'accessPoint2' 'robot1' 'robot2' 'server' :=
           'robotMaster'       0               0           1         0       0
           'robotSlave'        0               0           0         1       0
           'vEPC'              0               0           0         0       1
