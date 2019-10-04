@@ -12,6 +12,11 @@ set APs within vertices[infraGraph];
 set servers within vertices[infraGraph];
 set mobiles within vertices[infraGraph];
 
+# subsets of service
+set SFCs;
+set SFC_paths {sfc in SFCs} within edges[serviceGraph];
+param SFC_max_delays {sfc in SFCs} >= 0;
+
 # defining the master robot inside the cluster
 param master in mobiles, symbolic;
 
@@ -53,10 +58,10 @@ var AP_x {ap in APs, t_k in subintervals} binary;
 # delay variables for each of the three cases: mobile2mobile, mobile2server, server2server
 var delay_mobile_fixed {m in mobiles, s in servers, t_k in subintervals} = mobile_mobile_delay[m,master] + sum {ap in APs} AP_x[ap, t_k]*(APdelay[ap] + AP_server_delay[ap,s]);
 var delay {N1 in vertices[infraGraph], N2 in vertices[infraGraph], t_k in subintervals} = 
-	if {N1 in mobiles and N2 in servers} then delay_mobile_fixed[N1, N2, t_k]
-	else if {N1 in servers and N2 in mobiles} then delay_mobile_fixed[N2, N1, t_k]
-	else if {N1 in mobiles and N2 in mobiles} then mobile_mobile_delay[N1, N2, t_k]
-	else if {N1 in servers and N2 in servers} then server_server_delay[N1, N2, t_k];
+	if N1 in mobiles and N2 in servers then delay_mobile_fixed[N1, N2, t_k]
+	else if N1 in servers and N2 in mobiles then delay_mobile_fixed[N2, N1, t_k]
+	else if N1 in mobiles and N2 in mobiles then mobile_mobile_delay[N1, N2, t_k]
+	else if N1 in servers and N2 in servers then server_server_delay[N1, N2, t_k];
 # if we have problems in amount of variables, merge delay constraints in one
 
 minimize Total_cost:
@@ -81,9 +86,5 @@ subject to AP_coverage_threshold {t_k in subintervals}:
 subject to battery {N in mobiles}:
     max_used_battery[N] - ((sum {v in vertices[serviceGraph]}  X[v, N] * demands[v])/resources[N])*(max_used_battery[N] - min_used_battery[N]) >= battery_threshold;
     
-#subject to delay_service :
-#	for i=1:lenght(vertices[serviceGraph]})-1
-#		delay_service = delay_service + sum {N1 in vertices[infraGraph], N2 in vertices[infraGraph]} X[v(i), N1] * X[v(i+1), N2] * (max {t_k in subintervals} delay[N1, N2, t_k]);
-#	end
-#	sum {v in vertices[serviceGraph]} 
-#	{N1 in vertices[infraGraph], N2 in vertices[infraGraph], t_k in subintervals} 
+subject to SFC_delays {sfc in SFCs, t_k in subintervals}:
+    sum {(v1, v2) in SFC_paths[sfc]} sum {N1 in vertices[infraGraph], N2 in vertices[infraGraph]} X[v1, N1] * X[v2, N2] * delay[N1, N2, t_k] <= SFC_max_delays[sfc];
