@@ -1,10 +1,50 @@
 library(mecgen)
 library(SDMTools)
 
+# Read the micro cells
+micros <- read.csv(file="fixed-cells/cobo-calleja/micro-cells.csv", header=TRUE,
+                   sep = ' ')
+micros$type <- rep('micro', nrow(micros))
+
+
+# Generate with random uniform the pico cells
+repulsion <- 50
+cobo.bl <- c(40.253541,-3.775409)
+cobo.br <- c(40.253541,-3.737324)
+cobo.tr <- c(40.276686,-3.737324)
+cobo.tl <- c(40.276686,-3.775409)
+
+# Insert the first pico cell
+curr_pico.lon <- runif(1, min = cobo.bl[2], max = cobo.br[2])
+curr_pico.lat <- runif(1, min = cobo.br[1], max = cobo.tr[1])
+pico_cells <- data.frame(lon = curr_pico.lon, lat = curr_pico.lat, type='pico')
+
+while(nrow(pico_cells) < 40 - 1) {
+  curr_pico.lon <- runif(1, min = cobo.bl[2], max = cobo.br[2])
+  curr_pico.lat <- runif(1, min = cobo.br[1], max = cobo.tr[1])
+  
+  no_overlap <- TRUE
+  for (row in 1:nrow(pico_cells)) {
+    pico <- pico_cells[row,]
+    dis <- SDMTools::distance(lat1 = curr_pico.lat, lon1 = curr_pico.lon,
+                              lat2 = pico$lat, lon2 = pico$lon)$distance
+    if (dis < repulsion) {
+      no_overlap <- FALSE
+      break
+    }
+  }
+  
+  if (no_overlap) {
+    pico_cells <- rbind(pico_cells,
+                        data.frame(lon=curr_pico.lon, lat=curr_pico.lat,
+                                   type='pico'))
+  }
+}
+
+
 # Obtain the cells of Cobo Calleja
-coboCells <- mecgen::cobo
-coboCells <- head(coboCells, 20)
-assocs <- build5GScenario(lats = coboCells$lat, lons = coboCells$lon)
+cobo_cells <- rbind(micros, data.frame(head(pico_cells, 10)))
+assocs <- build5GScenario(lats = cobo_cells$lat, lons = cobo_cells$lon)
 
 # Obtain the link and nodes frames
 m1Assoc <- assocs[[1]]
@@ -17,10 +57,121 @@ m2AggAssocs <- assocs[[7]]
 aggCentCoords <- assocs[[8]]
 m3Assocs <- assocs[[9]]
 m3Switches <- assocs[[10]]
+
+
+
+# Attach remaining pico cells to the M1 nodes where other pico cells that are
+# close to them attach to
+orphan_picos <- data.frame()
+child_picos <- data.frame()
+for (row in 1:nrow(pico_cells)) {
+  pico <- pico_cells[row,]
+  orphan
+  orphan <- length(which(m1Assoc$lon == pico$lon &
+                           m1Assoc$lat == pico$lat)) == 0
+  if (orphan)
+    orphan_picos <- rbind(orphan_picos, data.frame(pico))
+  else
+    child_picos <- rbind(child_picos, data.frame(pico))
+}
+orphan_picos$assoc_m1 <- rep(-1, nrow(orphan_picos))
+
+# Store the used M1 switches
+used_m1s <- data.frame()
+for (gr in unique(m1Assoc$group)) {
+  idx <- which(m1Coords$group == gr)
+  used_m1s <- rbind(used_m1s, data.frame(m1Coords[idx,]))
+}
+# Store how many pico cells are associated to them
+used_m1s$num_picos <- rep(0, nrow(used_m1s))
+for (row in 2:nrow(used_m1s)) {
+  used_m1 <- used_m1s[row,]
+  cells_of_m1 <- subset(m1Assoc, group == used_m1$group)
+  for (row2 in 1:nrow(child_picos)) {
+    child_pico <- child_picos[row2,]
+    filtered <- subset(cells_of_m1, lon==child_pico$lon &
+                   lat==child_pico$lat)
+    if(nrow(subset(cells_of_m1, lon==child_pico$lon &
+                   lat==child_pico$lat)) > 0) {
+      used_m1s[row,]$num_picos = used_m1s[row,]$num_picos + 1
+    }
+  }
+}
+
+# Store how many more pico cells they can hold (x4 pico = x1 macro)
+for(row in 1:nrow(used_m1s)) {
+  used_m1s[row,]$num_picos <- used_m1s[row,]$num_picos * 4
+  used_m1s[row,]$num_picos <- used_m1s[row,]$num_picos -
+                              (used_m1s[row,]$num_picos / 4)
+}
+
+# Find the closest orphan for each used M1
+m1 <- 1
+while (length(which(orphan_picos$assoc_m1 == -1)) > 0) {
+  if (used_m1s[m1,]$num_picos == 0) {
+    m1 <- which(used_m1s$num_picos > 0)[1]
+  }
+  
+  m1_switch <- used_m1s[m1,]
+  
+  min_dis <- Inf
+  min_orphan <- -1
+  for (row in 1:nrow(orphan_picos)) {
+    orphan_pico <- orphan_picos[row,]
+    if (orphan_pico$assoc_m1 == -1) {
+      dis <- SDMTools::distance(lat1 = m1_switch$lat, lon1 = m1_switch$lon,
+                                lat2 = orphan_pico$lat,
+                                lon2 = orphan_pico$lon)$distance
+      if (dis < min_dis) {
+        min_dis <- dis
+        min_orphan <- row
+      }
+    }
+  }
+  
+  # do the assignment
+  orphan_picos[min_orphan,]$assoc_m1 = m1_switch$group
+  used_m1s[m1,]$num_picos = used_m1s[m1,]$num_picos - 1
+  
+  # Choose next M1 switch to assign antennas
+  m1 <- (m1 + 1) %% (nrow(used_m1s) + 1)
+  m1 <- ifelse(m1 == 0, yes=1, no=m1)
+}
+
+# Append the M1 switches
+orphan_picos$type <- NULL
+orphan_picos$group <- orphan_picos$assoc_m1 
+orphan_picos$assoc_m1 <- NULL
+m1Assoc <- rbind(m1Assoc, orphan_picos)
+  
+
+
+# Create the frames
 frames <- graphFrames(m1Assoc, m1Coords, m1AccAssocs, accCentCoords,
                       m2Assocs, m2Switches, m2AggAssocs, aggCentCoords,
                       m3Assocs, m3Switches)
-  
+
+# Add node property for the cell type
+pico_nodes <- c()
+micro_nodes <- c()
+cell_nodes <- subset(frames$nodes, type=='cell')
+for (i in 1:nrow(cell_nodes)) {
+  if (nrow(subset(pico_cells, lon == cell_nodes[i,]$lon &
+                              lat == cell_nodes[i,]$lat)) > 0)
+    pico_nodes <- c(pico_nodes, as.character(cell_nodes[i,]$id))
+  else
+    micro_nodes <- c(micro_nodes, as.character(cell_nodes[i,]$id))
+}
+newNodes <- addNodeProps(nodes = frames$nodes, id_ = pico_nodes,
+                     properties = list(size=rep('pico', length(pico_nodes)),
+                                       coverageRadius=
+                                         rep(100, length(pico_nodes))))
+newNodes <- addNodeProps(nodes = newNodes, id_ = micro_nodes,
+                     properties = list(size=rep('micro', length(micro_nodes)),
+                                       coverageRadius=
+                                         rep(400, length(micro_nodes))))
+frames$nodes <- newNodes
+
 
 # Attach edge servers
 attachFrames <- attachServers(nodes = frames$nodes, links = frames$links,
