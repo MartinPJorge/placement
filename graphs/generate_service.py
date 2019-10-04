@@ -65,6 +65,7 @@ class InfrastructureGMLGraph(GMLGraph):
         self.access_point_delay_str = 'delay'
         self.link_delay_str = 'distance'            # --- TODO: currently distance because this is already in the GML examples
         # the distance which the AP wireless connectivity reaches with high reliability
+        # TODO: reach is given in meters, one degree corresponds to 111 139m
         self.ap_reach_str = 'reach'
         # TODO: These might have multiple types, just like the switches and servers!
         self.access_point_strs = ['pico_cell', 'micro_cell', 'macro_cell', 'cell']

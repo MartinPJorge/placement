@@ -86,3 +86,6 @@ if __name__ == '__main__':
             mapper = cmf.ConstructiveMapperFromFractional(checker)
             mapping_result_dict = mapper.map(substrate_network, service_instance)
 
+            ampl_object = graph2ampl.get_complete_ampl_model_data('../ampl/system-model.mod',
+                                                                  service_instance, substrate_network)
+

@@ -15,7 +15,7 @@ def fill_service(ampl: AMPL, service: gs.ServiceGMLGraph) -> None:
     ampl.param['vertices'][service.name] = service.vnfs
     ampl.set['edges'][service.name] = [
         (service.nodes[c1][service.node_name_str],
-            service[c2][service.node_name_str] for c1,c2 in service.edges()]
+            service[c2][service.node_name_str]) for c1,c2 in service.edges()]
 
     # set the CPU demands
     ampl.getParameter('demands').setValues({
@@ -48,7 +48,7 @@ def fill_infra(ampl: AMPL, infra: gs.InfrastructureGMLGraph) -> None:
     
     # set the CPU capabilities
     ampl.getParameter('resources').setValues({
-        node: props[infra.]
+        node: props[infra]
         for node,props in infra.nodes(data=True)
     })
 
