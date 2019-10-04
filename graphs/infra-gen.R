@@ -66,7 +66,6 @@ orphan_picos <- data.frame()
 child_picos <- data.frame()
 for (row in 1:nrow(pico_cells)) {
   pico <- pico_cells[row,]
-  orphan
   orphan <- length(which(m1Assoc$lon == pico$lon &
                            m1Assoc$lat == pico$lat)) == 0
   if (orphan)
@@ -165,11 +164,13 @@ for (i in 1:nrow(cell_nodes)) {
 newNodes <- addNodeProps(nodes = frames$nodes, id_ = pico_nodes,
                      properties = list(size=rep('pico', length(pico_nodes)),
                                        coverageRadius=
-                                         rep(100, length(pico_nodes))))
+                                         rep(100, length(pico_nodes)),
+                                       delay=rep(2.5, length(pico_nodes))))
 newNodes <- addNodeProps(nodes = newNodes, id_ = micro_nodes,
                      properties = list(size=rep('micro', length(micro_nodes)),
                                        coverageRadius=
-                                         rep(400, length(micro_nodes))))
+                                         rep(400, length(micro_nodes)),
+                                       delay=rep(5, length(micro_nodes))))
 frames$nodes <- newNodes
 
 
@@ -181,7 +182,8 @@ attachFrames <- attachServers(nodes = frames$nodes, links = frames$links,
                               distance = 0,
                               distanceUnits = "meter",
                               switchType = "m1",
-                              properties = list(cpu=2, mem=20, disk=100),
+                              properties = list(cpu=2, mem=20, disk=100,
+                                                cost=5.83),
                               idPrefix = "edge_server")
 
 
@@ -193,7 +195,8 @@ attachFrames <- attachServers(nodes = frames$nodes, links = frames$links,
                               distance = 0,
                               distanceUnits = "meter",
                               switchType = "m3",
-                              properties = list(cpu=20, mem=200, disk=1000),
+                              properties = list(cpu=20, mem=200, disk=1000,
+                                                cost=2.48),
                               idPrefix = "cloud_server")
 
 ######### THE TWO SQUARES WHERE FOG NODES APPEAR #########
@@ -220,7 +223,8 @@ for (i in 1:nrow(squares)) {
                                  latB = square$br_lat, latT = square$tl_lat,
                                  lonL = square$tl_lon, lonR = square$br_lon,
                                  numNodes = robots_per_square,
-                                 properties = list(cpu = 1, mem = 1, disk=10),
+                                 properties = list(cpu = 1, mem = 1, disk=10,
+                                                   cost=15.27),
                                  bandwidth = 20, bandwidthUnits = "Mpbs",
                                  idPrefix = prefix)
   
@@ -255,6 +259,29 @@ for (i in 1:nrow(squares)) {
   last_link$to <- last_robot$id
   attachFrames$links <- rbind(attachFrames$links, last_link)
 }
+
+
+######### SET FIXED INFRA DELAYS ASSUMING FIBER #########
+froms <- c()
+tos <- c()
+delays <- c()
+for (row in 1:nrow(attachFrames$links)) {
+  from_id <- as.character(attachFrames$links[row,]$from)
+  to_id <- as.character(attachFrames$links[row,]$to)
+  distance <- as.numeric(attachFrames$links[row,]$distance)
+  
+  is_src_robot <- grepl("robot", from_id)
+  is_dst_robot <-  grepl("robot", to_id)
+  
+  if (!is_src_robot && !is_dst_robot) {
+    froms <- c(froms, from_id)
+    tos <- c(tos, to_id)
+    delays <- c(delays, distance / 3e5) # delay is in ms, distance in M, light
+  }
+}
+newLinks <- addLinkProps(links = attachFrames$links, from_ = froms, to_ = tos,
+                         properties = list(delay=delays))
+attachFrames$links <- newLinks
 
 
 # Store the generated graph
