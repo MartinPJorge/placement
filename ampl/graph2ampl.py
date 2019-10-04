@@ -6,77 +6,77 @@ import argparse
 
 import graphs.generate_service as gs
 
-AMPLInfraTypes = ['APs', 'servers', 'mobiles']
 
-# TODO: refactor the loading to a class to avoid parameter multiplication and/or global variables
-infra_type_sets = {itype: [] for itype in AMPLInfraTypes}
+class AMPLDataConstructor(object):
 
-def fill_service(ampl: AMPL, service: gs.ServiceGMLGraph) -> None:
-    ampl.param['vertices'][service.name] = service.vnfs
-    ampl.set['edges'][service.name] = [
-        (service.nodes[c1][service.node_name_str],
-            service[c2][service.node_name_str]) for c1,c2 in service.edges()]
+    def __init__(self):
+        self.AMPLInfraTypes = ['APs', 'servers', 'mobiles']
+        self.infra_type_sets = {itype: [] for itype in self.AMPLInfraTypes}
 
-    # set the CPU demands
-    ampl.getParameter('demands').setValues({
-        vnf: props[service.node_name_str]
-        for vnf,props in service.nodes(data=True)
-    })
+    def fill_service(self, ampl: AMPL, service: gs.ServiceGMLGraph) -> None:
+        ampl.set['vertices'][service.name] = service.vnfs
+        ampl.set['edges'][service.name] = [
+            (service.nodes[c1][service.node_name_str],
+                service.nodes[c2][service.node_name_str]) for c1,c2 in service.edges()]
 
+        # set the VNF demands
+        ampl.getParameter('demands').setValues({
+            props[service.node_name_str]: props[service.nf_demand_str]
+            for vnf, props in service.nodes(data=True)
+        })
 
-def fill_infra(ampl: AMPL, infra: gs.InfrastructureGMLGraph) -> None:
-    # Get the infrastructure nodes' names
-    endpoint_names = [infra.nodes[id_][infra.node_name_str]
-        for id_ in infra.endpoint_ids]
-    access_point_names = [infra.nodes[id_][infra.node_name_str]
-        for id_ in infra.access_point_ids]
-    server_names = [infra.nodes[id_][infra.node_name_str]
-        for id_ in infra.server_ids]
-    mobile_names = [infra.nodes[id_][infra.node_name_str]
-        for id_ in infra.mobile_ids]
-    infra_names = endpoint_names + access_point_names + server_names +\
-            mobile_names
+    def fill_infra(self, ampl: AMPL, infra: gs.InfrastructureGMLGraph) -> None:
+        # Get the infrastructure nodes' names
+        self.endpoint_names = [infra.nodes[id_][infra.node_name_str]
+            for id_ in infra.endpoint_ids]
+        self.access_point_names = [infra.nodes[id_][infra.node_name_str]
+            for id_ in infra.access_point_ids]
+        self.server_names = [infra.nodes[id_][infra.node_name_str]
+            for id_ in infra.server_ids]
+        self.mobile_names = [infra.nodes[id_][infra.node_name_str]
+            for id_ in infra.mobile_ids]
+        self.infra_names = self.endpoint_names + self.access_point_names + self.server_names + \
+                           self.mobile_names
 
-    # All the infra graph vertices
-    ampl.set['vertices'][infra.name] = infra_names
-    ampl.set['APs'] = access_point_names
-    ampl.set['servers'] = server_names
-    ampl.set['mobiles'] = mobile_names
+        # All the infra graph vertices
+        ampl.set['vertices'][infra.name] = self.infra_names
+        ampl.set['APs'] = self.access_point_names
+        ampl.set['servers'] = self.server_names
+        ampl.set['mobiles'] = self.mobile_names
 
-    # Infrastructure edges
-    ampl.set['edges'][infra.name] = [(infra.nodes[c1][infra.node_name_str],
-        infra.nodes[c2][infra.node_name_str]) for c1,c2 in infra.edges()]
-    
-    # set the CPU capabilities
-    ampl.getParameter('resources').setValues({
-        props[infra.node_name_str]: props[infra.infra_node_capacity_str]
-        for node,props in infra.nodes(data=True)
-    })
+        # Infrastructure edges
+        ampl.set['edges'][infra.name] = [(infra.nodes[c1][infra.node_name_str],
+            infra.nodes[c2][infra.node_name_str]) for c1,c2 in infra.edges()]
 
-    # TODO: put the cost unit demand
-    ampl.getParameter('cost_unit_demand').setValues({
-        props[infra.node_name_str]: props[infra.infra_unit_cost_str]
-        for node,props in infra.nodes(data=True)
-    })
+        # set the node resource capabilities
+        ampl.getParameter('resources').setValues({
+            props[infra.node_name_str]: props[infra.infra_node_capacity_str]
+            for node, props in infra.nodes(data=True) if node not in infra.ignored_nodes_for_optimization
+        })
 
-    # fill the battery probability constraints
-    ampl.getParameter('max_used_battery').setValues({
-        mobile_node: infra.full_loaded_battery_alive_prob
-        for mobile_node in mobile_names
-    })
-    ampl.getParameter('min_used_battery').setValues({
-        mobile_node: infra.unloaded_battery_alive_prob
-        for mobile_node in mobile_names
-    })
+        ampl.getParameter('cost_unit_demand').setValues({
+            props[infra.node_name_str]: props[infra.infra_unit_cost_str]
+            for node,props in infra.nodes(data=True) if node not in infra.ignored_nodes_for_optimization
+        })
 
+        # fill the battery probability constraints
+        ampl.getParameter('max_used_battery').setValues({
+            mobile_node: infra.full_loaded_battery_alive_prob
+            for mobile_node in self.mobile_names
+        })
+        ampl.getParameter('min_used_battery').setValues({
+            mobile_node: infra.unloaded_battery_alive_prob
+            for mobile_node in self.mobile_names
+        })
 
-def fill_AP_coverage_probabilities(ampl: AMPL, interval_length: int) -> None:
-    subintervals = [i for i in range(1, interval_length + 1)]
-    APs = infra_type_sets[AMPLInfraTypes['APs']]
-    df = DataFrame(('AP_name', 'subinterval'), 'prob')
-    df.setValues({(AP, subint): 0.9 for AP in APs for subint in subintervals})
-    ampl.param['prob_AP'].setValues(df)
-    # TODO: refine this method to actually fill with the coverage prob
+    def fill_AP_coverage_probabilities(self, ampl: AMPL, infra: gs.InfrastructureGMLGraph, interval_length: int) -> None:
+        subintervals = [i for i in range(1, interval_length + 1)]
+        df = DataFrame(('AP_name', 'subinterval'), 'prob')
+        single_cluster = list(infra.ap_coverage_probabilities.values())[0]
+        df.setValues({(infra.node[ap_id][infra.node_name_str], subint): single_cluster[subint][ap_id]
+                      for subint in subintervals for ap_id in infra.access_point_ids})
+        # df.setValues({(AP, subint): infra. for ap_id in infra.access_point_ids for subint in subintervals})
+        ampl.param['prob_AP'].setValues(df)
 
 
 def get_complete_ampl_model_data(ampl_model_path, service : gs.ServiceGMLGraph, infra : gs.InfrastructureGMLGraph) -> AMPL:
@@ -96,48 +96,11 @@ def get_complete_ampl_model_data(ampl_model_path, service : gs.ServiceGMLGraph, 
     # interval_length 
     ampl.param['interval_length'] = infra.time_interval_count
 
-    fill_AP_coverage_probabilities(ampl, interval_length)
+    constructor = AMPLDataConstructor()
+    constructor.fill_service(ampl, service)
+    constructor.fill_infra(ampl, infra)
+    constructor.fill_AP_coverage_probabilities(ampl, infra, infra.time_interval_count)
 
-    # TODO @Jorge: continue from here on
-        # fill the affinity variable
-
-    fill_service(ampl, service)
-    fill_infra(ampl, infra)
     return ampl
 
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Given network service and' + \
-                                                 ' infrastructure graphs, it creates an AMPL .dat file')
-
-    parser.add_argument('model', metavar='model', type=str,
-                        help='Path to the AMPL model')
-    parser.add_argument('service', metavar='service', type=str,
-                        help='Path to the network service GML file')
-    parser.add_argument('infra', metavar='infra', type=str,
-                        help='Path to the infrastructure GML file')
-    parser.add_argument('out', metavar='out', type=str,
-                        help='Path to the output where .dat is created')
-    parser.add_argument('interval_length', metavar='time_len', type=int,
-                        help='Time interval length')
-
-    args = parser.parse_args()
-
-    # Read .gml files of the network service and infrastructure graphs
-    infra = nx.read_gml(path=args.infra, label='id')
-    service = nx.read_gml(path=args.service, label='id')
-
-    # Fill our model data
-    ampl = AMPL()
-    ampl.read(args.model)
-    ampl.set['graph'] = [args.infra, args.service]
-    ampl.param['infraGraph'] = args.infra
-    ampl.param['serviceGraph'] = args.service
-    ampl.param['interval_length'] = args.interval_length
-    ampl.param['coverage_threshold'] = 0.95
-
-    fill_service(ampl, service)
-    fill_infra(ampl, infra)
-    fill_AP_coverage_probabilities(ampl, args.interval_length)
-    ampl.exportData(datfile=args.out)
 
