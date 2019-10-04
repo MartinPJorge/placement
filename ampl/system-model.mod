@@ -60,8 +60,8 @@ var delay_mobile_fixed {m in mobiles, s in servers, t_k in subintervals} = mobil
 var delay {N1 in vertices[infraGraph], N2 in vertices[infraGraph], t_k in subintervals} = 
 	if N1 in mobiles and N2 in servers then delay_mobile_fixed[N1, N2, t_k]
 	else if N1 in servers and N2 in mobiles then delay_mobile_fixed[N2, N1, t_k]
-	else if N1 in mobiles and N2 in mobiles then mobile_mobile_delay[N1, N2, t_k]
-	else if N1 in servers and N2 in servers then server_server_delay[N1, N2, t_k];
+	else if N1 in mobiles and N2 in mobiles then mobile_mobile_delay[N1, N2]
+	else if N1 in servers and N2 in servers then server_server_delay[N1, N2];
 # if we have problems in amount of variables, merge delay constraints in one
 
 minimize Total_cost:
