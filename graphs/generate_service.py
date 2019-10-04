@@ -10,7 +10,7 @@ class GMLGraph(nx.DiGraph):
 
     def __init__(self, incoming_graph_data=None, gml_file=None, label='label', **attr):
         if gml_file is not None:
-            super(GMLGraph, self).__init__(incoming_graph_data=nx.read_gml(gml_file, label=label))
+            super(GMLGraph, self).__init__(incoming_graph_data=nx.read_gml(gml_file, label=label), **attr)
         else:
             super(GMLGraph, self).__init__(incoming_graph_data, **attr)
 
@@ -65,8 +65,9 @@ class InfrastructureGMLGraph(GMLGraph):
         self.access_point_delay_str = 'delay'
         self.link_delay_str = 'distance'            # --- TODO: currently distance because this is already in the GML examples
         # the distance which the AP wireless connectivity reaches with high reliability
-        # TODO: reach is given in meters, one degree corresponds to 111 139m
-        self.ap_reach_str = 'reach'
+        # reach is given in meters, one degree corresponds to 111 139m
+        self.one_degree_in_meters = 111139.0
+        self.ap_reach_str = 'coverageRadius'
         # TODO: These might have multiple types, just like the switches and servers!
         self.access_point_strs = ['pico_cell', 'micro_cell', 'macro_cell', 'cell']
         self.server_strs = ['m{}_server'.format(i) for i in range(1,4)]
@@ -82,7 +83,7 @@ class InfrastructureGMLGraph(GMLGraph):
         self.full_loaded_battery_alive_prob = full_loaded_battery_alive_prob
 
         # store ID-s of all relevant node types
-        self.endpoint_ids, self.access_point_ids, self.server_ids, self.mobile_ids = [], [], [], []
+        self.endpoint_ids, self.access_point_ids, self.server_ids, self.mobile_ids, self.ignored_nodes_for_optimization = [], [], [], [], []
         for n, node_dict in self.nodes(data=True):
             # TODO: read these info from the GML file!
             node_dict[self.infra_fixed_cost_str] = self.random.uniform(0, 10)
@@ -92,8 +93,6 @@ class InfrastructureGMLGraph(GMLGraph):
                 self.endpoint_ids.append(n)
             elif node_dict[self.type_str] in self.access_point_strs:
                 # TODO this info should already be in the GML!
-                node_dict[self.ap_reach_str] = 100
-                # TODO this info should already be in the GML!
                 node_dict[self.access_point_delay_str] = 0.001
                 self.access_point_ids.append(n)
             elif node_dict[self.type_str] in self.server_strs:
@@ -101,6 +100,9 @@ class InfrastructureGMLGraph(GMLGraph):
             elif node_dict[self.type_str] == self.mobile_node_str:
                 #
                 self.mobile_ids.append(n)
+            else:
+                # save all nodes, in some set, beacuse these ones needs to be ignored during adding them to the AMPL model
+                self.ignored_nodes_for_optimization.append(n)
         self.cluster_endpoint_ids = []
         # stores lists of the contained mobile ID-s for each cluster.
         # Its key is the same as the outer key of the self.ap_coverage_probabilities
@@ -239,10 +241,9 @@ class InfrastructureGMLGraph(GMLGraph):
         """
         Pjx, Pjy = self.relative_coordinates(current_mobile_pos, self.nodes[ap_id])
         dist = math.sqrt(Pjx ** 2 + Pjy ** 2)
-        if self.ap_reach_str not in self.nodes[ap_id]:
-            reach = 0.02
-        else:
-            reach = self.nodes[ap_id][self.ap_reach_str]
+        # AP reach is given in meters, but we need it in degrees
+        reach = self.nodes[ap_id][self.ap_reach_str] / self.one_degree_in_meters
+
         # TODO: get better model for coverage probability dropping based on research
         # drops to 0.0 probability somewhere after 20% beyond the reach of the AP, decreases squared from 1.0
         probability = 1.0
