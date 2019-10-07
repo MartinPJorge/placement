@@ -10,14 +10,29 @@ import graphs.generate_service as gs
 class AMPLDataConstructor(object):
 
     def __init__(self):
-        self.AMPLInfraTypes = ['APs', 'servers', 'mobiles']
-        self.infra_type_sets = {itype: [] for itype in self.AMPLInfraTypes}
+        pass
 
     def fill_service(self, ampl: AMPL, service: gs.ServiceGMLGraph) -> None:
         ampl.set['vertices'][service.name] = service.vnfs
         ampl.set['edges'][service.name] = [
             (service.nodes[c1][service.node_name_str],
                 service.nodes[c2][service.node_name_str]) for c1,c2 in service.edges()]
+
+        # Parse SFC-s from the service graph
+        sfc_id = 1
+        sfc_path_dict = {}
+        sfc_delay_dict = {}
+        for sfc_delay, sfc_edge_id_path in service.sfc_delays_list:
+            # the generator's edges contain node ID-s, we need node names.
+            sfc_edge_name_path = map(lambda t: (service.nodes[t[0]][service.node_name_str],
+                                                service.nodes[t[1]][service.node_name_str]), sfc_edge_id_path)
+            sfc_path_dict['sfc'+str(sfc_id)] = list(sfc_edge_name_path)
+            sfc_delay_dict['sfc'+str(sfc_id)] = sfc_delay
+            sfc_id += 1
+        ampl.set['SFCs'] = list(sfc_path_dict.keys())
+        for sfc_name in sfc_path_dict.keys():
+            ampl.set['SFC_paths'][sfc_name] = sfc_path_dict[sfc_name]
+        ampl.getParameter('SFC_max_delays').setValues(sfc_delay_dict)
 
         # set the VNF demands
         ampl.getParameter('demands').setValues({
@@ -43,6 +58,10 @@ class AMPLDataConstructor(object):
         ampl.set['APs'] = self.access_point_names
         ampl.set['servers'] = self.server_names
         ampl.set['mobiles'] = self.mobile_names
+
+        # add the mobile cluster's master node
+        self.master_mobile = list(infra.ap_coverage_probabilities.keys())[0]
+        ampl.param['master'] = self.master_mobile
 
         # Infrastructure edges
         ampl.set['edges'][infra.name] = [(infra.nodes[c1][infra.node_name_str],
@@ -72,8 +91,8 @@ class AMPLDataConstructor(object):
     def fill_AP_coverage_probabilities(self, ampl: AMPL, infra: gs.InfrastructureGMLGraph, interval_length: int) -> None:
         subintervals = [i for i in range(1, interval_length + 1)]
         df = DataFrame(('AP_name', 'subinterval'), 'prob')
-        single_cluster = list(infra.ap_coverage_probabilities.values())[0]
-        df.setValues({(infra.node[ap_id][infra.node_name_str], subint): single_cluster[subint][ap_id]
+        single_cluster = infra.ap_coverage_probabilities[self.master_mobile]
+        df.setValues({(infra.nodes[ap_id][infra.node_name_str], subint): single_cluster[subint][ap_id]
                       for subint in subintervals for ap_id in infra.access_point_ids})
         # df.setValues({(AP, subint): infra. for ap_id in infra.access_point_ids for subint in subintervals})
         ampl.param['prob_AP'].setValues(df)
