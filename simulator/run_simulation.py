@@ -47,7 +47,7 @@ def test_delay_calc(substrate_network, time_interval_count):
 
 def run_without_config_file():
     time_interval_count = 12
-    substrate_network = gs.InfrastructureGMLGraph(gml_file="../graphs/infra-2-clusters-20-cells.gml", label='id', name='infra',
+    substrate_network = gs.InfrastructureGMLGraph(gml_file="../graphs/infras/cobo-calleja/pico-and-micro-cobo-calleja.gml", label='id', name='infra',
                                                   cluster_move_distances=[0.002, 0.005], time_interval_count=time_interval_count)
 
     # NOTE: forcing the algorithm to introduce new bin example: setting all item cost to 900, setting node 42 from 780 to 1200 cap, and node 47 from 10000 to 1000

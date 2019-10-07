@@ -56,19 +56,18 @@ class InfrastructureGMLGraph(GMLGraph):
         self.node_name_str = 'name'
         self.infra_node_capacity_str = 'cpu'
         self.infra_fixed_cost_str = 'fixed_cost'
-        self.infra_unit_cost_str = 'unit_cost'
+        self.infra_unit_cost_str = 'cost'
         self.endpoint_type_str = 'endpoint'
         self.type_str = 'type'
         self.server_type_str = 'server'
         self.access_point_type_str = 'cell'
-        # TODO: add delays to the GML graphs LINKS AND APS
         self.access_point_delay_str = 'delay'
-        self.link_delay_str = 'distance'            # --- TODO: currently distance because this is already in the GML examples
+        self.link_delay_str = 'delay'
         # the distance which the AP wireless connectivity reaches with high reliability
         # reach is given in meters, one degree corresponds to 111 139m
         self.one_degree_in_meters = 111139.0
         self.ap_reach_str = 'coverageRadius'
-        # TODO: These might have multiple types, just like the switches and servers!
+        # These might have multiple types, just like the switches and servers!
         self.access_point_strs = ['pico_cell', 'micro_cell', 'macro_cell', 'cell']
         self.server_strs = ['m{}_server'.format(i) for i in range(1,4)]
         self.server_strs.append('server')
@@ -85,15 +84,12 @@ class InfrastructureGMLGraph(GMLGraph):
         # store ID-s of all relevant node types
         self.endpoint_ids, self.access_point_ids, self.server_ids, self.mobile_ids, self.ignored_nodes_for_optimization = [], [], [], [], []
         for n, node_dict in self.nodes(data=True):
-            # TODO: read these info from the GML file!
-            node_dict[self.infra_fixed_cost_str] = self.random.uniform(0, 10)
-            node_dict[self.infra_unit_cost_str] = self.random.uniform(1, 2)
+            # TODO: read fixed_cost info from the GML file if needed!
+            node_dict[self.infra_fixed_cost_str] = 0.0
 
             if node_dict[self.type_str] == self.endpoint_type_str:
                 self.endpoint_ids.append(n)
             elif node_dict[self.type_str] in self.access_point_strs:
-                # TODO this info should already be in the GML!
-                node_dict[self.access_point_delay_str] = 0.001
                 self.access_point_ids.append(n)
             elif node_dict[self.type_str] in self.server_strs:
                 self.server_ids.append(n)
@@ -108,7 +104,8 @@ class InfrastructureGMLGraph(GMLGraph):
         # Its key is the same as the outer key of the self.ap_coverage_probabilities
         self.mobile_cluster_id_to_node_ids = {}
         # contains dictionary for each mobile cluster which is a dict of each time instance which is
-        # a dict of each AP_id to their coverage probability. A mobile cluster is identified by one of its nodes (master node)
+        # a dict of each AP_id to their coverage probability. A mobile cluster is identified by one of its nodes (master node),
+        # which relays the traffic of all mobile nodes towars the fixed part of the infra.
         self.ap_coverage_probabilities = {}
         if cluster_move_distances is not None:
             self.generate_mobility_pattern(cluster_move_distances)
@@ -162,18 +159,14 @@ class InfrastructureGMLGraph(GMLGraph):
                 if coverage_prob is not None:
                     if coverage_prob > self.ap_coverage_probabilities[affected_master_mobile_id][time_interval_index][through_ap_id]:
                         return float('inf')
-                # TODO: read properly the delay from the infra
-                # chosen_ap_delay = self.nodes[through_ap_id][self.access_point_delay_str]
-                chosen_ap_delay = self.random.random()
+                chosen_ap_delay = self.nodes[through_ap_id][self.access_point_delay_str]
                 chosen_ap_id = through_ap_id
             else:
                 # find the AP with the lowest delay, which is above the given coverage threshold
                 chosen_ap_delay = float('inf')
                 chosen_ap_id = None
                 for ap_id in self.access_point_ids:
-                    # TODO: read properly the delay from the infra
-                    # ap_delay = self.nodes[ap_id][self.access_point_delay_str]
-                    current_ap_delay = self.random.random()
+                    current_ap_delay = self.nodes[ap_id][self.access_point_delay_str]
                     if coverage_prob is not None:
                         # if coverage is given, skip the ones which are lower.
                         if coverage_prob > self.ap_coverage_probabilities[affected_master_mobile_id][time_interval_index][ap_id]:
