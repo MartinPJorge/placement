@@ -2,6 +2,8 @@ import sys
 import argparse
 import yaml
 import os
+import logging
+from rainbow_logging_handler import RainbowLoggingHandler
 sys.path.append(os.path.abspath(".."))
 
 
@@ -71,6 +73,12 @@ if __name__ == '__main__':
     if len(sys.argv) == 1:
         run_without_config_file()
     else:
+        root_logger = logging.Logger('simulator')
+        handler = RainbowLoggingHandler(sys.stderr, color_funcName=('black', 'yellow', True))
+        formatter = logging.Formatter('%(asctime)s.%(name)s.%(levelname).3s: %(message)s')
+        handler.setFormatter(formatter)
+        root_logger.addHandler(handler)
+        root_logger.setLevel(logging.DEBUG)
         parser = argparse.ArgumentParser(description="Invokes volatile resources optimization task generation and "
                                                      "solves it with heuristic and AMPL formulation.")
         parser.add_argument('config', metavar='CONFIG_PATH', type=str)
@@ -79,12 +87,12 @@ if __name__ == '__main__':
         with open(args.config) as f:
             config = yaml.load(f.read())
 
-            substrate_network = gs.InfrastructureGMLGraph(**config['infrastructure'])
+            substrate_network = gs.InfrastructureGMLGraph(**config['infrastructure'], log=root_logger)
 
-            service_instance = gs.ServiceGMLGraph(substrate_network, **config['service'])
+            service_instance = gs.ServiceGMLGraph(substrate_network, **config['service'], log=root_logger)
 
             checker = cmf.VolatileResourcesChecker()
-            mapper = cmf.ConstructiveMapperFromFractional(checker)
+            mapper = cmf.ConstructiveMapperFromFractional(checker, log=root_logger)
             mapping_result_dict = mapper.map(substrate_network, service_instance)
 
             # TODO: config['optimization'] is a python dictionary of optimization configuration parameters.

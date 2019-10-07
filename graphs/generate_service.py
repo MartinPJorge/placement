@@ -8,7 +8,16 @@ from rainbow_logging_handler import RainbowLoggingHandler
 
 class GMLGraph(nx.DiGraph):
 
-    def __init__(self, incoming_graph_data=None, gml_file=None, label='label', **attr):
+    def __init__(self, incoming_graph_data=None, gml_file=None, label='label', log=None, **attr):
+        if log is None:
+            self.log = logging.Logger(self.__class__.__name__)
+        else:
+            self.log = log.getChild(self.__class__.__name__)
+        handler = RainbowLoggingHandler(sys.stderr, color_funcName=('black', 'yellow', True))
+        formatter = logging.Formatter('%(asctime)s.%(name)s.%(levelname).3s: %(message)s')
+        handler.setFormatter(formatter)
+        self.log.addHandler(handler)
+        self.log.setLevel(logging.DEBUG)
         if gml_file is not None:
             super(GMLGraph, self).__init__(incoming_graph_data=nx.read_gml(gml_file, label=label), **attr)
         else:
@@ -199,6 +208,7 @@ class InfrastructureGMLGraph(GMLGraph):
                 endpoint = filter(lambda m: m in self.endpoint_ids, connected_comp.nodes).__next__()
                 self.cluster_endpoint_ids.append(endpoint)
                 master_mobile = self.random.choice([m for m in filter(lambda m: m in self.mobile_ids, connected_comp.nodes)])
+                self.log.debug("Generating mobility pattern for mobile cluster with master {}".format(master_mobile))
                 self.mobile_cluster_id_to_node_ids[master_mobile] = list(connected_comp.nodes()) + [endpoint]
                 self.ap_coverage_probabilities[master_mobile] = {}
                 move_distance = cluster_move_distances.pop()
@@ -376,12 +386,6 @@ class ServiceGMLGraph(GMLGraph):
         self.random = random.Random(seed)
         self.current_node_id = 0
         self.series_parallel_ratio = series_parallel_ratio
-        self.log = logging.Logger('ServiceGMLGraph')
-        handler = RainbowLoggingHandler(sys.stderr, color_funcName=('black', 'yellow', True))
-        formatter = logging.Formatter('%(asctime)s(%(name).6s)%(levelname).3s: %(message)s')
-        handler.setFormatter(formatter)
-        self.log.addHandler(handler)
-        self.log.setLevel(logging.DEBUG)
         self.sfc_delays_list = []             # list of (delay, edge path) tuples containing chain delays.
         self.mobile_nfs_per_sfc = mobile_nfs_per_sfc
         self._generate_structure()
