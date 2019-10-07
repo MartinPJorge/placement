@@ -71,6 +71,8 @@ class InfrastructureGMLGraph(GMLGraph):
         self.server_type_str = 'server'
         self.access_point_type_str = 'cell'
         self.access_point_delay_str = 'delay'
+        # NOTE: this must not be confused with the fixed/unit cost if AP-s would ever be used for hosting some NFs
+        self.access_point_usage_cost_str = 'cost'
         self.link_delay_str = 'delay'
         # the distance which the AP wireless connectivity reaches with high reliability
         # reach is given in meters, one degree corresponds to 111 139m
@@ -95,7 +97,6 @@ class InfrastructureGMLGraph(GMLGraph):
         for n, node_dict in self.nodes(data=True):
             # TODO: read fixed_cost info from the GML file if needed!
             node_dict[self.infra_fixed_cost_str] = 0.0
-
             if node_dict[self.type_str] == self.endpoint_type_str:
                 self.endpoint_ids.append(n)
             elif node_dict[self.type_str] in self.access_point_strs:

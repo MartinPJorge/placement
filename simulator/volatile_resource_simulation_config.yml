@@ -25,3 +25,5 @@ service:
 optimization:
   time_interval_count: 12                             # same as infrastructure.time_interval_count
   coverage_threshold: 0.9                             # Least probability the cluster should be covered at all time instances.
+  battery_threshold: 0.2                              # Least probability which the mobile clusters are not depleted by the end of the
+                                                      # optimization interval with the allocated load.

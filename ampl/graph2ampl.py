@@ -9,7 +9,7 @@ import graphs.generate_service as gs
 
 class AMPLDataConstructor(object):
 
-    def __init__(self, log=None):
+    def __init__(self, optimization_kwargs, log=None):
         if log is None:
             self.log = logging.Logger(self.__class__.__name__)
         else:
@@ -19,6 +19,7 @@ class AMPLDataConstructor(object):
         handler.setFormatter(formatter)
         self.log.addHandler(handler)
         self.log.setLevel(logging.DEBUG)
+        self.optimization_kwargs = optimization_kwargs
 
     def fill_service(self, ampl: AMPL, service: gs.ServiceGMLGraph) -> None:
         ampl.set['vertices'][service.name] = service.vnfs
@@ -85,9 +86,17 @@ class AMPLDataConstructor(object):
             for node, props in infra.nodes(data=True) if node not in infra.ignored_nodes_for_optimization
         })
 
+        # all non-ignored nodes have a cost which is interpreted as a unit cost.
+        # (it is set for AP-s too, but they can never host VNFs in the current model)
         ampl.getParameter('cost_unit_demand').setValues({
             props[infra.node_name_str]: props[infra.infra_unit_cost_str]
             for node,props in infra.nodes(data=True) if node not in infra.ignored_nodes_for_optimization
+        })
+
+        # set usage cost of AP
+        ampl.getParameter('cost_using_AP').setValues({
+            props[infra.node_name_str]: props[infra.access_point_usage_cost_str]
+            for node, props in infra.nodes(data=True) if node in infra.access_point_ids
         })
 
         # fill the battery probability constraints
@@ -106,11 +115,44 @@ class AMPLDataConstructor(object):
         single_cluster = infra.ap_coverage_probabilities[self.master_mobile_id]
         df.setValues({(infra.nodes[ap_id][infra.node_name_str], subint): single_cluster[subint][ap_id]
                       for subint in subintervals for ap_id in infra.access_point_ids})
-        # df.setValues({(AP, subint): infra. for ap_id in infra.access_point_ids for subint in subintervals})
         ampl.param['prob_AP'].setValues(df)
 
+    def fill_global_optimization_params(self, ampl : AMPL):
+        # minimal probability of covering the mobile cluster by the selected access point at all times
+        ampl.getParameter('coverage_threshold').set(float(self.optimization_kwargs['coverage_threshold']))
+        # Least probability which the mobile clusters are not depleted by the end of the
+        # optimization interval with the allocated load.
+        ampl.getParameter('battery_threshold').set(float(self.optimization_kwargs['battery_threshold']))
+        # must be the same as it is set for the infrastructure for the optimization task generation
+        ampl.getParameter('interval_length').set(float(self.optimization_kwargs['time_interval_count']))
 
-def get_complete_ampl_model_data(ampl_model_path, service : gs.ServiceGMLGraph, infra : gs.InfrastructureGMLGraph, log=None) -> AMPL:
+    def fill_placement_policies(self, ampl : AMPL, service : gs.ServiceGMLGraph, infra : gs.InfrastructureGMLGraph):
+        policy_dict = {}
+        self.log.info("Reading placement policies from service...")
+        self.log.debug(" "*5 + " ".join(d[infra.node_name_str] for i, d in infra.nodes(data=True) if i not in infra.ignored_nodes_for_optimization))
+        for vnf_id, vnf_data in service.nodes(data=True):
+            string_of_a_row = ""
+            for infra_node_id, infra_node_data in infra.nodes(data=True):
+                if infra_node_id not in infra.ignored_nodes_for_optimization:
+                    ampl_df_key = (vnf_data[service.node_name_str], infra_node_data[infra.node_name_str])
+                    if service.location_constr_str in vnf_data:
+                        if infra_node_id in vnf_data[service.location_constr_str]:
+                            policy_dict[ampl_df_key] = 1
+                        else:
+                            policy_dict[ampl_df_key] = 0
+                    else:
+                        policy_dict[ampl_df_key] = 1
+                    string_of_a_row += " "*len(infra_node_data[infra.node_name_str]) + str(policy_dict[ampl_df_key])
+            self.log.debug("{}:".format(vnf_data[service.node_name_str]) + string_of_a_row)
+        df = DataFrame(('vnf_name', 'infra_node_name'), 'is_allowed')
+        df.setValues(policy_dict)
+        ampl.param['policy'].setValues(df)
+
+    def fill_delay_values(self, ampl : AMPL, infra : gs.InfrastructureGMLGraph):
+        pass
+
+def get_complete_ampl_model_data(ampl_model_path, service : gs.ServiceGMLGraph, infra : gs.InfrastructureGMLGraph,
+                                 optimization_kwargs : dict, log=None) -> AMPL:
     """
     Reads all service and infrastructure information to AMPL python data structure
 
@@ -124,13 +166,13 @@ def get_complete_ampl_model_data(ampl_model_path, service : gs.ServiceGMLGraph, 
     ampl.param['infraGraph'] = infra.name
     ampl.param['serviceGraph'] = service.name
 
-    # interval_length 
-    ampl.param['interval_length'] = infra.time_interval_count
-
-    constructor = AMPLDataConstructor(log)
+    constructor = AMPLDataConstructor(optimization_kwargs, log)
+    constructor.fill_global_optimization_params(ampl)
     constructor.fill_service(ampl, service)
     constructor.fill_infra(ampl, infra)
     constructor.fill_AP_coverage_probabilities(ampl, infra, infra.time_interval_count)
+    constructor.fill_placement_policies(ampl, service, infra)
+    constructor.fill_delay_values(ampl, infra)
 
     return ampl
 
