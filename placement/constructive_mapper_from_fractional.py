@@ -154,7 +154,7 @@ class PruneLocalityConstraints(BasePruningStep):
 
 class ConstructiveMapperFromFractional(AbstractMapper):
 
-    def __init__(self, checker: AbstractChecker):
+    def __init__(self, checker: AbstractChecker, log=None):
         """
         Constructs a solution for the volatile resources problem based on the fractional optimal solution
         for the inherent bin packing problem as defined by Cambazard, et. al. -- Bin Packing with Linear Usage
@@ -170,12 +170,15 @@ class ConstructiveMapperFromFractional(AbstractMapper):
         self.pruning_steps_collection = [PruneLocalityConstraints()]
         self.objective_value_of_fractional_opt = None
         self.objective_value_of_integer_solution = None
-        self.log = logging.Logger(self.__class__.__name__)
+        if log is None:
+            self.log = logging.Logger(self.__class__.__name__)
+        else:
+            self.log = log.getChild(self.__class__.__name__)
+        self.log.setLevel(logging.INFO)
         handler = RainbowLoggingHandler(sys.stderr, color_funcName=('black', 'yellow', True))
-        formatter = logging.Formatter('%(asctime)s(%(name).6s)%(levelname).3s: %(message)s')
+        formatter = logging.Formatter('%(asctime)s.%(name)s.%(levelname).3s: %(message)s')
         handler.setFormatter(formatter)
         self.log.addHandler(handler)
-        self.log.setLevel(logging.INFO)
 
         # these might not be needed if we override the functions with other heuristics.
         self.epsilon = 1e-3
