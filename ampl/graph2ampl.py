@@ -149,7 +149,45 @@ class AMPLDataConstructor(object):
         ampl.param['policy'].setValues(df)
 
     def fill_delay_values(self, ampl : AMPL, infra : gs.InfrastructureGMLGraph):
-        pass
+        self.log.info("Setting time-invariant delay matrices from the infrastructure distance calculation info.")
+        # set delay of AP
+        ampl.getParameter('AP_mobile_delay').setValues({
+            props[infra.node_name_str]: props[infra.access_point_delay_str]
+            for node, props in infra.nodes(data=True) if node in infra.access_point_ids
+        })
+
+        # set delays between APs and servers
+        ap_server_delay_dict = {}
+        for ap_id in infra.access_point_ids:
+            for infra_id in infra.server_ids:
+                ampl_df_key = (infra.nodes[ap_id][infra.node_name_str], infra.nodes[infra_id][infra.node_name_str])
+                # delay between the APs and servers is time-invariant
+                ap_server_delay_dict[ampl_df_key] = infra.delay_distance(ap_id, infra_id, 1)
+        df = DataFrame(("AP_name", "infra_node_name"), "delay")
+        df.setValues(ap_server_delay_dict)
+        ampl.param['AP_server_delay'].setValues(df)
+
+        # set delays between servers
+        server_server_delay_dict = {}
+        for infra_id1 in infra.server_ids:
+            for infra_id2 in infra.server_ids:
+                ampl_df_key = (infra.nodes[infra_id1][infra.node_name_str], infra.nodes[infra_id2][infra.node_name_str])
+                # delay between servers are time invariant
+                server_server_delay_dict[ampl_df_key] = infra.delay_distance(infra_id1, infra_id2, 1)
+        df = DataFrame(("infra_node_name1", "infra_node_name2"), "delay")
+        df.setValues(server_server_delay_dict)
+        ampl.param['server_server_delay'].setValues(df)
+
+        # set mobile internal delays
+        mobile_mobile_delay_dict = {}
+        for mobile_id1 in infra.mobile_ids:
+            for mobile_id2 in infra.mobile_ids:
+                ampl_df_key = (infra.nodes[mobile_id1][infra.node_name_str], infra.nodes[mobile_id2][infra.node_name_str])
+                mobile_mobile_delay_dict[ampl_df_key] = infra.delay_distance(mobile_id1, mobile_id2, 1)
+        df = DataFrame(("mobile_name1", "mobile_name2"), "delay")
+        df.setValues(mobile_mobile_delay_dict)
+        ampl.param['mobile_mobile_delay'].setValues(df)
+
 
 def get_complete_ampl_model_data(ampl_model_path, service : gs.ServiceGMLGraph, infra : gs.InfrastructureGMLGraph,
                                  optimization_kwargs : dict, log=None) -> AMPL:
