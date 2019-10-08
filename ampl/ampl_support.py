@@ -66,6 +66,7 @@ class AMPLSolverSupport(object):
             self.log.info("Saving the generated AMPL data to file path {}".format(export_ampl_data_path))
             self.ampl.exportData(export_ampl_data_path)
         self.log.info("Parsing to AMPL is successful!")
+        self.ampl.setOption('solver', 'gurobi')
 
     def solve(self):
         """
