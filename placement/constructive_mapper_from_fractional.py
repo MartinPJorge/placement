@@ -172,13 +172,16 @@ class ConstructiveMapperFromFractional(AbstractMapper):
         self.objective_value_of_integer_solution = None
         if log is None:
             self.log = logging.Logger(self.__class__.__name__)
+            handler = RainbowLoggingHandler(sys.stderr, color_funcName=('black', 'yellow', True))
+            formatter = logging.Formatter('%(asctime)s.%(name)s.%(levelname).3s: %(message)s')
+            handler.setFormatter(formatter)
+            self.log.addHandler(handler)
+            self.log.setLevel(logging.INFO)
         else:
             self.log = log.getChild(self.__class__.__name__)
-        self.log.setLevel(logging.INFO)
-        handler = RainbowLoggingHandler(sys.stderr, color_funcName=('black', 'yellow', True))
-        formatter = logging.Formatter('%(asctime)s.%(name)s.%(levelname).3s: %(message)s')
-        handler.setFormatter(formatter)
-        self.log.addHandler(handler)
+            for handler in log.handlers:
+                self.log.addHandler(handler)
+            self.log.setLevel(log.getEffectiveLevel())
 
         # these might not be needed if we override the functions with other heuristics.
         self.epsilon = 1e-3
