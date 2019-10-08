@@ -11,13 +11,16 @@ class GMLGraph(nx.DiGraph):
     def __init__(self, incoming_graph_data=None, gml_file=None, label='label', log=None, **attr):
         if log is None:
             self.log = logging.Logger(self.__class__.__name__)
+            handler = RainbowLoggingHandler(sys.stderr, color_funcName=('black', 'yellow', True))
+            formatter = logging.Formatter('%(asctime)s.%(name)s.%(levelname).3s: %(message)s')
+            handler.setFormatter(formatter)
+            self.log.addHandler(handler)
+            self.log.setLevel(logging.DEBUG)
         else:
             self.log = log.getChild(self.__class__.__name__)
-        handler = RainbowLoggingHandler(sys.stderr, color_funcName=('black', 'yellow', True))
-        formatter = logging.Formatter('%(asctime)s.%(name)s.%(levelname).3s: %(message)s')
-        handler.setFormatter(formatter)
-        self.log.addHandler(handler)
-        self.log.setLevel(logging.DEBUG)
+            for handler in log.handlers:
+                self.log.addHandler(handler)
+            self.log.setLevel(log.getEffectiveLevel())
         if gml_file is not None:
             super(GMLGraph, self).__init__(incoming_graph_data=nx.read_gml(gml_file, label=label), **attr)
         else:

@@ -66,19 +66,14 @@ def run_without_config_file():
     run_some_tests(substrate_network)
 
     ampl_object = graph2ampl.get_complete_ampl_model_data('../ampl/system-model.mod',
-                                                          service_instance, substrate_network)
+                                                          service_instance, substrate_network,
+                                                          {'time_interval_count': 12, 'coverage_threshold': 0.9, 'battery_threshold': 0.2})
 
 
 if __name__ == '__main__':
     if len(sys.argv) == 1:
         run_without_config_file()
     else:
-        root_logger = logging.Logger('simulator')
-        handler = RainbowLoggingHandler(sys.stderr, color_funcName=('black', 'yellow', True))
-        formatter = logging.Formatter('%(asctime)s.%(name)s.%(levelname).3s: %(message)s')
-        handler.setFormatter(formatter)
-        root_logger.addHandler(handler)
-        root_logger.setLevel(logging.DEBUG)
         parser = argparse.ArgumentParser(description="Invokes volatile resources optimization task generation and "
                                                      "solves it with heuristic and AMPL formulation.")
         parser.add_argument('config', metavar='CONFIG_PATH', type=str)
@@ -86,6 +81,18 @@ if __name__ == '__main__':
 
         with open(args.config) as f:
             config = yaml.load(f.read())
+
+            root_logger = logging.Logger('simulator')
+            consol_handler = RainbowLoggingHandler(sys.stderr, color_funcName=('black', 'yellow', True))
+            file_handler = logging.FileHandler(config['simulator']['log_file'], 'w')
+            formatter = logging.Formatter('%(asctime)s.%(name)s.%(levelname).3s: %(message)s')
+            consol_handler.setFormatter(formatter)
+            file_handler.setFormatter(formatter)
+            root_logger.addHandler(consol_handler)
+            root_logger.addHandler(file_handler)
+            root_logger.setLevel(config['simulator']['log_level'])
+
+            root_logger.info("Generating infrastructure...")
 
             substrate_network = gs.InfrastructureGMLGraph(**config['infrastructure'], log=root_logger)
 
@@ -95,6 +102,7 @@ if __name__ == '__main__':
             mapper = cmf.ConstructiveMapperFromFractional(checker, log=root_logger)
             mapping_result_dict = mapper.map(substrate_network, service_instance)
 
+            root_logger.info("Parsing optimization task into AMPL data structure...")
             # config['optimization'] is a python dictionary of optimization configuration parameters.
             ampl_object = graph2ampl.get_complete_ampl_model_data('../ampl/system-model.mod',
                                                                   service_instance, substrate_network,

@@ -12,13 +12,16 @@ class AMPLDataConstructor(object):
     def __init__(self, optimization_kwargs, log=None):
         if log is None:
             self.log = logging.Logger(self.__class__.__name__)
+            handler = RainbowLoggingHandler(sys.stderr, color_funcName=('black', 'yellow', True))
+            formatter = logging.Formatter('%(asctime)s.%(name)s.%(levelname).3s: %(message)s')
+            handler.setFormatter(formatter)
+            self.log.addHandler(handler)
+            self.log.setLevel(logging.DEBUG)
         else:
             self.log = log.getChild(self.__class__.__name__)
-        handler = RainbowLoggingHandler(sys.stderr, color_funcName=('black', 'yellow', True))
-        formatter = logging.Formatter('%(asctime)s.%(name)s.%(levelname).3s: %(message)s')
-        handler.setFormatter(formatter)
-        self.log.addHandler(handler)
-        self.log.setLevel(logging.DEBUG)
+            for handler in log.handlers:
+                self.log.addHandler(handler)
+            self.log.setLevel(log.getEffectiveLevel())
         self.optimization_kwargs = optimization_kwargs
 
     def fill_service(self, ampl: AMPL, service: gs.ServiceGMLGraph) -> None:
