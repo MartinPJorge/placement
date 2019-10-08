@@ -6,8 +6,7 @@ import logging
 from rainbow_logging_handler import RainbowLoggingHandler
 sys.path.append(os.path.abspath(".."))
 
-
-import ampl.graph2ampl as graph2ampl
+from ampl.ampl_support import AMPLSolverSupport
 import graphs.generate_service as gs
 import heuristic.placement.constructive_mapper_from_fractional as cmf
 
@@ -25,7 +24,7 @@ def run_some_tests(substrate_network):
                 mapper.map(substrate_network, service_instance)
 
                 # try:
-                #     ampl_object = graph2ampl.get_complete_ampl_model_data('../ampl/system-model.mod',
+                #     ampl_solver_support = graph2ampl.get_complete_ampl_model_data('../ampl/system-model.mod',
                 #                                                           service_instance, substrate_network)
                 #     # TODO: second execution of ampl tranform gives exception on NOT unique 'cell1' -- internal AMPL object not created from scratch?
                 #     # TODO: invoke AMPL solver and extract solution
@@ -65,9 +64,11 @@ def run_without_config_file():
 
     run_some_tests(substrate_network)
 
-    ampl_object = graph2ampl.get_complete_ampl_model_data('../ampl/system-model.mod',
-                                                          service_instance, substrate_network,
-                                                          {'time_interval_count': 12, 'coverage_threshold': 0.9, 'battery_threshold': 0.2})
+    # TODO(Low prio): without config AMPL is not run...
+    #
+    # ampl_object = graph2ampl.get_complete_ampl_model_data('../ampl/system-model.mod',
+    #                                                       service_instance, substrate_network,
+    #                                                       {'time_interval_count': 12, 'coverage_threshold': 0.9, 'battery_threshold': 0.2})
 
 
 if __name__ == '__main__':
@@ -93,19 +94,27 @@ if __name__ == '__main__':
             root_logger.setLevel(config['simulator']['log_level'])
 
             root_logger.info("Generating infrastructure...")
-
             substrate_network = gs.InfrastructureGMLGraph(**config['infrastructure'], log=root_logger)
-
+            root_logger.info("Generating service graph...")
             service_instance = gs.ServiceGMLGraph(substrate_network, **config['service'], log=root_logger)
 
-            checker = cmf.VolatileResourcesChecker()
-            mapper = cmf.ConstructiveMapperFromFractional(checker, log=root_logger)
-            mapping_result_dict = mapper.map(substrate_network, service_instance)
+            try:
+                checker = cmf.VolatileResourcesChecker()
+                mapper = cmf.ConstructiveMapperFromFractional(checker, log=root_logger)
+                mapping_result_dict = mapper.map(substrate_network, service_instance)
+            except Exception as e:
+                root_logger.error("Error during heuristic solution: ")
+                # for development keep it raised
+                raise
 
-            root_logger.info("Parsing optimization task into AMPL data structure...")
-            # config['optimization'] is a python dictionary of optimization configuration parameters.
-            ampl_object = graph2ampl.get_complete_ampl_model_data('../ampl/system-model.mod',
-                                                                  service_instance, substrate_network,
-                                                                  config['optimization'], log=root_logger)
-            # TODO: make this work
-            # ampl_object.solve()
+            try:
+                root_logger.info("Creating AMPL solver support class...")
+                # config['optimization'] is a python dictionary of optimization configuration parameters.
+                ampl_solver_support = AMPLSolverSupport(config['simulator']['ampl_model_path'], service_instance, substrate_network,
+                                                        config['optimization'], log=root_logger)
+                root_logger.info("Solving AMPL...")
+                ampl_solver_support.solve()
+            except Exception as e:
+                root_logger.error("Error during AMPL solution: ")
+                # for development keep raised
+                raise

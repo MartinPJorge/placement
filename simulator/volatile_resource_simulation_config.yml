@@ -30,4 +30,5 @@ optimization:
 #================= Simulator settings =================#
 simulator:
   log_file: "simulator.log"
-  log_level: "DEBUG"
+  log_level: "INFO"
+  ampl_model_path: '../ampl/system-model.mod'
