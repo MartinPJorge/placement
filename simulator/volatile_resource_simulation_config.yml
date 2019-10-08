@@ -31,4 +31,5 @@ optimization:
 simulator:
   log_file: "simulator.log"
   log_level: "INFO"
-  ampl_model_path: '../ampl/system-model.mod'
+  ampl_model_path: '../ampl/system-model.mod'                           # AMPL model location for the volatile resources model
+  export_ampl_data_path: "../ampl/system-model-generated.dat"           # if given, the generated data is exported for inspection/outer solution

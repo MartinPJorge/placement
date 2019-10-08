@@ -4,3 +4,4 @@
 venv/
 *.Rhistory
 *.log
+ampl/system-model-generated.dat

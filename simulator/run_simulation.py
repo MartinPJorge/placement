@@ -103,18 +103,20 @@ if __name__ == '__main__':
                 mapper = cmf.ConstructiveMapperFromFractional(checker, log=root_logger)
                 mapping_result_dict = mapper.map(substrate_network, service_instance)
             except Exception as e:
-                root_logger.error("Error during heuristic solution: ")
+                root_logger.exception("Error during heuristic solution: ")
                 # for development keep it raised
                 raise
 
             try:
                 root_logger.info("Creating AMPL solver support class...")
                 # config['optimization'] is a python dictionary of optimization configuration parameters.
+                export_data_if_needed = config['simulator']['export_ampl_data_path'] if "export_ampl_data_path" in config['simulator'] else None
                 ampl_solver_support = AMPLSolverSupport(config['simulator']['ampl_model_path'], service_instance, substrate_network,
-                                                        config['optimization'], log=root_logger)
+                                                        config['optimization'], log=root_logger,
+                                                        export_ampl_data_path=export_data_if_needed)
                 root_logger.info("Solving AMPL...")
-                ampl_solver_support.solve()
+                # ampl_solver_support.solve()
             except Exception as e:
-                root_logger.error("Error during AMPL solution: ")
+                root_logger.exception("Error during AMPL solution: ")
                 # for development keep raised
                 raise
