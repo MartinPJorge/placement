@@ -4,7 +4,7 @@ infrastructure:
   name: "infra"                                       # name of the graph object
   label: "id"                                         # GML node attribute to be used as graph node id
   time_interval_count: 12                             # the number of time frames for the optimization t \in (t0, t1)
-  cluster_move_distances: [0.002, 0.005]              # list of lengths of each cluster's line mobility pattern where the cluster goes there and back
+  cluster_move_distances: [0.05]              # list of lengths of each cluster's line mobility pattern where the cluster goes there and back
                                                       # during the simulated time interval. The list's length identifies the number of clusters.
                                                       # Measured in 'GPS coordinate' lengths
   unloaded_battery_alive_prob: 0.99                   # Probability having a not completly depleted battery by the end of the optimization
