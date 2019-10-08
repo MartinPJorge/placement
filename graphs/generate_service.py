@@ -209,7 +209,11 @@ class InfrastructureGMLGraph(GMLGraph):
             # see if this is a mobile node cluster
             if any(m in connected_comp for m in self.mobile_ids):
                 # there must be at least one endpoint in each cluster
-                endpoint = filter(lambda m: m in self.endpoint_ids, connected_comp.nodes).__next__()
+                endpoints_in_component = list(filter(lambda m: m in self.endpoint_ids, connected_comp.nodes))
+                if len(endpoints_in_component) == 0:
+                    raise Exception("No endpoint found in mobile cluster {}".format(connected_comp.nodes))
+                else:
+                    endpoint = self.random.choice(endpoints_in_component)
                 self.cluster_endpoint_ids.append(endpoint)
                 master_mobile = self.random.choice([m for m in filter(lambda m: m in self.mobile_ids, connected_comp.nodes)])
                 self.log.debug("Generating mobility pattern for mobile cluster with master {}".format(master_mobile))

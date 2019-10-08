@@ -115,7 +115,7 @@ if __name__ == '__main__':
                                                         config['optimization'], log=root_logger,
                                                         export_ampl_data_path=export_data_if_needed)
                 root_logger.info("Solving AMPL...")
-                # ampl_solver_support.solve()
+                ampl_solver_support.solve()
             except Exception as e:
                 root_logger.exception("Error during AMPL solution: ")
                 # for development keep raised

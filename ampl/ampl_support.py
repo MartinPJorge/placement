@@ -62,6 +62,8 @@ class AMPLSolverSupport(object):
         self.ampl = get_complete_ampl_model_data(ampl_model_path, service_instance, substrate_network, optimization_kwargs, log = log)
         self.ampl.setErrorHandler(AMPLErrorHandler(self.log))
         if export_ampl_data_path is not None:
+            # NOTE: Full zero rows/columns are not shown anywhere in the .dat file???
+            self.log.info("Saving the generated AMPL data to file path {}".format(export_ampl_data_path))
             self.ampl.exportData(export_ampl_data_path)
         self.log.info("Parsing to AMPL is successful!")
 

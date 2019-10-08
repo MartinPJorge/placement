@@ -79,9 +79,11 @@ class AMPLDataConstructor(object):
         ampl.param['master'] = self.master_mobile_name
         self.log.debug("Setting master mobile {}".format(self.master_mobile_name))
 
+        # NOTE: infrastructure edges are never used anywhere in the formulation!
         # Infrastructure edges
-        ampl.set['edges'][infra.name] = [(infra.nodes[c1][infra.node_name_str],
-            infra.nodes[c2][infra.node_name_str]) for c1,c2 in infra.edges()]
+        # NOT ALL INFRA edges should be added!
+        # ampl.set['edges'][infra.name] = [(infra.nodes[c1][infra.node_name_str],
+        #     infra.nodes[c2][infra.node_name_str]) for c1,c2 in infra.edges()]
 
         # set the node resource capabilities
         ampl.getParameter('resources').setValues({

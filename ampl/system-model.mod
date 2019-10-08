@@ -56,7 +56,7 @@ var X {v in vertices[serviceGraph], N in vertices[infraGraph]} binary;
 var AP_x {ap in APs, t_k in subintervals} binary;
 
 # delay variables for each of the three cases: mobile2mobile, mobile2server, server2server
-var delay_mobile_fixed {m in mobiles, s in servers, t_k in subintervals} = mobile_mobile_delay[m,master] + sum {ap in APs} AP_x[ap, t_k]*(AP_mobile_delay[ap] + AP_server_delay[ap,s]);
+var delay_mobile_fixed {m in mobiles, s in servers, t_k in subintervals} = mobile_mobile_delay[m, master] + sum {ap in APs} AP_x[ap, t_k]*(AP_mobile_delay[ap] + AP_server_delay[ap,s]);
 var delay {N1 in vertices[infraGraph], N2 in vertices[infraGraph], t_k in subintervals} = 
 	if N1 in mobiles and N2 in servers then delay_mobile_fixed[N1, N2, t_k]
 	else if N1 in servers and N2 in mobiles then delay_mobile_fixed[N2, N1, t_k]
