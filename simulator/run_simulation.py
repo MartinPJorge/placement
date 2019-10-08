@@ -88,10 +88,13 @@ if __name__ == '__main__':
             file_handler = logging.FileHandler(config['simulator']['log_file'], 'w')
             formatter = logging.Formatter('%(asctime)s.%(name)s.%(levelname).3s: %(message)s')
             consol_handler.setFormatter(formatter)
+            consol_handler.setLevel(config['simulator']['console_log_level'])
             file_handler.setFormatter(formatter)
+            file_handler.setLevel(config['simulator']['file_log_level'])
             root_logger.addHandler(consol_handler)
             root_logger.addHandler(file_handler)
-            root_logger.setLevel(config['simulator']['log_level'])
+            # NOTE: Root loglevel is DEBUG so the handler level settings properly take effect
+            root_logger.setLevel(logging.DEBUG)
 
             root_logger.info("Generating infrastructure...")
             substrate_network = gs.InfrastructureGMLGraph(**config['infrastructure'], log=root_logger)
