@@ -76,6 +76,10 @@ class AMPLSolverSupport(object):
         # NOTE: error and warning handling are done by AMPLErrorHandler
         self.log.info("Starting AMPL solver...")
         self.ampl.solve()
-        self.log.info("AMPL solver finished!")
+        objective = self.ampl.getObjective("Total_cost")
+        self.log.info("AMPL solver finished:\n"
+                      "\t\t\tresult: {}\n"
+                      "\t\t\tmessage: {}\n"
+                      "\t\t\tobjective value: {}\n".format(objective.result(), objective.message(), objective.value()))
 
 
