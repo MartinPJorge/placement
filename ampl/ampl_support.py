@@ -5,6 +5,7 @@ from rainbow_logging_handler import RainbowLoggingHandler
 import amplpy
 
 from graphs.generate_service import InfrastructureGMLGraph, ServiceGMLGraph
+from graphs.mapping_structure import VolatileResourcesMapping
 from ampl.graph2ampl import get_complete_ampl_model_data
 
 
@@ -36,6 +37,7 @@ class AMPLSolverSupport(object):
                  optimization_kwargs : dict, log = None, export_ampl_data_path=None):
         """
         Facilitates communicating with the AMPL object so it it easy to call the AMPL solution from the simulator.
+        Raises an Exception baseclass if something occours which MUST be corrected, or MUSTNOT happen.
 
         :param ampl_model_path:
         :param service_instance:
@@ -60,6 +62,8 @@ class AMPLSolverSupport(object):
         self.log.info("Parsing optimization task into AMPL data structure...")
         # AMPL object provided by the library
         self.ampl = get_complete_ampl_model_data(ampl_model_path, service_instance, substrate_network, optimization_kwargs, log = log)
+        self.service_instance = service_instance
+        self.substrate_network = substrate_network
         self.ampl.setErrorHandler(AMPLErrorHandler(self.log))
         if export_ampl_data_path is not None:
             # NOTE: Full zero rows/columns are not shown anywhere in the .dat file???
@@ -67,6 +71,40 @@ class AMPLSolverSupport(object):
             self.ampl.exportData(export_ampl_data_path)
         self.log.info("Parsing to AMPL is successful!")
         self.ampl.setOption('solver', 'gurobi')
+
+    def construct_mapping(self, objective : amplpy.objective.Objective):
+        """
+        Constructs a VolatileResourcesMapping object according to the solver's results.
+
+        :param objective:
+        :return:
+        """
+        mapping = VolatileResourcesMapping()
+        if objective.result() == 'infeasible':
+            return mapping
+        elif objective.result() == 'solved':
+            mapping[VolatileResourcesMapping.WORKED] = True
+            for var_name, var in self.ampl.getVariables():
+                # node mapping decision variables
+                if var_name == 'X':
+                    for key, value in var.getValues().toDict().items():
+                        # it is a binary in float, so safe to compare
+                        if value == 1.0:
+                            nf_name, infra_name = key
+                            mapping[nf_name] = infra_name
+                elif var_name == 'AP_x':
+                    for key, value in var.getValues().toDict().items():
+                        if value == 1.0:
+                            ap_name, subinterval = key
+                            mapping.add_access_point_selection(subinterval, ap_name)
+
+            if not mapping.validate_mapping(self.service_instance, self.substrate_network):
+                raise Exception("Mapping of the AMPL model is invalid!")
+            self.log.info("Mapping structure validation is successful!")
+            return mapping
+        else:
+            self.log.error("Unhandled AMPL result variant!")
+            raise NotImplementedError("Unhandled AMPL result variant!")
 
     def solve(self):
         """
@@ -82,5 +120,7 @@ class AMPLSolverSupport(object):
                       "\t\t\tresult: {}\n"
                       "\t\t\tmessage: {}\n"
                       "\t\t\tobjective value: {}\n".format(objective.result(), objective.message(), objective.value()))
+        return self.construct_mapping(objective)
+
 
 

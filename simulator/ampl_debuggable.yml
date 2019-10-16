@@ -1,3 +1,4 @@
+# configuration which is small enough to run the AMPL with the demo license
 #================= Infrastructure description section =================#
 infrastructure:
   gml_file: "../graphs/infras/cobo-calleja/small-variant.gml"
