@@ -6,6 +6,7 @@ import sys
 from .mapper import AbstractMapper
 from .checker import AbstractChecker
 from graphs.generate_service import ServiceGMLGraph, InfrastructureGMLGraph
+from graphs.mapping_structure import VolatileResourcesMapping
 
 
 class UnfeasibleBinPacking(Exception):
@@ -391,35 +392,21 @@ class ConstructiveMapperFromFractional(AbstractMapper):
             raise Exception("Item not found in mapped_here structure in any bin!")
         return True
 
-    def check_other_constraints(self, infra : InfrastructureGMLGraph, ns : ServiceGMLGraph):
+    def construct_output_mapping(self, mapping, ns : ServiceGMLGraph, infra : InfrastructureGMLGraph):
         """
-        Checks whether the output indeed satisfies all volatile resources constraints (capacity, can be checked by
-        the check_bin_mapping function)
-
-        :return:
-        """
-        for item in self.items:
-            if ns.location_constr_str in item['node_dict']:
-                if item.mapped_to['id'] not in item['node_dict'][ns.location_constr_str]:
-                    return False
-        return True
-
-    def construct_output_mapping(self, mapping):
-        """
-
+        Constructs an output mapping object
 
         :param mapping:
         :return:
         """
         mapping['worked'] = True
+        for i in self.items:
+            mapping[i['node_dict'][ns.node_name_str]] = i.mapped_to['node_dict'][infra.node_name_str]
 
         return mapping
 
-    # TODO: maybe return a mapping structure as a class? (we could move retrieving mapping info to this class instead of static mapper functions)
     def map(self, infra, ns) -> dict:
-        mapping = {
-            'worked': False
-        }
+        mapping = VolatileResourcesMapping()
         # Check that graphs have correct format
         if not self.__checker.check_infra(infra) or not self.__checker.check_ns(ns):
             return mapping
@@ -454,13 +441,14 @@ class ConstructiveMapperFromFractional(AbstractMapper):
         if not self.check_bin_mapping():
             self.log.info("Bin packing solution not found by the heuristic!")
             return mapping
-        elif not self.check_other_constraints(infra, ns):
-            self.log.error("Bin packing result does not respect some non-bin packing constraint!")
-            raise Exception("Bin packing result does not respect some non-bin packing constraint!")
         else:
             self.log.info("Bin packing solution found with objective value {}, while fractional optimal value is {}".
                           format(self.objective_value_of_integer_solution, self.objective_value_of_fractional_opt))
-            mapping = self.construct_output_mapping(mapping)
-
-        return mapping
+            mapping = self.construct_output_mapping(mapping, ns, infra)
+            if not mapping.validate_mapping(ns, infra):
+                self.log.error("Heuristic algorithm solution does not respect some constraint!")
+                raise Exception("Heuristic algorithm solution does not respect some constraint!")
+            else:
+                self.log.info("Mapping solution validation is successful!")
+            return mapping
 
