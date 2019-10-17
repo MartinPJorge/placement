@@ -62,6 +62,10 @@ class Item(dict):
     def __repr__(self):
         return "Item(id={}, weight={}, mapped_to={})".format(self['id'], self['weight'], self.mapped_to)
 
+    def __hash__(self):
+        # ID uniquely defines the Item, it is ensured by the NetworkX graph
+        return hash(str(self['id']))
+
 
 class Bin(dict):
 
@@ -149,13 +153,77 @@ class PruneLocalityConstraints(BasePruningStep):
         return items, bins
 
 
-# TODO: add other pruning classes
-# class ASDSDASDAS(BasePruningStep)
+class BaseConstraintViolationChecker(metaclass=ABCMeta):
+
+    def __init__(self, current_bins, infra : InfrastructureGMLGraph, ns : ServiceGMLGraph):
+        super(BaseConstraintViolationChecker, self).__init__()
+        self.bins = current_bins
+        self.ns = ns
+        self.infra = infra
+        self.violating_items = None
+
+    @abstractmethod
+    def get_violating_items(self) -> list:
+        """
+        Returns a list of items which somehow violate the constraints, sets the elf.violating_items list.
+
+        :return:
+        """
+        pass
+
+    @abstractmethod
+    def item_move_improvement_score(self, item_to_be_moved : Item, target_bin : Bin) -> int:
+        """
+        Returns +1, 0, -1 to indicate whether the input item move is desired, neutral or undesired for easing
+        the violation of this constraint.
+
+        :param item_to_be_moved:
+        :param target_bin:
+        :return:
+        """
+        pass
+
+
+class BinCapacityViolationChecker(BaseConstraintViolationChecker):
+
+    def __init__(self, current_bins, infra : InfrastructureGMLGraph, ns : ServiceGMLGraph):
+        super(BinCapacityViolationChecker, self).__init__(current_bins, infra, ns)
+
+    def get_violating_items(self):
+        """
+        Returns all items, which are in overloaded bins.
+
+        :return:
+        """
+        violating_items = []
+        for bin in self.bins:
+            if bin.is_overloaded:
+                violating_items.extend(bin.mapped_here)
+        return violating_items
+
+    def item_move_improvement_score(self, item_to_be_moved: Item, target_bin: Bin):
+        """
+        Prefers if the number of violating items/violated bins decrease.
+
+        :param item_to_be_moved:
+        :param target_bin:
+        :return:
+        """
+        origin_bin_not_overloaded = item_to_be_moved.mapped_to.total_load - item_to_be_moved['weight'] < \
+                                    item_to_be_moved.mapped_to['capacity']
+        if target_bin.does_item_fit(item_to_be_moved):
+            return 1
+        elif origin_bin_not_overloaded:
+            return 0
+        else:
+            # NOTE: it is possible that the total number of violating items wont increase in this case either, if there was no item mapped
+            # to target bin, but then it still doesnot make sense it map a not fitting item there.
+            return -1
 
 
 class ConstructiveMapperFromFractional(AbstractMapper):
 
-    def __init__(self, checker: AbstractChecker, log=None):
+    def __init__(self, checker: AbstractChecker, log=None, improvement_score_limit=1):
         """
         Constructs a solution for the volatile resources problem based on the fractional optimal solution
         for the inherent bin packing problem as defined by Cambazard, et. al. -- Bin Packing with Linear Usage
@@ -187,6 +255,8 @@ class ConstructiveMapperFromFractional(AbstractMapper):
         # these might not be needed if we override the functions with other heuristics.
         self.epsilon = 1e-3
         self.min_bin_preference = None
+        # TODO: delegate to configuration parameters
+        self.improvement_score_limit = improvement_score_limit
 
     @property
     def total_item_weight(self):
@@ -216,6 +286,7 @@ class ConstructiveMapperFromFractional(AbstractMapper):
             if bin['capacity'] >= min_weighted_item['weight']:
                 self.bins.append(bin)
             elif bin['capacity'] > self.epsilon:
+                # items and bins with 0 capacity might appear as access points
                 self.log.info("Discarding bin {} because it cannot fit even the smallest item".format(bin))
         if len(self.bins) == 0:
             raise UnfeasibleBinPacking("None of the bins can host the smallest item!")
@@ -297,28 +368,36 @@ class ConstructiveMapperFromFractional(AbstractMapper):
         :param ns:
         :return: bool, whether there is anything left to improve
         """
-        overloading_items = []
-        for bin in best_bins:
-            if bin.is_overloaded:
-                overloading_items.extend(bin.mapped_here)
-        if len(overloading_items) == 0:
+        violation_checkers = [BinCapacityViolationChecker(best_bins, infra, ns)]
+        violating_items = set()
+        for checker in violation_checkers:
+            violating_items = violating_items.union(checker.get_violating_items())
+        if len(violating_items) == 0:
             return False
         else:
             cost_of_cheapest_improvement = float('inf')
             target_bin = None
             item_to_be_moved = None
-            for item in overloading_items:
+            for item in violating_items:
                 for bin in best_bins:
-                    if bin.does_item_fit(item) and bin is not item.mapped_to and bin in item.possible_bins:
-                        # Difference between the current mapping and the possible relocation.
-                        # This value might be even negative, if the rounding did not consider taking the first fitting bin in the
-                        # ordered best bin list.
-                        cost_of_improvement = bin.get_variable_cost_of_mapping(item) - \
-                                              item.mapped_to.get_variable_cost_of_mapping(item)
-                        if cost_of_improvement < cost_of_cheapest_improvement:
-                            cost_of_cheapest_improvement = cost_of_improvement
-                            target_bin = bin
-                            item_to_be_moved = item
+                    if bin is not item.mapped_to and bin in item.possible_bins:
+                        total_item_move_improvement_score = 0
+                        for checker in violation_checkers:
+                            total_item_move_improvement_score += checker.item_move_improvement_score(item, bin)
+                        if total_item_move_improvement_score >= self.improvement_score_limit:
+                            # might be useful later, for now it is too many log entries
+                            # self.log.debug("Total item move improvement score: {} >= {} for moving {} to {}".
+                            #                 format(total_item_move_improvement_score, self.improvement_score_limit, item, bin))
+                            # Difference between the current mapping and the possible relocation.
+                            # This value might be even negative, if the rounding did not consider taking the first fitting bin in the
+                            # ordered best bin list.
+                            # TODO: include AP usage cost!!
+                            cost_of_improvement = bin.get_variable_cost_of_mapping(item) - \
+                                                  item.mapped_to.get_variable_cost_of_mapping(item)
+                            if cost_of_improvement < cost_of_cheapest_improvement:
+                                cost_of_cheapest_improvement = cost_of_improvement
+                                target_bin = bin
+                                item_to_be_moved = item
             if target_bin is not None:
                 self.log.debug("Improving mapping by moving item {} to target bin {}".
                                format(item_to_be_moved, target_bin))
