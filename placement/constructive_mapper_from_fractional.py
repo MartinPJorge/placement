@@ -2,6 +2,7 @@ from abc import ABCMeta, abstractmethod
 import logging
 from rainbow_logging_handler import RainbowLoggingHandler
 import sys
+import math
 
 from .mapper import AbstractMapper
 from .checker import AbstractChecker
@@ -155,12 +156,14 @@ class PruneLocalityConstraints(BasePruningStep):
 
 class BaseConstraintViolationChecker(metaclass=ABCMeta):
 
-    def __init__(self, current_bins, infra : InfrastructureGMLGraph, ns : ServiceGMLGraph):
+    def __init__(self, items, current_bins, infra : InfrastructureGMLGraph, ns : ServiceGMLGraph):
         super(BaseConstraintViolationChecker, self).__init__()
         self.bins = current_bins
+        self.items = items
         self.ns = ns
         self.infra = infra
         self.violating_items = None
+        self.id_item_map = {i['id'] : i for i in self.items}
 
     @abstractmethod
     def get_violating_items(self) -> list:
@@ -186,8 +189,8 @@ class BaseConstraintViolationChecker(metaclass=ABCMeta):
 
 class BinCapacityViolationChecker(BaseConstraintViolationChecker):
 
-    def __init__(self, current_bins, infra : InfrastructureGMLGraph, ns : ServiceGMLGraph):
-        super(BinCapacityViolationChecker, self).__init__(current_bins, infra, ns)
+    def __init__(self, items, current_bins, infra : InfrastructureGMLGraph, ns : ServiceGMLGraph):
+        super(BinCapacityViolationChecker, self).__init__(items, current_bins, infra, ns)
 
     def get_violating_items(self):
         """
@@ -221,9 +224,126 @@ class BinCapacityViolationChecker(BaseConstraintViolationChecker):
             return -1
 
 
+class DelayAndCoverageViolationChecker(BaseConstraintViolationChecker):
+
+    def __init__(self, items, current_bins, infra : InfrastructureGMLGraph, ns : ServiceGMLGraph, sfc_delay, sfc_path,
+                 time_interval_count, coverage_threshold):
+        super(DelayAndCoverageViolationChecker, self).__init__(items, current_bins, infra, ns)
+        self.sfc_delay = sfc_delay
+        self.sfc_path = sfc_path
+        self.affected_nfs = [v for u,v in self.sfc_path]
+        self.coverage_threshold = coverage_threshold
+        self.time_interval_count = time_interval_count
+
+    def calculate_violations(self):
+        """
+        Calculates the number of violating time intervals in the current allocation, respecting the coverage probability,
+        described by a tuple:
+            (number of subintervals, where the SFC delay is infinite;
+            number of subintervals, where remaining SFC delay is negative)
+        Second number is only informative, if the first number is 0.
+
+        :return: int tuple
+        """
+        remaining_delay = float(self.sfc_delay)
+        all_mobile_node_ids = self.infra.cluster_endpoint_ids + self.infra.mobile_ids
+        # VNFs cannot be mapped to APs, ID-s which are connected to the fixed infra part are not stored separately
+        all_fixed_node_ids = self.infra.server_ids + [n for n in self.infra.endpoint_ids if n not in self.infra.cluster_endpoint_ids]
+        for u, v in self.sfc_path:
+            u_host_id = self.id_item_map[u].mapped_to['id']
+            v_host_id = self.id_item_map[v].mapped_to['id']
+            # collect the time/place independent latency the current allocation
+            if (u_host_id in all_mobile_node_ids and v_host_id in all_mobile_node_ids) or\
+                (u_host_id in all_fixed_node_ids and v_host_id in all_fixed_node_ids):
+                remaining_delay -= self.infra.delay_distance(u_host_id, v_host_id)
+        if remaining_delay == -float('inf') or remaining_delay == float('inf'):
+            raise Exception("Remaining delay cannot be -inf or inf at this point!")
+
+        inf_count_subinterval = 0
+        negative_rem_delay_subinterval = 0
+        for subinterval in range(1, self.time_interval_count+1):
+            rem_delay_in_subint = remaining_delay
+            for u, v in self.sfc_path:
+                u_host_id = self.id_item_map[u].mapped_to['id']
+                v_host_id = self.id_item_map[v].mapped_to['id']
+                # filter for links mapped over the wireless channel
+                if (u_host_id in all_mobile_node_ids and v_host_id in all_fixed_node_ids) or \
+                        (u_host_id in all_fixed_node_ids and v_host_id in all_mobile_node_ids):
+                    # find the best possible delay, which obeys the coverage probabilty through ANY access point.
+                    min_wireless_delay_with_cov = float('inf')
+                    min_delay_though_ap_id = None
+                    for ap_id in self.infra.access_point_ids:
+                        curr_wireless_delay_with_cov = self.infra.delay_distance(u_host_id, v_host_id, subinterval,
+                                                                                 self.coverage_threshold, ap_id)
+                        if curr_wireless_delay_with_cov < min_wireless_delay_with_cov:
+                            min_wireless_delay_with_cov = curr_wireless_delay_with_cov
+                            min_delay_though_ap_id = ap_id
+                    # evaluate the situation for the output numbers
+                    if min_wireless_delay_with_cov == float('inf'):
+                        inf_count_subinterval += 1
+                    elif rem_delay_in_subint < min_wireless_delay_with_cov:
+                        negative_rem_delay_subinterval += 1
+                    else:
+                        rem_delay_in_subint -= min_wireless_delay_with_cov
+        return inf_count_subinterval, negative_rem_delay_subinterval
+
+    def get_violating_items(self):
+        """
+        Returns the non-endpoint items of an SFC, if its delay or coverage probability is violated.
+
+        :return:
+        """
+        violating_items = []
+        inf_count_subinterval, negative_rem_delay_subinterval = self.calculate_violations()
+        if inf_count_subinterval == 0 and negative_rem_delay_subinterval == 0:
+            # no violations are happening for the delay OR coverage req of this SFC in any subinterval
+            return violating_items
+        else:
+            # The allocation of this SFC is not OK, we need to move something
+            for u, v in self.sfc_path:
+                # the last and the first item/vnf in the SFC is an endpoint.
+                v_host_id = self.id_item_map[v].mapped_to['id']
+                if v_host_id not in self.infra.endpoint_ids:
+                    violating_items.append(self.id_item_map[v])
+        return violating_items
+
+    def item_move_improvement_score(self, item_to_be_moved : Item, target_bin : Bin):
+        """
+
+
+        :param item_to_be_moved:
+        :param target_bin:
+        :return:
+        """
+        improvement_score = 0
+        if item_to_be_moved['id'] in self.affected_nfs:
+            inf_count_subinterval_before, neg_rem_delay_subinterval_before = self.calculate_violations()
+
+            original_bin = item_to_be_moved.mapped_to
+            # Temporarily execute the item moving on the structure
+            ConstructiveMapperFromFractional.move_item_to_bin(item_to_be_moved, target_bin)
+
+            inf_count_subinterval_after, neg_rem_delay_subinterval_after = self.calculate_violations()
+
+            if inf_count_subinterval_before == 0:
+                if neg_rem_delay_subinterval_after < neg_rem_delay_subinterval_before:
+                    improvement_score = 1
+                elif neg_rem_delay_subinterval_after > neg_rem_delay_subinterval_before:
+                    improvement_score = -1
+            elif inf_count_subinterval_after < inf_count_subinterval_before:
+                improvement_score = 1
+            elif inf_count_subinterval_after > inf_count_subinterval_before:
+                improvement_score = -1
+
+            # undo the temporary bin move
+            ConstructiveMapperFromFractional.move_item_to_bin(item_to_be_moved, original_bin)
+
+        return improvement_score
+
+
 class ConstructiveMapperFromFractional(AbstractMapper):
 
-    def __init__(self, checker: AbstractChecker, log=None, improvement_score_limit=1):
+    def __init__(self, checker: AbstractChecker, coverage_threshold, time_interval_count, battery_threshold, log=None, improvement_score_limit=1):
         """
         Constructs a solution for the volatile resources problem based on the fractional optimal solution
         for the inherent bin packing problem as defined by Cambazard, et. al. -- Bin Packing with Linear Usage
@@ -255,8 +375,11 @@ class ConstructiveMapperFromFractional(AbstractMapper):
         # these might not be needed if we override the functions with other heuristics.
         self.epsilon = 1e-3
         self.min_bin_preference = None
-        # TODO: delegate to configuration parameters
         self.improvement_score_limit = improvement_score_limit
+        # compulsory parameters
+        self.time_interval_count = time_interval_count
+        self.battery_threshold = battery_threshold
+        self.coverage_threshold = coverage_threshold
 
     @property
     def total_item_weight(self):
@@ -359,6 +482,16 @@ class ConstructiveMapperFromFractional(AbstractMapper):
             else:
                 raise UnfeasibleBinPacking("Item {} cannot be mapped anywhere".format(item))
 
+    @staticmethod
+    def move_item_to_bin(item_to_be_moved, target_bin):
+        # delete the mapping of the foudn item from its current mapping
+        if item_to_be_moved not in item_to_be_moved.mapped_to.mapped_here:
+            raise Exception("Item is not found in mapped_to of a bin where it should have been!")
+        item_to_be_moved.mapped_to.mapped_here.remove(item_to_be_moved)
+        target_bin.mapped_here.append(item_to_be_moved)
+        # set its mapping to the target bin
+        item_to_be_moved.mapped_to = target_bin
+
     def improve_item_to_bin_mappings(self, best_bins, infra, ns):
         """
         Moves the item, which increases the objective the least, to one of the best bins where it fits.
@@ -368,22 +501,33 @@ class ConstructiveMapperFromFractional(AbstractMapper):
         :param ns:
         :return: bool, whether there is anything left to improve
         """
-        violation_checkers = [BinCapacityViolationChecker(best_bins, infra, ns)]
+        violation_checkers = [BinCapacityViolationChecker(self.items, best_bins, infra, ns)]
+        # add a separate checker for each SFC
+        for sfc_delay, sfc_path in ns.sfc_delays_list:
+            violation_checkers.append(DelayAndCoverageViolationChecker(self.items, best_bins, infra, ns, sfc_delay, sfc_path,
+                                                                       self.time_interval_count, self.coverage_threshold))
         violating_items = set()
+        improvement_score_stats = dict()
+        key_gen = lambda checker: checker.__class__.__name__+str(int(hash(checker)/10000000000))
         for checker in violation_checkers:
             violating_items = violating_items.union(checker.get_violating_items())
+            improvement_score_stats[key_gen(checker)] = []
         if len(violating_items) == 0:
             return False
         else:
             cost_of_cheapest_improvement = float('inf')
             target_bin = None
             item_to_be_moved = None
+            improvement_score_stats['total'] = []
             for item in violating_items:
                 for bin in best_bins:
                     if bin is not item.mapped_to and bin in item.possible_bins:
                         total_item_move_improvement_score = 0
                         for checker in violation_checkers:
-                            total_item_move_improvement_score += checker.item_move_improvement_score(item, bin)
+                            improvement_score = checker.item_move_improvement_score(item, bin)
+                            total_item_move_improvement_score += improvement_score
+                            improvement_score_stats[key_gen(checker)].append(improvement_score)
+                        improvement_score_stats['total'].append(total_item_move_improvement_score)
                         if total_item_move_improvement_score >= self.improvement_score_limit:
                             # might be useful later, for now it is too many log entries
                             # self.log.debug("Total item move improvement score: {} >= {} for moving {} to {}".
@@ -398,16 +542,12 @@ class ConstructiveMapperFromFractional(AbstractMapper):
                                 cost_of_cheapest_improvement = cost_of_improvement
                                 target_bin = bin
                                 item_to_be_moved = item
+            self.log.debug("Improvement score averages: {}".format(
+                {k : "{0:.4f}".format(math.fsum(v)/len(v)) for k, v in improvement_score_stats.items()}))
             if target_bin is not None:
                 self.log.debug("Improving mapping by moving item {} to target bin {}".
                                format(item_to_be_moved, target_bin))
-                # delete the mapping of the foudn item from its current mapping
-                if item_to_be_moved not in item_to_be_moved.mapped_to.mapped_here:
-                    raise Exception("Item is not foudn in mapped_to of a bin where it should have been!")
-                item_to_be_moved.mapped_to.mapped_here.remove(item_to_be_moved)
-                target_bin.mapped_here.append(item_to_be_moved)
-                # set its mapping to the target bin
-                item_to_be_moved.mapped_to = target_bin
+                ConstructiveMapperFromFractional.move_item_to_bin(item_to_be_moved, target_bin)
                 # NOTE: even if this is the very last improvement, it will turn out in the next call of this function
                 return True
             else:
