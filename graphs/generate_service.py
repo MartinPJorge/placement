@@ -134,7 +134,7 @@ class InfrastructureGMLGraph(GMLGraph):
         """
         return True
 
-    def delay_distance(self, u, v, time_interval_index, coverage_prob=None, through_ap_id=None):
+    def delay_distance(self, u, v, time_interval_index=None, coverage_prob=None, through_ap_id=None):
         """
         Reads the precalculated distances measured in delay between any two nodes of the infrastructure.
         'through_ap_id' and 'coverage_prob' can be specified in any combination.
@@ -154,6 +154,8 @@ class InfrastructureGMLGraph(GMLGraph):
         elif u in all_cluster_ids and v in all_cluster_ids:
             # mobile clusters cannot communicate with each other (for now)
             return float('inf')
+        elif time_interval_index is None:
+            raise ValueError("time_interval_index must be given if u and v are not among the same parts of the infra!")
         else:
             # we are between a mobile cluster and the fixed infra
             # It is symmetric for the direction so make u: mobile and v: fixed
@@ -508,7 +510,8 @@ class ServiceGMLGraph(GMLGraph):
                 self.log.debug("Adding SFC from VNF {} to endpoint {} with delay {} on path {}".
                                format(endpoint_vnf_id, endpoint_infra_id, sfc_delay, loop))
             except nx.NetworkXNoCycle:
-                self.log.debug("No cycle found in component of size {}".format(connected_subgraph.number_of_nodes()))
+                # warn, so we can expect to have same number of SFC-s as connected components
+                self.log.warn("No cycle found in component of size {}".format(connected_subgraph.number_of_nodes()))
 
     def _generate_structure(self):
         """
