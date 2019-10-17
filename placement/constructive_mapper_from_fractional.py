@@ -156,9 +156,9 @@ class PruneLocalityConstraints(BasePruningStep):
 
 class BaseConstraintViolationChecker(metaclass=ABCMeta):
 
-    def __init__(self, items, current_bins, infra : InfrastructureGMLGraph, ns : ServiceGMLGraph):
+    def __init__(self, items, bins, infra : InfrastructureGMLGraph, ns : ServiceGMLGraph):
         super(BaseConstraintViolationChecker, self).__init__()
-        self.bins = current_bins
+        self.bins = bins
         self.items = items
         self.ns = ns
         self.infra = infra
@@ -189,8 +189,8 @@ class BaseConstraintViolationChecker(metaclass=ABCMeta):
 
 class BinCapacityViolationChecker(BaseConstraintViolationChecker):
 
-    def __init__(self, items, current_bins, infra : InfrastructureGMLGraph, ns : ServiceGMLGraph):
-        super(BinCapacityViolationChecker, self).__init__(items, current_bins, infra, ns)
+    def __init__(self, items, bins, infra : InfrastructureGMLGraph, ns : ServiceGMLGraph):
+        super(BinCapacityViolationChecker, self).__init__(items, bins, infra, ns)
 
     def get_violating_items(self):
         """
@@ -226,9 +226,9 @@ class BinCapacityViolationChecker(BaseConstraintViolationChecker):
 
 class DelayAndCoverageViolationChecker(BaseConstraintViolationChecker):
 
-    def __init__(self, items, current_bins, infra : InfrastructureGMLGraph, ns : ServiceGMLGraph, sfc_delay, sfc_path,
+    def __init__(self, items, bins, infra : InfrastructureGMLGraph, ns : ServiceGMLGraph, sfc_delay, sfc_path,
                  time_interval_count, coverage_threshold):
-        super(DelayAndCoverageViolationChecker, self).__init__(items, current_bins, infra, ns)
+        super(DelayAndCoverageViolationChecker, self).__init__(items, bins, infra, ns)
         self.sfc_delay = sfc_delay
         self.sfc_path = sfc_path
         self.affected_nfs = [v for u,v in self.sfc_path]
@@ -413,10 +413,11 @@ class ConstructiveMapperFromFractional(AbstractMapper):
                 self.log.info("Discarding bin {} because it cannot fit even the smallest item".format(bin))
         if len(self.bins) == 0:
             raise UnfeasibleBinPacking("None of the bins can host the smallest item!")
+        # set possible bins for all items (discard ones with insufficient capacity)
         for item in self.items:
             # important to have a separate list for the possible bins for each item
             # (removing from one, Must not be reflected in another item's possible bins)
-            item.possible_bins.extend(self.bins)
+            item.possible_bins.extend([b for b in self.bins if b['capacity'] >= item['weight']])
 
     def set_initial_bin_preferences(self, original_best_bins, total_bin_capacity):
         # sets the preference to the same ordering which is given by the fractional mapping variables for the best bins
@@ -477,8 +478,15 @@ class ConstructiveMapperFromFractional(AbstractMapper):
                 item.mapped_to = item.possible_bins[0]
                 item.possible_bins[0].mapped_here.append(item)
             elif len(item.possible_bins) > 1:
-                raise NotImplementedError("Bin packing heuristic is not implemented for unambiguous initial mapping outside of the "
-                                          "best bins provided by the fractional optimal solution")
+                # It happens when there is no intersection of the best bins and the possible bins.
+                self.log.info("Setting initial mapping for item {} to be the cheapest of its possible bins, as it cannot be mapped "
+                              "to initially chosen bins.".format(item))
+                # choose the cheapest bin among the possible ones (natural extension of the algorithm).
+                for bin in self.get_bins_sorted_by_filled_unit_cost():
+                    if bin in item.possible_bins:
+                        item.mapped_to = bin
+                        bin.mapped_here.append(item)
+                        break
             else:
                 raise UnfeasibleBinPacking("Item {} cannot be mapped anywhere".format(item))
 
@@ -496,15 +504,16 @@ class ConstructiveMapperFromFractional(AbstractMapper):
         """
         Moves the item, which increases the objective the least, to one of the best bins where it fits.
 
-        :param best_bins:
+        :param best_bins: moving target can only be to these bins
         :param infra:
         :param ns:
-        :return: bool, whether there is anything left to improve
+        :return: bool tuple, whether there is anything left to improve; whether more improvement is needed
         """
-        violation_checkers = [BinCapacityViolationChecker(self.items, best_bins, infra, ns)]
+        # TODO: is it OK if violating items can come mapped from outside of the best_bins??
+        violation_checkers = [BinCapacityViolationChecker(self.items, self.bins, infra, ns)]
         # add a separate checker for each SFC
         for sfc_delay, sfc_path in ns.sfc_delays_list:
-            violation_checkers.append(DelayAndCoverageViolationChecker(self.items, best_bins, infra, ns, sfc_delay, sfc_path,
+            violation_checkers.append(DelayAndCoverageViolationChecker(self.items, self.bins, infra, ns, sfc_delay, sfc_path,
                                                                        self.time_interval_count, self.coverage_threshold))
         violating_items = set()
         improvement_score_stats = dict()
@@ -513,13 +522,16 @@ class ConstructiveMapperFromFractional(AbstractMapper):
             violating_items = violating_items.union(checker.get_violating_items())
             improvement_score_stats[key_gen(checker)] = []
         if len(violating_items) == 0:
-            return False
+            return False, False
         else:
             cost_of_cheapest_improvement = float('inf')
             target_bin = None
             item_to_be_moved = None
             improvement_score_stats['total'] = []
             for item in violating_items:
+                if not any(b in item.possible_bins for b in best_bins):
+                    self.log.debug("Violating item {} cannot be moved to any of the current best bins due to its possible bins list".format(item))
+                    continue
                 for bin in best_bins:
                     if bin is not item.mapped_to and bin in item.possible_bins:
                         total_item_move_improvement_score = 0
@@ -543,15 +555,15 @@ class ConstructiveMapperFromFractional(AbstractMapper):
                                 target_bin = bin
                                 item_to_be_moved = item
             self.log.debug("Improvement score averages: {}".format(
-                {k : "{0:.4f}".format(math.fsum(v)/len(v)) for k, v in improvement_score_stats.items()}))
+                {k : ("{0:.4f}".format(math.fsum(v)/len(v)) if len(v) > 0 else "N/A") for k, v in improvement_score_stats.items()}))
             if target_bin is not None:
                 self.log.debug("Improving mapping by moving item {} to target bin {}".
                                format(item_to_be_moved, target_bin))
                 ConstructiveMapperFromFractional.move_item_to_bin(item_to_be_moved, target_bin)
                 # NOTE: even if this is the very last improvement, it will turn out in the next call of this function
-                return True
+                return True, True
             else:
-                return False
+                return False, True
 
     def get_new_best_bins(self, best_bins, infra, ns) -> tuple:
         """
@@ -645,9 +657,12 @@ class ConstructiveMapperFromFractional(AbstractMapper):
             can_add_next_bin = True
             while can_add_next_bin:
                 anything_left_to_improve = True
+                any_violation_left = True
                 while anything_left_to_improve:
                     # get mapping improvement : improve on the item mappings
-                    anything_left_to_improve = self.improve_item_to_bin_mappings(best_bins, infra, ns)
+                    anything_left_to_improve, any_violation_left = self.improve_item_to_bin_mappings(best_bins, infra, ns)
+                if not any_violation_left:
+                    break
                 # get new bin : if there is nothing left to improve with the current bins, we can introduce new ones
                 best_bins, can_add_next_bin = self.get_new_best_bins(best_bins, infra, ns)
         except UnfeasibleBinPacking as ubp:
