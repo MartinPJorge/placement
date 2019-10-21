@@ -215,7 +215,15 @@ squares <- rbind(square1, square2)
 
 ######## GENERATE THE FOG NODES #######
 robots_per_square <- 10
+d2d_delay <- 0.2
+mesh_robot_connections <- ncol(combn(rep(0,robots_per_square), 2))
+from_sqs <- data.frame(matrix(0, ncol = nrow(squares),
+                              nrow = mesh_robot_connections))
+to_sqs <- data.frame(matrix(0, ncol = nrow(squares),
+                               nrow = mesh_robot_connections))
 for (i in 1:nrow(squares)) {
+  tos <- c()
+  froms <- c()
   square <- squares[i,]
   prefix <- paste("robot_sq", i, sep="")
   attachFrames <- attachFogNodes(nodes = attachFrames$nodes,
@@ -239,8 +247,30 @@ for (i in 1:nrow(squares)) {
     link <- tail(attachFrames$links, 1)
     link$from <- robot_pairs[1,c]
     link$to <- robot_pairs[2,c]
+    
+    # Include the robot link in the connectivity data.frame
+    froms <- c(froms, link$from)
+    tos <- c(tos, link$to)
+    
+    # Get robot coordinates
+    from_row <- as.numeric(rownames(subset(attachFrames$nodes, id==link$from)))
+    from_lon <- attachFrames$nodes[from_row,]$lon
+    from_lat <- attachFrames$nodes[from_row,]$lat
+    to_row <- as.numeric(rownames(subset(attachFrames$nodes, id==link$to)))
+    to_lon <- attachFrames$nodes[to_row,]$lon
+    to_lat <- attachFrames$nodes[to_row,]$lat
+    
+    # Attach the robot with its distances
+    link$distance <- SDMTools::distance(lat1 = to_lat, lon1 = to_lon,
+                                        lat2 = from_lat,
+                                        lon2 = from_lon)$distance
     attachFrames$links <- rbind(attachFrames$links, link)
+    
   }
+  
+  # Specify the meshed connections delays of robots inside the square
+  from_sqs[,i] <- froms
+  to_sqs[,i] <- tos
   
   # Attach endpoint node
   square_endpoint <- paste("endpoint_sq", i, sep="")
@@ -259,6 +289,17 @@ for (i in 1:nrow(squares)) {
   last_link$to <- last_robot$id
   attachFrames$links <- rbind(attachFrames$links, last_link)
 }
+
+######### SET THE D2D DELAY BETWEEN ROBOTS #########
+d2d_delay <- 0.2
+for (i in 1:nrow(squares)) {
+  newLinks <- addLinkProps(links = attachFrames$links, from_ = from_sqs[,i],
+                           to_ = to_sqs[,i],
+                           properties = list(delay=rep(d2d_delay,
+                                                       nrow(from_sqs))))
+  attachFrames$links <- newLinks
+}
+
 
 
 ######### SET FIXED INFRA DELAYS ASSUMING FIBER #########

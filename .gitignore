@@ -5,3 +5,4 @@ venv/
 *.Rhistory
 *.log
 ampl/system-model-generated.dat
+.ipynb_checkpoints*
