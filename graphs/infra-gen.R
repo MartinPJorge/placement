@@ -165,12 +165,14 @@ newNodes <- addNodeProps(nodes = frames$nodes, id_ = pico_nodes,
                      properties = list(size=rep('pico', length(pico_nodes)),
                                        coverageRadius=
                                          rep(100, length(pico_nodes)),
-                                       delay=rep(2.5, length(pico_nodes))))
+                                       delay=rep(2.5, length(pico_nodes)),
+                                       cost=rep(1.6, length(pico_nodes))))
 newNodes <- addNodeProps(nodes = newNodes, id_ = micro_nodes,
                      properties = list(size=rep('micro', length(micro_nodes)),
                                        coverageRadius=
                                          rep(400, length(micro_nodes)),
-                                       delay=rep(5, length(micro_nodes))))
+                                       delay=rep(5, length(micro_nodes)),
+                                       cost=rep(34.6, length(pico_nodes))))
 frames$nodes <- newNodes
 
 
@@ -215,7 +217,6 @@ squares <- rbind(square1, square2)
 
 ######## GENERATE THE FOG NODES #######
 robots_per_square <- 10
-d2d_delay <- 0.2
 mesh_robot_connections <- ncol(combn(rep(0,robots_per_square), 2))
 from_sqs <- data.frame(matrix(0, ncol = nrow(squares),
                               nrow = mesh_robot_connections))
@@ -291,7 +292,7 @@ for (i in 1:nrow(squares)) {
 }
 
 ######### SET THE D2D DELAY BETWEEN ROBOTS #########
-d2d_delay <- 0.2
+d2d_delay <- 0.2 # ms
 for (i in 1:nrow(squares)) {
   newLinks <- addLinkProps(links = attachFrames$links, from_ = from_sqs[,i],
                            to_ = to_sqs[,i],
@@ -323,6 +324,46 @@ for (row in 1:nrow(attachFrames$links)) {
 newLinks <- addLinkProps(links = attachFrames$links, from_ = froms, to_ = tos,
                          properties = list(delay=delays))
 attachFrames$links <- newLinks
+
+
+
+
+# Generate the fiber hops delay, which include the processing delay of switches
+fiber_delays <- read.csv('fiber_delays.csv', header = FALSE)
+froms <- c()
+tos <- c()
+delays <- c()
+for (row in 1:nrow(attachFrames$links)) {
+  from <- as.character(attachFrames$links[row,]$from)
+  to <- as.character(attachFrames$links[row,]$to)
+  
+  is_src_cell <-  grepl("cell", from)
+  is_src_m1 <-  grepl("m1", from)
+  is_dst_m1 <-  grepl("m1", to)
+  is_src_m2 <-  grepl("m2", from)
+  is_dst_m2 <-  grepl("m2", to)
+  is_src_m3 <-  grepl("m3", from)
+  is_dst_m3 <-  grepl("m3", to)
+  
+  if ((is_src_cell && is_dst_m1) ||
+      (is_src_m1 && is_dst_m1) ||
+      (is_src_m1 && is_dst_m2) ||
+      (is_src_m2 && is_dst_m2) ||
+      (is_src_m2 && is_dst_m2) ||
+      (is_src_m3 && is_dst_m3)) {
+    
+    print('in')
+    
+    froms <- c(froms, from)
+    tos <- c(tos, to)
+    rand_delay <- runif(1, min=1, max=nrow(fiber_delays))
+    delays <- c(delays, fiber_delays[rand_delay, ]) # delay is in ms
+  }
+}
+newLinks <- addLinkProps(links = attachFrames$links, from_ = froms, to_ = tos,
+                         properties = list(delay=delays))
+attachFrames$links <- newLinks
+
 
 
 # Store the generated graph
