@@ -40,8 +40,8 @@ param coverage_threshold >=0.0, <=1.0;
 param policy {v in vertices[serviceGraph], N in vertices[infraGraph]} binary;
 
 # battery parameters
-param max_used_battery {N in mobiles} >=0.0, <=1.0;
-param min_used_battery {N in mobiles} >=0.0, <=1.0;
+param unloaded_battery_alive_prob {N in mobiles} >=0.0, <=1.0;
+param full_loaded_battery_alive_prob {N in mobiles} >=0.0, <=1.0;
 param battery_threshold >=0.0, <=1.0;
 
 # delay parameters
@@ -85,7 +85,7 @@ subject to AP_coverage_threshold {t_k in subintervals}:
     sum {ap in APs} AP_x[ap, t_k] *  prob_AP[ap, t_k] >= coverage_threshold;
 
 subject to battery {N in mobiles}:
-    max_used_battery[N] - ((sum {v in vertices[serviceGraph]}  X[v, N] * demands[v])/resources[N])*(max_used_battery[N] - min_used_battery[N]) >= battery_threshold;
+    unloaded_battery_alive_prob[N] - ((sum {v in vertices[serviceGraph]}  X[v, N] * demands[v])/resources[N])*(unloaded_battery_alive_prob[N] - full_loaded_battery_alive_prob[N]) >= battery_threshold;
     
 subject to SFC_delays {sfc in SFCs, t_k in subintervals}:
     sum {(v1, v2) in SFC_paths[sfc]} sum {N1 in vertices[infraGraph], N2 in vertices[infraGraph]} X[v1, N1] * X[v2, N2] * delay[N1, N2, t_k] <= SFC_max_delays[sfc];

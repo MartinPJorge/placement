@@ -63,10 +63,10 @@ param policy :          'accessPoint1' 'accessPoint2' 'robot1' 'robot2' 'server'
           'controller'        0               0           1         1       1;
 
 # battery parameters
-param max_used_battery 'robot1' 0.5
-                       'robot2' 0.3;
-param min_used_battery 'robot1' 0.9
-                       'robot2' 0.8;
+param full_loaded_battery_alive_prob 'robot1' 0.5
+                                     'robot2' 0.3;
+param unloaded_battery_alive_prob 'robot1' 0.9
+                                  'robot2' 0.8;
 param battery_threshold 0.3;
 
 # delay parameters

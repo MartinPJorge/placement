@@ -104,7 +104,7 @@ if __name__ == '__main__':
             if config['simulator']['run_heuristic']:
                 try:
                     checker = cmf.VolatileResourcesChecker()
-                    mapper = cmf.ConstructiveMapperFromFractional(checker, log=root_logger)
+                    mapper = cmf.ConstructiveMapperFromFractional(checker, log=root_logger, **config['optimization'])
                     mapping_result_dict = mapper.map(substrate_network, service_instance)
                 except Exception as e:
                     root_logger.exception("Error during heuristic solution: ")

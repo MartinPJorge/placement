@@ -5,11 +5,101 @@ graph
   directed 0
   node
   [
-    id 21
-    name "cell22"
+    id 0
+    name "cell1"
     type "cell"
-    lon -3.76716081863571
-    lat 40.2666967195529
+    lon -3.7523116
+    lat 40.2698308
+    cpu 0
+    mem 0
+    disk 0
+    cost 0
+    size "micro"
+    coverageRadius 400
+    delay 5
+  ]
+  node
+  [
+    id 1
+    name "cell2"
+    type "cell"
+    lon -3.7451018
+    lat 40.266589
+    cpu 0
+    mem 0
+    disk 0
+    cost 0
+    size "micro"
+    coverageRadius 400
+    delay 5
+  ]
+  node
+  [
+    id 2
+    name "cell3"
+    type "cell"
+    lon -3.7568751
+    lat 40.2642948
+    cpu 0
+    mem 0
+    disk 0
+    cost 0
+    size "micro"
+    coverageRadius 400
+    delay 5
+  ]
+  node
+  [
+    id 3
+    name "cell4"
+    type "cell"
+    lon -3.7497367
+    lat 40.2627903
+    cpu 0
+    mem 0
+    disk 0
+    cost 0
+    size "micro"
+    coverageRadius 400
+    delay 5
+  ]
+  node
+  [
+    id 4
+    name "cell5"
+    type "cell"
+    lon -3.7506808
+    lat 40.2547338
+    cpu 0
+    mem 0
+    disk 0
+    cost 0
+    size "micro"
+    coverageRadius 400
+    delay 5
+  ]
+  node
+  [
+    id 5
+    name "cell6"
+    type "cell"
+    lon -3.7454559
+    lat 40.2590439
+    cpu 0
+    mem 0
+    disk 0
+    cost 0
+    size "micro"
+    coverageRadius 400
+    delay 5
+  ]
+  node
+  [
+    id 6
+    name "cell7"
+    type "cell"
+    lon -3.75419069977898
+    lat 40.276622099073
     cpu 0
     mem 0
     disk 0
@@ -20,11 +110,11 @@ graph
   ]
   node
   [
-    id 22
-    name "cell23"
+    id 7
+    name "cell8"
     type "cell"
-    lon -3.75935516961335
-    lat 40.2565702999812
+    lon -3.76847238084992
+    lat 40.2701080894712
     cpu 0
     mem 0
     disk 0
@@ -35,11 +125,11 @@ graph
   ]
   node
   [
-    id 23
-    name "cell24"
+    id 8
+    name "cell9"
     type "cell"
-    lon -3.75337782347898
-    lat 40.2562721682055
+    lon -3.75936307885957
+    lat 40.2535780128605
     cpu 0
     mem 0
     disk 0
@@ -50,11 +140,11 @@ graph
   ]
   node
   [
-    id 24
-    name "cell25"
+    id 9
+    name "cell10"
     type "cell"
-    lon -3.74515851387695
-    lat 40.2665846224204
+    lon -3.77001665544756
+    lat 40.2543671433602
     cpu 0
     mem 0
     disk 0
@@ -65,11 +155,11 @@ graph
   ]
   node
   [
-    id 25
-    name "cell26"
+    id 10
+    name "cell11"
     type "cell"
-    lon -3.76223816621155
-    lat 40.2583542600403
+    lon -3.77039520749058
+    lat 40.276205315521
     cpu 0
     mem 0
     disk 0
@@ -80,11 +170,11 @@ graph
   ]
   node
   [
-    id 26
-    name "cell27"
+    id 11
+    name "cell12"
     type "cell"
-    lon -3.76551747494127
-    lat 40.2706075386149
+    lon -3.76420445085491
+    lat 40.2565234335806
     cpu 0
     mem 0
     disk 0
@@ -95,11 +185,11 @@ graph
   ]
   node
   [
-    id 27
-    name "cell28"
+    id 12
+    name "cell13"
     type "cell"
-    lon -3.76658812867577
-    lat 40.2596373438279
+    lon -3.76167068597345
+    lat 40.263907281666
     cpu 0
     mem 0
     disk 0
@@ -110,11 +200,11 @@ graph
   ]
   node
   [
-    id 28
-    name "cell29"
+    id 13
+    name "cell14"
     type "cell"
-    lon -3.75846024620415
-    lat 40.2618346610853
+    lon -3.74057571518783
+    lat 40.2761194306697
     cpu 0
     mem 0
     disk 0
@@ -125,236 +215,11 @@ graph
   ]
   node
   [
-    id 29
-    name "cell30"
+    id 14
+    name "cell15"
     type "cell"
-    lon -3.75153307118624
-    lat 40.2583683424547
-    cpu 0
-    mem 0
-    disk 0
-    cost 0
-    size "pico"
-    coverageRadius 100
-    delay 2.5
-  ]
-  node
-  [
-    id 30
-    name "cell31"
-    type "cell"
-    lon -3.77385296051489
-    lat 40.2735636300534
-    cpu 0
-    mem 0
-    disk 0
-    cost 0
-    size "pico"
-    coverageRadius 100
-    delay 2.5
-  ]
-  node
-  [
-    id 31
-    name "cell32"
-    type "cell"
-    lon -3.76415948474567
-    lat 40.2599326240316
-    cpu 0
-    mem 0
-    disk 0
-    cost 0
-    size "pico"
-    coverageRadius 100
-    delay 2.5
-  ]
-  node
-  [
-    id 32
-    name "cell33"
-    type "cell"
-    lon -3.74376244003181
-    lat 40.2594307016628
-    cpu 0
-    mem 0
-    disk 0
-    cost 0
-    size "pico"
-    coverageRadius 100
-    delay 2.5
-  ]
-  node
-  [
-    id 33
-    name "cell34"
-    type "cell"
-    lon -3.75150429659246
-    lat 40.2765028110657
-    cpu 0
-    mem 0
-    disk 0
-    cost 0
-    size "pico"
-    coverageRadius 100
-    delay 2.5
-  ]
-  node
-  [
-    id 34
-    name "cell35"
-    type "cell"
-    lon -3.73861563981231
-    lat 40.2633152256598
-    cpu 0
-    mem 0
-    disk 0
-    cost 0
-    size "pico"
-    coverageRadius 100
-    delay 2.5
-  ]
-  node
-  [
-    id 35
-    name "cell36"
-    type "cell"
-    lon -3.7491019724619
-    lat 40.2619051653391
-    cpu 0
-    mem 0
-    disk 0
-    cost 0
-    size "pico"
-    coverageRadius 100
-    delay 2.5
-  ]
-  node
-  [
-    id 36
-    name "cell37"
-    type "cell"
-    lon -3.76244695829285
-    lat 40.2548620148461
-    cpu 0
-    mem 0
-    disk 0
-    cost 0
-    size "pico"
-    coverageRadius 100
-    delay 2.5
-  ]
-  node
-  [
-    id 37
-    name "cell38"
-    type "cell"
-    lon -3.76173409940007
-    lat 40.2672061628807
-    cpu 0
-    mem 0
-    disk 0
-    cost 0
-    size "pico"
-    coverageRadius 100
-    delay 2.5
-  ]
-  node
-  [
-    id 38
-    name "cell39"
-    type "cell"
-    lon -3.74813890481234
-    lat 40.2686033332028
-    cpu 0
-    mem 0
-    disk 0
-    cost 0
-    size "pico"
-    coverageRadius 100
-    delay 2.5
-  ]
-  node
-  [
-    id 39
-    name "cell40"
-    type "cell"
-    lon -3.74935435071465
-    lat 40.2554832790246
-    cpu 0
-    mem 0
-    disk 0
-    cost 0
-    size "pico"
-    coverageRadius 100
-    delay 2.5
-  ]
-  node
-  [
-    id 40
-    name "cell41"
-    type "cell"
-    lon -3.74604515833331
-    lat 40.2571635535064
-    cpu 0
-    mem 0
-    disk 0
-    cost 0
-    size "pico"
-    coverageRadius 100
-    delay 2.5
-  ]
-  node
-  [
-    id 41
-    name "cell42"
-    type "cell"
-    lon -3.76325766241008
-    lat 40.2679013037674
-    cpu 0
-    mem 0
-    disk 0
-    cost 0
-    size "pico"
-    coverageRadius 100
-    delay 2.5
-  ]
-  node
-  [
-    id 42
-    name "cell43"
-    type "cell"
-    lon -3.74026503228434
-    lat 40.2603220125489
-    cpu 0
-    mem 0
-    disk 0
-    cost 0
-    size "pico"
-    coverageRadius 100
-    delay 2.5
-  ]
-  node
-  [
-    id 43
-    name "cell44"
-    type "cell"
-    lon -3.76951809222207
-    lat 40.2711036157516
-    cpu 0
-    mem 0
-    disk 0
-    cost 0
-    size "pico"
-    coverageRadius 100
-    delay 2.5
-  ]
-  node
-  [
-    id 44
-    name "cell45"
-    type "cell"
-    lon -3.73861131945071
-    lat 40.2542448895316
+    lon -3.77440799732664
+    lat 40.25729990812
     cpu 0
     mem 0
     disk 0
@@ -770,243 +635,153 @@ graph
   ]
   edge
   [
-    source 46
-    target 21
+    source 45
+    target 0
     bandwidth 10
     bandwidthUnits "Gb/s"
-    distance 330.52
+    distance 1286.32
     distanceUnits "meters"
-    delay 0.00110173333333333
+    delay 0.00428773333333333
+  ]
+  edge
+  [
+    source 45
+    target 1
+    bandwidth 10
+    bandwidthUnits "Gb/s"
+    distance 992.68
+    distanceUnits "meters"
+    delay 0.00330893333333333
+  ]
+  edge
+  [
+    source 45
+    target 2
+    bandwidth 10
+    bandwidthUnits "Gb/s"
+    distance 887.43
+    distanceUnits "meters"
+    delay 0.0029581
+  ]
+  edge
+  [
+    source 45
+    target 3
+    bandwidth 10
+    bandwidthUnits "Gb/s"
+    distance 486.91
+    distanceUnits "meters"
+    delay 0.00162303333333333
+  ]
+  edge
+  [
+    source 45
+    target 4
+    bandwidth 10
+    bandwidthUnits "Gb/s"
+    distance 414.38
+    distanceUnits "meters"
+    delay 0.00138126666666667
+  ]
+  edge
+  [
+    source 45
+    target 5
+    bandwidth 10
+    bandwidthUnits "Gb/s"
+    distance 376.33
+    distanceUnits "meters"
+    delay 0.00125443333333333
+  ]
+  edge
+  [
+    source 46
+    target 6
+    bandwidth 10
+    bandwidthUnits "Gb/s"
+    distance 1596.5
+    distanceUnits "meters"
+    delay 0.00532166666666667
+  ]
+  edge
+  [
+    source 46
+    target 7
+    bandwidth 10
+    bandwidthUnits "Gb/s"
+    distance 704.05
+    distanceUnits "meters"
+    delay 0.00234683333333333
+  ]
+  edge
+  [
+    source 46
+    target 8
+    bandwidth 10
+    bandwidthUnits "Gb/s"
+    distance 1294.16
+    distanceUnits "meters"
+    delay 0.00431386666666667
+  ]
+  edge
+  [
+    source 46
+    target 9
+    bandwidth 10
+    bandwidthUnits "Gb/s"
+    distance 1227.6
+    distanceUnits "meters"
+    delay 0.004092
+  ]
+  edge
+  [
+    source 46
+    target 10
+    bandwidth 10
+    bandwidthUnits "Gb/s"
+    distance 1387.63
+    distanceUnits "meters"
+    delay 0.00462543333333333
+  ]
+  edge
+  [
+    source 46
+    target 11
+    bandwidth 10
+    bandwidthUnits "Gb/s"
+    distance 893.42
+    distanceUnits "meters"
+    delay 0.00297806666666667
   ]
   edge
   [
     source 47
-    target 22
+    target 12
     bandwidth 10
     bandwidthUnits "Gb/s"
-    distance 754.31
+    distance 302.23
     distanceUnits "meters"
-    delay 0.00251436666666667
+    delay 0.00100743333333333
   ]
   edge
   [
     source 47
-    target 23
+    target 13
     bandwidth 10
     bandwidthUnits "Gb/s"
-    distance 1141.76
+    distance 2548.17
     distanceUnits "meters"
-    delay 0.00380586666666667
-  ]
-  edge
-  [
-    source 46
-    target 24
-    bandwidth 10
-    bandwidthUnits "Gb/s"
-    distance 1652.21
-    distanceUnits "meters"
-    delay 0.00550736666666667
+    delay 0.0084939
   ]
   edge
   [
     source 47
-    target 25
+    target 14
     bandwidth 10
     bandwidthUnits "Gb/s"
-    distance 460.9
+    distance 1006.56
     distanceUnits "meters"
-    delay 0.00153633333333333
-  ]
-  edge
-  [
-    source 46
-    target 26
-    bandwidth 10
-    bandwidthUnits "Gb/s"
-    distance 676.91
-    distanceUnits "meters"
-    delay 0.00225636666666667
-  ]
-  edge
-  [
-    source 47
-    target 27
-    bandwidth 10
-    bandwidthUnits "Gb/s"
-    distance 336.16
-    distanceUnits "meters"
-    delay 0.00112053333333333
-  ]
-  edge
-  [
-    source 47
-    target 28
-    bandwidth 10
-    bandwidthUnits "Gb/s"
-    distance 505.72
-    distanceUnits "meters"
-    delay 0.00168573333333333
-  ]
-  edge
-  [
-    source 47
-    target 29
-    bandwidth 10
-    bandwidthUnits "Gb/s"
-    distance 1170.92
-    distanceUnits "meters"
-    delay 0.00390306666666667
-  ]
-  edge
-  [
-    source 46
-    target 30
-    bandwidth 10
-    bandwidthUnits "Gb/s"
-    distance 1279.2
-    distanceUnits "meters"
-    delay 0.004264
-  ]
-  edge
-  [
-    source 47
-    target 31
-    bandwidth 10
-    bandwidthUnits "Gb/s"
-    distance 248.31
-    distanceUnits "meters"
-    delay 0.0008277
-  ]
-  edge
-  [
-    source 47
-    target 32
-    bandwidth 10
-    bandwidthUnits "Gb/s"
-    distance 1778.33
-    distanceUnits "meters"
-    delay 0.00592776666666667
-  ]
-  edge
-  [
-    source 46
-    target 33
-    bandwidth 10
-    bandwidthUnits "Gb/s"
-    distance 1721.15
-    distanceUnits "meters"
-    delay 0.00573716666666667
-  ]
-  edge
-  [
-    source 46
-    target 34
-    bandwidth 10
-    bandwidthUnits "Gb/s"
-    distance 2196.87
-    distanceUnits "meters"
-    delay 0.0073229
-  ]
-  edge
-  [
-    source 46
-    target 35
-    bandwidth 10
-    bandwidthUnits "Gb/s"
-    distance 1335.34
-    distanceUnits "meters"
-    delay 0.00445113333333333
-  ]
-  edge
-  [
-    source 46
-    target 36
-    bandwidth 10
-    bandwidthUnits "Gb/s"
-    distance 1090.89
-    distanceUnits "meters"
-    delay 0.0036363
-  ]
-  edge
-  [
-    source 46
-    target 37
-    bandwidth 10
-    bandwidthUnits "Gb/s"
-    distance 372.35
-    distanceUnits "meters"
-    delay 0.00124116666666667
-  ]
-  edge
-  [
-    source 46
-    target 38
-    bandwidth 10
-    bandwidthUnits "Gb/s"
-    distance 1454.66
-    distanceUnits "meters"
-    delay 0.00484886666666667
-  ]
-  edge
-  [
-    source 47
-    target 39
-    bandwidth 10
-    bandwidthUnits "Gb/s"
-    distance 1477.17
-    distanceUnits "meters"
-    delay 0.0049239
-  ]
-  edge
-  [
-    source 47
-    target 40
-    bandwidth 10
-    bandwidthUnits "Gb/s"
-    distance 1654.36
-    distanceUnits "meters"
-    delay 0.00551453333333333
-  ]
-  edge
-  [
-    source 46
-    target 41
-    bandwidth 10
-    bandwidthUnits "Gb/s"
-    distance 383.58
-    distanceUnits "meters"
-    delay 0.0012786
-  ]
-  edge
-  [
-    source 46
-    target 42
-    bandwidth 10
-    bandwidthUnits "Gb/s"
-    distance 2105.92
-    distanceUnits "meters"
-    delay 0.00701973333333333
-  ]
-  edge
-  [
-    source 46
-    target 43
-    bandwidth 10
-    bandwidthUnits "Gb/s"
-    distance 844.14
-    distanceUnits "meters"
-    delay 0.0028138
-  ]
-  edge
-  [
-    source 46
-    target 44
-    bandwidth 10
-    bandwidthUnits "Gb/s"
-    distance 2474.46
-    distanceUnits "meters"
-    delay 0.0082482
+    delay 0.0033552
   ]
   edge
   [

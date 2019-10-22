@@ -105,11 +105,11 @@ class AMPLDataConstructor(object):
         })
 
         # fill the battery probability constraints
-        ampl.getParameter('max_used_battery').setValues({
+        ampl.getParameter('full_loaded_battery_alive_prob').setValues({
             mobile_node: infra.full_loaded_battery_alive_prob
             for mobile_node in self.mobile_names
         })
-        ampl.getParameter('min_used_battery').setValues({
+        ampl.getParameter('unloaded_battery_alive_prob').setValues({
             mobile_node: infra.unloaded_battery_alive_prob
             for mobile_node in self.mobile_names
         })

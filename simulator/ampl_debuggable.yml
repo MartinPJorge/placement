@@ -1,10 +1,11 @@
+# configuration which is small enough to run the AMPL with the demo license
 #================= Infrastructure description section =================#
 infrastructure:
   gml_file: "../graphs/infras/cobo-calleja/small-variant.gml"
   name: "infra"                                       # name of the graph object
   label: "id"                                         # GML node attribute to be used as graph node id
   time_interval_count: 12                             # the number of time frames for the optimization t \in (t0, t1)
-  cluster_move_distances: [0.002, 0.005]              # list of lengths of each cluster's line mobility pattern where the cluster goes there and back
+  cluster_move_distances: [0.0025]              # list of lengths of each cluster's line mobility pattern where the cluster goes there and back
                                                       # during the simulated time interval. The list's length identifies the number of clusters.
                                                       # Measured in 'GPS coordinate' lengths
   unloaded_battery_alive_prob: 0.99                   # Probability having a not completly depleted battery by the end of the optimization
@@ -24,7 +25,7 @@ service:
 #================= Optimization description section =================#
 optimization:
   time_interval_count: 12                             # same as infrastructure.time_interval_count
-  coverage_threshold: 0.9                             # Least probability the cluster should be covered at all time instances.
+  coverage_threshold: 0.14                             # Least probability the cluster should be covered at all time instances.
   battery_threshold: 0.2                              # Least probability which the mobile clusters are not depleted by the end of the
                                                       # optimization interval with the allocated load.
 #================= Simulator settings =================#
@@ -34,5 +35,5 @@ simulator:
   file_log_level: "DEBUG"
   ampl_model_path: '../ampl/system-model.mod'                           # AMPL model location for the volatile resources model
   export_ampl_data_path: "../ampl/system-model-generated.dat"           # if given, the generated data is exported for inspection/outer solution
-  run_heuristic: False                                                  # Flags to set which algoritms to run
+  run_heuristic: True                                                  # Flags to set which algoritms to run
   run_ampl: True
