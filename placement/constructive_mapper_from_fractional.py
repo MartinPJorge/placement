@@ -10,10 +10,10 @@ from graphs.generate_service import ServiceGMLGraph, InfrastructureGMLGraph
 from graphs.mapping_structure import VolatileResourcesMapping
 
 
-class UnfeasibleBinPacking(Exception):
+class UnfeasibleVolatileResourcesProblem(Exception):
 
     def __init__(self, msg, *args, **kwargs):
-        super(UnfeasibleBinPacking, self).__init__(*args, **kwargs)
+        super(UnfeasibleVolatileResourcesProblem, self).__init__(*args, **kwargs)
         self.msg = msg
 
 
@@ -226,6 +226,10 @@ class BinCapacityViolationChecker(BaseConstraintViolationChecker):
 
 class DelayAndCoverageViolationChecker(BaseConstraintViolationChecker):
 
+    # stores the AP id for each time interval which, has the lowest delay, obeying the coverage probability
+    # The variable needs to be class level, because the AP selection must agree for all SFC-s. It is set to None
+    chosen_ap_ids = None
+
     def __init__(self, items, bins, infra : InfrastructureGMLGraph, ns : ServiceGMLGraph, sfc_delay, sfc_path,
                  time_interval_count, coverage_threshold):
         super(DelayAndCoverageViolationChecker, self).__init__(items, bins, infra, ns)
@@ -235,6 +239,23 @@ class DelayAndCoverageViolationChecker(BaseConstraintViolationChecker):
         self.coverage_threshold = coverage_threshold
         self.time_interval_count = time_interval_count
 
+    def get_cheapest_ap_id(self, subinterval):
+        master_mobile_id = list(self.infra.ap_coverage_probabilities.keys())[0]
+        # choose the cheapest AP which meets the coverage threshold
+        min_ap_cost = float('inf')
+        min_cost_ap_id = None
+        for ap_id, coverage_prob in self.infra.ap_coverage_probabilities[master_mobile_id][subinterval].items():
+            if coverage_prob > self.coverage_threshold:
+                ap_cost = self.infra.nodes[ap_id][self.infra.access_point_usage_cost_str]
+                if ap_cost < min_ap_cost:
+                    min_ap_cost = ap_cost
+                    min_cost_ap_id = ap_id
+        if min_cost_ap_id is not None:
+            return min_cost_ap_id
+        else:
+            raise UnfeasibleVolatileResourcesProblem("No access point found for the cluster with the given coverage probability, "
+                                                     "even without checking the delay requirements!")
+
     def calculate_violations(self):
         """
         Calculates the number of violating time intervals in the current allocation, respecting the coverage probability,
@@ -242,6 +263,7 @@ class DelayAndCoverageViolationChecker(BaseConstraintViolationChecker):
             (number of subintervals, where the SFC delay is infinite;
             number of subintervals, where remaining SFC delay is negative)
         Second number is only informative, if the first number is 0.
+        Updates the DelayAndCoverageViolationChecker.chosen_ap_ids dictionary to reflect the violation metrics returned by the function.
 
         :return: int tuple
         """
@@ -261,8 +283,11 @@ class DelayAndCoverageViolationChecker(BaseConstraintViolationChecker):
 
         inf_count_subinterval = 0
         negative_rem_delay_subinterval = 0
+        # stores the AP id for each time interval which, has the lowest delay, obeying the coverage probability
+        chosen_ap_ids = dict()
         for subinterval in range(1, self.time_interval_count+1):
             rem_delay_in_subint = remaining_delay
+            min_delay_though_ap_id = None
             for u, v in self.sfc_path:
                 u_host_id = self.id_item_map[u].mapped_to['id']
                 v_host_id = self.id_item_map[v].mapped_to['id']
@@ -270,8 +295,10 @@ class DelayAndCoverageViolationChecker(BaseConstraintViolationChecker):
                 if (u_host_id in all_mobile_node_ids and v_host_id in all_fixed_node_ids) or \
                         (u_host_id in all_fixed_node_ids and v_host_id in all_mobile_node_ids):
                     # find the best possible delay, which obeys the coverage probabilty through ANY access point.
+                    # NOTE: We cannot select the cheapest AP, even if there are multiple access points which obey the delay requirement,
+                    # because then multiple SFC delays could result in different AP selections. So we need to select the lowest delay one
+                    # and save it in a static class variable
                     min_wireless_delay_with_cov = float('inf')
-                    min_delay_though_ap_id = None
                     for ap_id in self.infra.access_point_ids:
                         curr_wireless_delay_with_cov = self.infra.delay_distance(u_host_id, v_host_id, subinterval,
                                                                                  self.coverage_threshold, ap_id)
@@ -285,6 +312,21 @@ class DelayAndCoverageViolationChecker(BaseConstraintViolationChecker):
                         negative_rem_delay_subinterval += 1
                     else:
                         rem_delay_in_subint -= min_wireless_delay_with_cov
+            if inf_count_subinterval == 0 and negative_rem_delay_subinterval == 0:
+                if min_delay_though_ap_id is not None:
+                    chosen_ap_ids[subinterval] = min_delay_though_ap_id
+                elif remaining_delay == rem_delay_in_subint:
+                    # if all nodes are mapped inside the cluster or inside the fixed infra part, we
+                    chosen_ap_ids[subinterval] = self.get_cheapest_ap_id(subinterval)
+                else:
+                    raise Exception("AP must always be selected if the delay and coverage are OK in a mapping!")
+            else:
+                DelayAndCoverageViolationChecker.chosen_ap_ids = None
+
+        # if the delay and coverage values are violated in none of the subintervals, then we have an AP selection
+        if inf_count_subinterval == 0 and negative_rem_delay_subinterval == 0:
+            DelayAndCoverageViolationChecker.chosen_ap_ids = chosen_ap_ids
+
         return inf_count_subinterval, negative_rem_delay_subinterval
 
     def get_violating_items(self):
@@ -309,7 +351,7 @@ class DelayAndCoverageViolationChecker(BaseConstraintViolationChecker):
 
     def item_move_improvement_score(self, item_to_be_moved : Item, target_bin : Bin):
         """
-
+        Identifies the item move's improvement score based on the violation metrics calculated by self.calculate_violations()
 
         :param item_to_be_moved:
         :param target_bin:
@@ -339,6 +381,24 @@ class DelayAndCoverageViolationChecker(BaseConstraintViolationChecker):
             ConstructiveMapperFromFractional.move_item_to_bin(item_to_be_moved, original_bin)
 
         return improvement_score
+
+    @staticmethod
+    def calculate_current_ap_selection_cost(infra : InfrastructureGMLGraph):
+        """
+        Sums the cost of the currently selected AP-s if the last calculated constraint violation function found a coverage and delay
+        respecting allocation for all subintervals.
+
+        :param infra:
+        :return:
+        """
+        total_ap_cost = None
+        if DelayAndCoverageViolationChecker.chosen_ap_ids is not None:
+            total_ap_cost = 0.0
+            for subinterval, selected_ap_id in DelayAndCoverageViolationChecker.chosen_ap_ids.items():
+                # divide by the number of time intervals as the meaning of an AP cost is to use that for the whole interval
+                # (similarly to the cost of a vCPU for the whole interval)
+                total_ap_cost += infra.nodes[selected_ap_id][infra.access_point_usage_cost_str] / float(infra.time_interval_count)
+        return total_ap_cost
 
 
 class ConstructiveMapperFromFractional(AbstractMapper):
@@ -399,8 +459,6 @@ class ConstructiveMapperFromFractional(AbstractMapper):
         :return:
         """
         for n, node_dict in ns.nodes(data=True):
-            # TODO: fill in from values of the node based on checker.
-            # TODO (we might filter out APs and endpoints here already -- If we know what exactly will be their 'type' fields)
             # initialize the problem with all possible bins
             self.items.append(Item(n, node_dict[ns.nf_demand_str], node_dict, possible_bins=[]))
         min_weighted_item = min(self.items, key=lambda i: i['weight'])
@@ -414,7 +472,7 @@ class ConstructiveMapperFromFractional(AbstractMapper):
                 # items and bins with 0 capacity might appear as access points
                 self.log.info("Discarding bin {} because it cannot fit even the smallest item".format(bin))
         if len(self.bins) == 0:
-            raise UnfeasibleBinPacking("None of the bins can host the smallest item!")
+            raise UnfeasibleVolatileResourcesProblem("None of the bins can host the smallest item!")
         # set possible bins for all items (discard ones with insufficient capacity)
         for item in self.items:
             # important to have a separate list for the possible bins for each item
@@ -451,8 +509,8 @@ class ConstructiveMapperFromFractional(AbstractMapper):
                 self.set_initial_bin_preferences(best_bins, total_bin_capacity)
                 return best_bins
         else:
-            raise UnfeasibleBinPacking("Total item weight {} is more than all the bin capacities {}".
-                                       format(self.total_item_weight, total_bin_capacity))
+            raise UnfeasibleVolatileResourcesProblem("Total item weight {} is more than all the bin capacities {}".
+                                                     format(self.total_item_weight, total_bin_capacity))
 
     def map_all_items_to_bins(self, best_bins, infra, ns):
         """
@@ -489,7 +547,7 @@ class ConstructiveMapperFromFractional(AbstractMapper):
                         bin.mapped_here.append(item)
                         break
             else:
-                raise UnfeasibleBinPacking("Item {} cannot be mapped anywhere".format(item))
+                raise UnfeasibleVolatileResourcesProblem("Item {} cannot be mapped anywhere".format(item))
 
     @staticmethod
     def move_item_to_bin(item_to_be_moved, target_bin):
@@ -553,9 +611,12 @@ class ConstructiveMapperFromFractional(AbstractMapper):
                             # Difference between the current mapping and the possible relocation.
                             # This value might be even negative, if the rounding did not consider taking the first fitting bin in the
                             # ordered best bin list.
-                            # TODO: include AP usage cost!!
                             cost_of_improvement = bin.get_variable_cost_of_mapping(item) - \
                                                   item.mapped_to.get_variable_cost_of_mapping(item)
+                            # we cannot include the improvement on the total AP selection cost, because with the heuristic, a mapping
+                            # setting must unambiguously identify the AP selection.
+                            # see "# NOTE" in DelayAndCoverageViolationChecker.calculate_violations
+                            # TODO: work out a way to include improvement on AP selection cost?? (difficult, not fit well to the current design)
                             if cost_of_improvement < cost_of_cheapest_improvement:
                                 cost_of_cheapest_improvement = cost_of_improvement
                                 target_bin = bin
@@ -591,7 +652,7 @@ class ConstructiveMapperFromFractional(AbstractMapper):
         :param ns:
         :return:
         """
-        if self.check_bin_mapping():
+        if self.check_all_constraints_calculate_objective(infra):
             # we dont have to add next bin, everything is mapped to the current best bins
             return best_bins, False
         else:
@@ -612,10 +673,11 @@ class ConstructiveMapperFromFractional(AbstractMapper):
                 # it means, that all bins are already in the best bins.
                 return best_bins, False
 
-    def check_bin_mapping(self):
+    def check_all_constraints_calculate_objective(self, infra):
         """
         Checks if the constructed solution for the bin packing is valid.
         Also calculates the objective_value_of_integer_solution if the solution is valid.
+        Checks other constraints not only the pure bin packing problem's capacity constraints.
 
         :return:
         """
@@ -638,6 +700,13 @@ class ConstructiveMapperFromFractional(AbstractMapper):
                     else:
                         raise Exception("Wrong item mapping structure, each item must be in exactly one bin!")
                 self.objective_value_of_integer_solution += bin['fixed_cost']
+        total_ap_selection_cost = DelayAndCoverageViolationChecker.calculate_current_ap_selection_cost(infra)
+        if total_ap_selection_cost is None:
+            self.objective_value_of_integer_solution = None
+            return False
+        else:
+            self.objective_value_of_integer_solution += total_ap_selection_cost
+        # TODO: check other constraints too!
         if len(all_items) != 0:
             raise Exception("Item not found in mapped_here structure in any bin!")
         return True
@@ -684,14 +753,14 @@ class ConstructiveMapperFromFractional(AbstractMapper):
                     break
                 # get new bin : if there is nothing left to improve with the current bins, we can introduce new ones
                 best_bins, can_add_next_bin = self.get_new_best_bins(best_bins, infra, ns)
-        except UnfeasibleBinPacking as ubp:
+        except UnfeasibleVolatileResourcesProblem as ubp:
             self.log.exception(ubp.msg)
             raise ubp
             # TODO: for development keep it raised!
             # mapping['worked'] = False
             # return mapping
 
-        if not self.check_bin_mapping():
+        if not self.check_all_constraints_calculate_objective(infra):
             self.log.info("Bin packing solution not found by the heuristic!")
             return mapping
         else:
