@@ -380,6 +380,8 @@ class ConstructiveMapperFromFractional(AbstractMapper):
         self.time_interval_count = time_interval_count
         self.battery_threshold = battery_threshold
         self.coverage_threshold = coverage_threshold
+        # variable to communicate between the new best bins and the item move improvement step functions
+        self.possible_bins_needed = []
 
     @property
     def total_item_weight(self):
@@ -509,7 +511,6 @@ class ConstructiveMapperFromFractional(AbstractMapper):
         :param ns:
         :return: bool tuple, whether there is anything left to improve; whether more improvement is needed
         """
-        # TODO: is it OK if violating items can come mapped from outside of the best_bins??
         violation_checkers = [BinCapacityViolationChecker(self.items, self.bins, infra, ns)]
         # add a separate checker for each SFC
         for sfc_delay, sfc_path in ns.sfc_delays_list:
@@ -528,9 +529,14 @@ class ConstructiveMapperFromFractional(AbstractMapper):
             target_bin = None
             item_to_be_moved = None
             improvement_score_stats['total'] = []
+            current_possible_bins_needed = []
+            unmovable_violating_items = []
             for item in violating_items:
                 if not any(b in item.possible_bins for b in best_bins):
                     self.log.debug("Violating item {} cannot be moved to any of the current best bins due to its possible bins list".format(item))
+                    # TODO: it might happen that this goes on for a long time, and many improvement steps fail due to not having possible bins in the best bins. If this is the case, maybe we could choose the next best bins from these possible bins.
+                    current_possible_bins_needed.extend(item.possible_bins)
+                    unmovable_violating_items.append(item)
                     continue
                 for bin in best_bins:
                     if bin is not item.mapped_to and bin in item.possible_bins:
@@ -554,8 +560,17 @@ class ConstructiveMapperFromFractional(AbstractMapper):
                                 cost_of_cheapest_improvement = cost_of_improvement
                                 target_bin = bin
                                 item_to_be_moved = item
-            self.log.debug("Improvement score averages: {}".format(
-                {k : ("{0:.4f}".format(math.fsum(v)/len(v)) if len(v) > 0 else "N/A") for k, v in improvement_score_stats.items()}))
+            if len(improvement_score_stats['total']) != 0:
+                self.log.debug("Improvement score averages: {}".format(
+                    {k : ("{0:.4f}".format(math.fsum(v)/len(v)) if len(v) > 0 else "N/A") for k, v in improvement_score_stats.items()}))
+                # if there are improvements, do not interfere with the algorithm
+                self.possible_bins_needed = []
+            elif len(unmovable_violating_items) > 0:
+                self.log.debug("Saving next bins for unmovable violating items: {}".format(unmovable_violating_items))
+                # self.possible_bins_needed stores the bins required
+                self.possible_bins_needed = current_possible_bins_needed
+
+                # if a target bin is set we can execute the moving
             if target_bin is not None:
                 self.log.debug("Improving mapping by moving item {} to target bin {}".
                                format(item_to_be_moved, target_bin))
@@ -580,8 +595,16 @@ class ConstructiveMapperFromFractional(AbstractMapper):
             # we dont have to add next bin, everything is mapped to the current best bins
             return best_bins, False
         else:
+            force_bin_choosing = False
+            if len(self.possible_bins_needed) > 0:
+                force_bin_choosing = True
+                self.log.debug("Forcing next bin selection to choose from the required possible bins (examples): {}".format(self.possible_bins_needed[:5]))
             for bin in self.get_bins_sorted_by_filled_unit_cost():
                 if bin not in best_bins:
+                    if force_bin_choosing and bin not in self.possible_bins_needed:
+                        # we need to skip this bin for now, it is more urgent to choose a bin, which is required anyway
+                        continue
+                        # TODO: do we mess up the bin preference setting? where does it matter besides the original ordering???
                     best_bins.append(bin)
                     # all later introduced bins are less and less preferred
                     bin.preference = self.min_bin_preference - self.epsilon
