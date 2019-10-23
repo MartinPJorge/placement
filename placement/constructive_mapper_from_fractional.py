@@ -422,8 +422,9 @@ class ConstructiveMapperFromFractional(AbstractMapper):
             item.possible_bins.extend([b for b in self.bins if b['capacity'] >= item['weight']])
 
     def set_initial_bin_preferences(self, original_best_bins, total_bin_capacity):
-        # sets the preference to the same ordering which is given by the fractional mapping variables for the best bins
-        min_pref = float('inf')
+        # sets the preference to the same ordering which is given by the fractional mapping variables for the best bins as defined
+        # in the referenced paper (originally the x_ij values has a denominator, but this does not influence their rounding, so it
+        # is ommited).
         self.objective_value_of_fractional_opt = 0.0
         for bin in original_best_bins:
             if bin is original_best_bins[-1]:
@@ -432,10 +433,6 @@ class ConstructiveMapperFromFractional(AbstractMapper):
             else:
                 bin.preference = bin['capacity']
             self.objective_value_of_fractional_opt += bin['fixed_cost'] + bin.preference * bin['unit_cost']
-            if bin.preference < min_pref:
-                min_pref = bin.preference
-        self.min_bin_preference = min_pref
-        self.log.debug("Minimum bin preference set to {}".format(self.min_bin_preference))
 
     def get_fist_best_bins(self):
         """
@@ -462,7 +459,7 @@ class ConstructiveMapperFromFractional(AbstractMapper):
         Round the fractional optimal solution defined by the best_bins.
         Round the x_ij mapping variable to the highest one, aka, get the highest capacity bin from the
         intersection of the possible bins of an item and the input best bins
-        (this appoach neglects that in the 'k'-th bin has less then it is capacity allocated, so the x_ik is lower too).
+        Preference is set only for the best_bins, not all bins in the self.bins!
         Ignores all other constrains from infra and ns
 
         :param best_bins:
@@ -473,6 +470,8 @@ class ConstructiveMapperFromFractional(AbstractMapper):
         for item in self.items:
             best_and_possible_bins = [b for b in best_bins if b in item.possible_bins]
             if len(best_and_possible_bins) > 0:
+                # preference is only set for the initial 'k' best_bins, if we need to introduce new bins to get a constraint
+                # non-violating solution, we introduce them according to their filled unit cost as they give the cheapest solution.
                 chosen_bin = max(best_and_possible_bins, key=lambda b: b.preference)
                 item.mapped_to = chosen_bin
                 chosen_bin.mapped_here.append(item)
@@ -511,6 +510,7 @@ class ConstructiveMapperFromFractional(AbstractMapper):
         :param ns:
         :return: bool tuple, whether there is anything left to improve; whether more improvement is needed
         """
+        # NOTE: violation checkers are only in a local scope, but some refactor could be done, to instantiate them at the constructor.
         violation_checkers = [BinCapacityViolationChecker(self.items, self.bins, infra, ns)]
         # add a separate checker for each SFC
         for sfc_delay, sfc_path in ns.sfc_delays_list:
@@ -604,12 +604,8 @@ class ConstructiveMapperFromFractional(AbstractMapper):
                     if force_bin_choosing and bin not in self.possible_bins_needed:
                         # we need to skip this bin for now, it is more urgent to choose a bin, which is required anyway
                         continue
-                        # TODO: do we mess up the bin preference setting? where does it matter besides the original ordering???
                     best_bins.append(bin)
-                    # all later introduced bins are less and less preferred
-                    bin.preference = self.min_bin_preference - self.epsilon
-                    self.min_bin_preference = bin.preference
-                    self.log.info("Introducing next new bin {} with minimal preference {}".format(bin, bin.preference))
+                    self.log.info("Introducing next new bin {}".format(bin))
                     # we return with the first one right away
                     return best_bins, True
             else:
