@@ -48,6 +48,7 @@ class VolatileResourcesMapping(dict):
                     location_constr_name = map(lambda x: infra.nodes[x][infra.node_name_str], data[ns.location_constr_str])
                     if self[data[ns.node_name_str]] not in location_constr_name:
                         return False
+
             # TODO: check other constraints
             # if we didnt return yet, all constraints are correct
             return True

@@ -32,7 +32,7 @@ def run_some_tests(substrate_network):
                 #     print("Error in parsing")
                 #     raise
 
-            except cmf.UnfeasibleBinPacking:
+            except cmf.UnfeasibleVolatileResourcesProblem:
                 print("Bin packing is infeasible")
 
 
@@ -57,7 +57,7 @@ def run_without_config_file():
     try:
         mapper = cmf.ConstructiveMapperFromFractional(checker)
         mapper.map(substrate_network, service_instance)
-    except cmf.UnfeasibleBinPacking:
+    except cmf.UnfeasibleVolatileResourcesProblem:
         print("Bin packing is infeasible")
 
     test_delay_calc(substrate_network, time_interval_count)
