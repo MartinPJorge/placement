@@ -20,7 +20,7 @@ class VolatileResourcesMapping(dict):
         if VolatileResourcesMapping.WORKED not in self:
             self[VolatileResourcesMapping.WORKED] = False
         if VolatileResourcesMapping.AP_SELECTION not in self:
-            # keyed by subinterval index and value is AP id
+            # keyed by subinterval index and value is AP name
             self[VolatileResourcesMapping.AP_SELECTION] = {}
 
     def add_access_point_selection(self, subinterval : int, ap_name):
@@ -29,7 +29,23 @@ class VolatileResourcesMapping(dict):
     def get_access_point_selection(self, subinterval : int):
         return self[VolatileResourcesMapping.AP_SELECTION][int(subinterval)]
 
-    def validate_mapping(self, ns: ServiceGMLGraph, infra: InfrastructureGMLGraph):
+    def get_hosting_infra_node_id(self, ns : ServiceGMLGraph, infra : InfrastructureGMLGraph, vnf_id):
+        """
+        Returns the infra node id, where the given VNF id is hosted. Could be cached...
+
+        :param ns:
+        :param infra:
+        :param vnf_id:
+        :return:
+        """
+        for vnf_name, host_name in self.items():
+            if ns.nodes[vnf_id][ns.node_name_str] == vnf_name:
+                for host_id, data in infra.nodes(data=True):
+                    if data[infra.node_name_str] == host_name:
+                        return host_id
+
+    def validate_mapping(self, ns: ServiceGMLGraph, infra: InfrastructureGMLGraph,
+                         time_interval_count, coverage_threshold, battery_threshold):
         """
         Checks whether the mapping task defined by the ns and infra is solved by this mapping object
 
@@ -38,10 +54,34 @@ class VolatileResourcesMapping(dict):
         :return:
         """
         if self[VolatileResourcesMapping.WORKED]:
+
             # if not all service nodes are mapped
             if not all({d[ns.node_name_str] in self for n, d in ns.nodes(data=True)}):
                 return False
-            # TODO: check AP selection
+
+            # check AP selection
+            for subinterval in range(1, time_interval_count+1):
+                ap_name = self.get_access_point_selection(subinterval)
+                # find the AP_id for this AP name
+                for ap_id in infra.access_point_ids:
+                    if infra.nodes[ap_id][infra.node_name_str] == ap_name:
+                        for master_mobile_id in infra.ap_coverage_probabilities.keys():
+                            if infra.ap_coverage_probabilities[master_mobile_id][subinterval][ap_id] < coverage_threshold:
+                                return False
+
+                        # check delay constraints in each interval for all subchains
+                        for sfc_delay, sfc_path in ns.sfc_delays_list:
+                            actual_sfc_delay = 0.0
+                            for nfu, nfv in sfc_path:
+                                host_u, host_v = self.get_hosting_infra_node_id(ns, infra, nfu), self.get_hosting_infra_node_id(ns, infra, nfv)
+                                actual_sfc_delay += infra.delay_distance(host_u, host_v, subinterval, coverage_threshold, ap_id)
+                            if sfc_delay < actual_sfc_delay:
+                                return False
+                        # go to next subinterval
+                        break
+                else:
+                    raise Exception("No AP id found for name {} in subinterval {}".format(ap_name, subinterval))
+
             # location constraints
             for nf, data in ns.nodes(data=True):
                 if ns.location_constr_str in data:
@@ -49,7 +89,28 @@ class VolatileResourcesMapping(dict):
                     if self[data[ns.node_name_str]] not in location_constr_name:
                         return False
 
-            # TODO: check other constraints
+            mobile_ids = list(infra.mobile_ids)
+            # check capacity constraints
+            for infra_node_id in infra.nodes():
+                total_capacity = infra.nodes[infra_node_id][infra.infra_node_capacity_str]
+                infra_node_name = infra.nodes[infra_node_id][infra.node_name_str]
+                allocated_load = 0.0
+                for vnf_id, data in ns.nodes(data=True):
+                    if self[data[ns.node_name_str]] == infra_node_name:
+                        allocated_load += data[ns.nf_demand_str]
+                # check if load matches
+                if allocated_load > total_capacity:
+                    return False
+                # check battery constraints
+                if infra_node_id in infra.mobile_ids:
+                    mobile_ids.remove(infra_node_id)
+                    linear_coeff = infra.unloaded_battery_alive_prob - infra.full_loaded_battery_alive_prob
+                    probability = infra.unloaded_battery_alive_prob - allocated_load / total_capacity * linear_coeff
+                    if probability < battery_threshold:
+                        return False
+            if len(mobile_ids) > 0:
+                raise Exception("Not all mobile nodes have been checked for battery constraints!")
+
             # if we didnt return yet, all constraints are correct
             return True
         else:

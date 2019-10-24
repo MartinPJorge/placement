@@ -62,6 +62,7 @@ class AMPLSolverSupport(object):
         self.log.info("Parsing optimization task into AMPL data structure...")
         # AMPL object provided by the library
         self.ampl = get_complete_ampl_model_data(ampl_model_path, service_instance, substrate_network, optimization_kwargs, log = log)
+        self.optimization_kwargs = optimization_kwargs
         self.service_instance = service_instance
         self.substrate_network = substrate_network
         self.ampl.setErrorHandler(AMPLErrorHandler(self.log))
@@ -98,7 +99,7 @@ class AMPLSolverSupport(object):
                             ap_name, subinterval = key
                             mapping.add_access_point_selection(subinterval, ap_name)
 
-            if not mapping.validate_mapping(self.service_instance, self.substrate_network):
+            if not mapping.validate_mapping(self.service_instance, self.substrate_network, **self.optimization_kwargs):
                 raise Exception("Mapping of the AMPL model is invalid!")
             self.log.info("Mapping structure validation is successful!")
             return mapping
