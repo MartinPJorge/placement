@@ -212,7 +212,8 @@ square1 <- data.frame(tl_lat=40.266662, tl_lon=-3.756308,
                       br_lat=40.262594, br_lon=-3.751914)
 square2 <- data.frame(tl_lat=40.264600, tl_lon=-3.751753,
                       br_lat=40.260469, br_lon=-3.748170)
-squares <- rbind(square1, square2)
+squares <- rbind(square1, square2) # TODO DEPRECATED, just using one
+squares <- square1
 
 
 ######## GENERATE THE FOG NODES #######

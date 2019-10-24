@@ -1,4 +1,4 @@
-Creator "igraph version 1.2.4 Mon Oct 21 18:22:58 2019"
+Creator "igraph version 1.2.4 Thu Oct 24 16:56:40 2019"
 Version 1
 graph
 [
@@ -98,8 +98,8 @@ graph
     id 6
     name "cell7"
     type "cell"
-    lon -3.74350121997085
-    lat 40.2658366842343
+    lon -3.77255111386259
+    lat 40.2653754311195
     cost 1.6
     cpu 0
     mem 0
@@ -113,8 +113,8 @@ graph
     id 7
     name "cell8"
     type "cell"
-    lon -3.75278256030115
-    lat 40.2576976102768
+    lon -3.77227412654478
+    lat 40.2693670158156
     cost 1.6
     cpu 0
     mem 0
@@ -128,8 +128,8 @@ graph
     id 8
     name "cell9"
     type "cell"
-    lon -3.77077077107534
-    lat 40.273883919361
+    lon -3.74868196393783
+    lat 40.258425949214
     cost 1.6
     cpu 0
     mem 0
@@ -143,8 +143,8 @@ graph
     id 9
     name "cell10"
     type "cell"
-    lon -3.75676720308614
-    lat 40.263371402182
+    lon -3.77417628461335
+    lat 40.261454926456
     cost 1.6
     cpu 0
     mem 0
@@ -158,8 +158,8 @@ graph
     id 10
     name "cell11"
     type "cell"
-    lon -3.76345237995053
-    lat 40.2666784953268
+    lon -3.75614658519622
+    lat 40.2651846351229
     cost 1.6
     cpu 0
     mem 0
@@ -173,8 +173,8 @@ graph
     id 11
     name "cell12"
     type "cell"
-    lon -3.7377320346153
-    lat 40.2663692042135
+    lon -3.75738122294564
+    lat 40.2623001788132
     cost 1.6
     cpu 0
     mem 0
@@ -188,8 +188,8 @@ graph
     id 12
     name "cell13"
     type "cell"
-    lon -3.7649262018338
-    lat 40.2634189215352
+    lon -3.75861953113273
+    lat 40.2547943477382
     cost 1.6
     cpu 0
     mem 0
@@ -203,8 +203,8 @@ graph
     id 13
     name "cell14"
     type "cell"
-    lon -3.74074872016701
-    lat 40.2704326887394
+    lon -3.75537964732868
+    lat 40.2642378889316
     cost 1.6
     cpu 0
     mem 0
@@ -218,8 +218,8 @@ graph
     id 14
     name "cell15"
     type "cell"
-    lon -3.77160555295233
-    lat 40.2645672169344
+    lon -3.75328803805956
+    lat 40.2682715369596
     cost 1.6
     cpu 0
     mem 0
@@ -233,8 +233,8 @@ graph
     id 15
     name "cell16"
     type "cell"
-    lon -3.76434308332339
-    lat 40.2750367178522
+    lon -3.74867318318136
+    lat 40.2716305632292
     cost 1.6
     cpu 0
     mem 0
@@ -248,8 +248,8 @@ graph
     id 16
     name "cell17"
     type "cell"
-    lon -3.76524852902874
-    lat 40.2685420463658
+    lon -3.75044650652601
+    lat 40.2737898784245
     cost 1.6
     cpu 0
     mem 0
@@ -263,8 +263,8 @@ graph
     id 17
     name "cell18"
     type "cell"
-    lon -3.76801526248038
-    lat 40.2681086101047
+    lon -3.75578641989767
+    lat 40.2610905962592
     cost 1.6
     cpu 0
     mem 0
@@ -278,8 +278,8 @@ graph
     id 18
     name "cell19"
     type "cell"
-    lon -3.75964740834737
-    lat 40.262762151654
+    lon -3.76006316274012
+    lat 40.2597019333602
     cost 1.6
     cpu 0
     mem 0
@@ -293,8 +293,8 @@ graph
     id 19
     name "cell20"
     type "cell"
-    lon -3.76056669023906
-    lat 40.2705091036623
+    lon -3.76246688586441
+    lat 40.2765865638447
     cost 1.6
     cpu 0
     mem 0
@@ -308,8 +308,8 @@ graph
     id 20
     name "cell21"
     type "cell"
-    lon -3.75541899617243
-    lat 40.2563529993574
+    lon -3.77029044339706
+    lat 40.2745606813557
     cost 1.6
     cpu 0
     mem 0
@@ -323,8 +323,8 @@ graph
     id 21
     name "cell22"
     type "cell"
-    lon -3.74841086402061
-    lat 40.2606812446852
+    lon -3.75915293822204
+    lat 40.2538601688763
     cost 1.6
     cpu 0
     mem 0
@@ -338,8 +338,8 @@ graph
     id 22
     name "cell23"
     type "cell"
-    lon -3.7636791486168
-    lat 40.2584595811382
+    lon -3.74815605386027
+    lat 40.2719362610041
     cost 1.6
     cpu 0
     mem 0
@@ -353,8 +353,8 @@ graph
     id 23
     name "cell24"
     type "cell"
-    lon -3.76438915295724
-    lat 40.2670064187596
+    lon -3.76796505135722
+    lat 40.2700346271399
     cost 1.6
     cpu 0
     mem 0
@@ -368,8 +368,8 @@ graph
     id 24
     name "cell25"
     type "cell"
-    lon -3.76658613353861
-    lat 40.2766728289828
+    lon -3.77195398367202
+    lat 40.2670482249187
     cost 1.6
     cpu 0
     mem 0
@@ -383,8 +383,8 @@ graph
     id 25
     name "cell26"
     type "cell"
-    lon -3.76257378871077
-    lat 40.2552678146189
+    lon -3.75052933407773
+    lat 40.2723735626821
     cost 1.6
     cpu 0
     mem 0
@@ -398,8 +398,8 @@ graph
     id 26
     name "cell27"
     type "cell"
-    lon -3.77302595487379
-    lat 40.2551437668533
+    lon -3.76573476314581
+    lat 40.2715783570829
     cost 1.6
     cpu 0
     mem 0
@@ -413,8 +413,8 @@ graph
     id 27
     name "cell28"
     type "cell"
-    lon -3.74176590984234
-    lat 40.275618002476
+    lon -3.76459693498472
+    lat 40.2616059276066
     cost 1.6
     cpu 0
     mem 0
@@ -428,8 +428,8 @@ graph
     id 28
     name "cell29"
     type "cell"
-    lon -3.73810318115769
-    lat 40.2766212839047
+    lon -3.76199343934234
+    lat 40.2627078396038
     cost 1.6
     cpu 0
     mem 0
@@ -443,8 +443,8 @@ graph
     id 29
     name "cell30"
     type "cell"
-    lon -3.77161910383152
-    lat 40.2561562779101
+    lon -3.76291117545896
+    lat 40.2556971282796
     cost 1.6
     cpu 0
     mem 0
@@ -458,8 +458,8 @@ graph
     id 30
     name "cell31"
     type "cell"
-    lon -3.75857674942547
-    lat 40.2760708717235
+    lon -3.76738293685309
+    lat 40.2605744449581
     cost 1.6
     cpu 0
     mem 0
@@ -473,8 +473,8 @@ graph
     id 31
     name "cell32"
     type "cell"
-    lon -3.76441681643596
-    lat 40.2725843316401
+    lon -3.76305294627948
+    lat 40.26002715113
     cost 1.6
     cpu 0
     mem 0
@@ -488,8 +488,8 @@ graph
     id 32
     name "cell33"
     type "cell"
-    lon -3.73941791403657
-    lat 40.2760300122587
+    lon -3.75189706891131
+    lat 40.2657269812884
     cost 1.6
     cpu 0
     mem 0
@@ -503,8 +503,8 @@ graph
     id 33
     name "cell34"
     type "cell"
-    lon -3.74951408390577
-    lat 40.2679705627353
+    lon -3.75063139094115
+    lat 40.2751727017066
     cost 1.6
     cpu 0
     mem 0
@@ -518,8 +518,8 @@ graph
     id 34
     name "cell35"
     type "cell"
-    lon -3.74115816440801
-    lat 40.2752280917939
+    lon -3.75234588013868
+    lat 40.272950589197
     cost 1.6
     cpu 0
     mem 0
@@ -533,8 +533,8 @@ graph
     id 35
     name "cell36"
     type "cell"
-    lon -3.7469088245642
-    lat 40.2593376986756
+    lon -3.7455804873803
+    lat 40.268702969064
     cost 1.6
     cpu 0
     mem 0
@@ -548,8 +548,8 @@ graph
     id 36
     name "cell37"
     type "cell"
-    lon -3.75226090091438
-    lat 40.2700139231843
+    lon -3.73896028831245
+    lat 40.2762555189441
     cost 1.6
     cpu 0
     mem 0
@@ -563,8 +563,8 @@ graph
     id 37
     name "cell38"
     type "cell"
-    lon -3.76172277643497
-    lat 40.2678713300313
+    lon -3.77123308179558
+    lat 40.2604909580064
     cost 1.6
     cpu 0
     mem 0
@@ -578,8 +578,8 @@ graph
     id 38
     name "cell39"
     type "cell"
-    lon -3.75478128949713
-    lat 40.2669428225621
+    lon -3.74171829047859
+    lat 40.2641286174182
     cost 1.6
     cpu 0
     mem 0
@@ -593,8 +593,8 @@ graph
     id 39
     name "cell40"
     type "cell"
-    lon -3.76292359387937
-    lat 40.2708921265609
+    lon -3.76218892445878
+    lat 40.2551785872971
     cost 1.6
     cpu 0
     mem 0
@@ -608,8 +608,8 @@ graph
     id 40
     name "cell41"
     type "cell"
-    lon -3.77189105560894
-    lat 40.2544011299202
+    lon -3.76028602398864
+    lat 40.2555879202902
     cost 1.6
     cpu 0
     mem 0
@@ -623,8 +623,8 @@ graph
     id 41
     name "cell42"
     type "cell"
-    lon -3.74192922675728
-    lat 40.2732705982836
+    lon -3.76867339327253
+    lat 40.2661009706705
     cost 1.6
     cpu 0
     mem 0
@@ -638,8 +638,8 @@ graph
     id 42
     name "cell43"
     type "cell"
-    lon -3.77074733364503
-    lat 40.2641138078519
+    lon -3.75559918309737
+    lat 40.2741159932302
     cost 1.6
     cpu 0
     mem 0
@@ -653,8 +653,8 @@ graph
     id 43
     name "cell44"
     type "cell"
-    lon -3.74456220067127
-    lat 40.2608256750577
+    lon -3.74777075312159
+    lat 40.2715879861013
     cost 1.6
     cpu 0
     mem 0
@@ -668,8 +668,8 @@ graph
     id 44
     name "cell45"
     type "cell"
-    lon -3.76967661364479
-    lat 40.2667562487091
+    lon -3.75413233373066
+    lat 40.2611066638291
     cost 1.6
     cpu 0
     mem 0
@@ -698,8 +698,8 @@ graph
     id 46
     name "m1_1"
     type "m1"
-    lon -3.75360101943316
-    lat 40.264031344718
+    lon -3.76313475778578
+    lat 40.2630024841659
     cost 0
     cpu 0
     mem 0
@@ -713,8 +713,8 @@ graph
     id 47
     name "m1_2"
     type "m1"
-    lon -3.76040588956913
-    lat 40.2683638862653
+    lon -3.75382000829994
+    lat 40.2645761069017
     cost 0
     cpu 0
     mem 0
@@ -728,8 +728,8 @@ graph
     id 48
     name "m1_3"
     type "m1"
-    lon -3.76018504647636
-    lat 40.2687200718827
+    lon -3.75325095327727
+    lat 40.2653424972945
     cost 0
     cpu 0
     mem 0
@@ -743,8 +743,8 @@ graph
     id 49
     name "m1_4"
     type "m1"
-    lon -3.7598407061317
-    lat 40.2694736436533
+    lon -3.7531697813295
+    lat 40.2655216243711
     cost 0
     cpu 0
     mem 0
@@ -758,8 +758,8 @@ graph
     id 50
     name "m1_5"
     type "m1"
-    lon -3.75890785736176
-    lat 40.2697797158963
+    lon -3.7530797374441
+    lat 40.2655269822873
     cost 0
     cpu 0
     mem 0
@@ -773,8 +773,8 @@ graph
     id 51
     name "m2_0"
     type "m2"
-    lon -3.75712492205704
-    lat 40.2664623821244
+    lon -3.75519755657939
+    lat 40.2620943660257
     cost 0
     cpu 0
     mem 0
@@ -788,8 +788,8 @@ graph
     id 52
     name "m2_1"
     type "m2"
-    lon -3.75614186932694
-    lat 40.2667297249505
+    lon -3.75459936492158
+    lat 40.2621158152702
     cost 0
     cpu 0
     mem 0
@@ -803,8 +803,8 @@ graph
     id 53
     name "m2_2"
     type "m2"
-    lon -3.75535131049122
-    lat 40.2674583563177
+    lon -3.7545142351651
+    lat 40.2621482514667
     cost 0
     cpu 0
     mem 0
@@ -818,8 +818,8 @@ graph
     id 54
     name "m2_3"
     type "m2"
-    lon -3.75509249543923
-    lat 40.2678702582222
+    lon -3.75385075102015
+    lat 40.2630272812368
     cost 0
     cpu 0
     mem 0
@@ -833,8 +833,8 @@ graph
     id 55
     name "m2_4"
     type "m2"
-    lon -3.75423233263067
-    lat 40.2688281686463
+    lon -3.75378665927206
+    lat 40.2636274375336
     cost 0
     cpu 0
     mem 0
@@ -848,8 +848,8 @@ graph
     id 56
     name "m2_5"
     type "m2"
-    lon -3.7532452966132
-    lat 40.2694407949786
+    lon -3.75333568720766
+    lat 40.2636760036957
     cost 0
     cpu 0
     mem 0
@@ -863,8 +863,8 @@ graph
     id 57
     name "m3_0"
     type "m3"
-    lon -3.75625497600568
-    lat 40.2669093355352
+    lon -3.75463506388504
+    lat 40.262313489823
     cost 0
     cpu 0
     mem 0
@@ -878,8 +878,8 @@ graph
     id 58
     name "m3_rep_0"
     type "m3"
-    lon -3.75625497600568
-    lat 40.2669093355352
+    lon -3.75463506388504
+    lat 40.262313489823
     cost 0
     cpu 0
     mem 0
@@ -893,8 +893,8 @@ graph
     id 59
     name "cloud_server_server_0"
     type "server"
-    lon -3.75625497600568
-    lat 40.2669093355352
+    lon -3.75463506388504
+    lat 40.262313489823
     cost 2.48
     cpu 20
     mem 200
@@ -908,8 +908,8 @@ graph
     id 60
     name "cloud_server_server_1"
     type "server"
-    lon -3.75625497600568
-    lat 40.2669093355352
+    lon -3.75463506388504
+    lat 40.262313489823
     cost 2.48
     cpu 20
     mem 200
@@ -923,8 +923,8 @@ graph
     id 61
     name "robot_sq1_fogNode_1"
     type "fogNode"
-    lon -3.75197167661823
-    lat 40.2643977033203
+    lon -3.75406296474236
+    lat 40.2631380528252
     cost 15.27
     cpu 1
     mem 1
@@ -938,8 +938,8 @@ graph
     id 62
     name "robot_sq1_fogNode_2"
     type "fogNode"
-    lon -3.75294491079217
-    lat 40.2648550016826
+    lon -3.75216591484371
+    lat 40.2631302220636
     cost 15.27
     cpu 1
     mem 1
@@ -953,8 +953,8 @@ graph
     id 63
     name "robot_sq1_fogNode_3"
     type "fogNode"
-    lon -3.75583091815797
-    lat 40.2642378308585
+    lon -3.75434349642619
+    lat 40.2664170697453
     cost 15.27
     cpu 1
     mem 1
@@ -968,8 +968,8 @@ graph
     id 64
     name "robot_sq1_fogNode_4"
     type "fogNode"
-    lon -3.75476790754365
-    lat 40.2631198782173
+    lon -3.75327064298868
+    lat 40.2658819324726
     cost 15.27
     cpu 1
     mem 1
@@ -983,8 +983,8 @@ graph
     id 65
     name "robot_sq1_fogNode_5"
     type "fogNode"
-    lon -3.75197507040087
-    lat 40.2648354420488
+    lon -3.75201781469796
+    lat 40.2626802050619
     cost 15.27
     cpu 1
     mem 1
@@ -998,8 +998,8 @@ graph
     id 66
     name "robot_sq1_fogNode_6"
     type "fogNode"
-    lon -3.75564415476961
-    lat 40.2639067349038
+    lon -3.75213455078023
+    lat 40.2641215561278
     cost 15.27
     cpu 1
     mem 1
@@ -1013,8 +1013,8 @@ graph
     id 67
     name "robot_sq1_fogNode_7"
     type "fogNode"
-    lon -3.75378978027329
-    lat 40.2657246030852
+    lon -3.75359916446136
+    lat 40.2639189897547
     cost 15.27
     cpu 1
     mem 1
@@ -1028,8 +1028,8 @@ graph
     id 68
     name "robot_sq1_fogNode_8"
     type "fogNode"
-    lon -3.75581341202584
-    lat 40.2664075688992
+    lon -3.75250395330998
+    lat 40.2657008384117
     cost 15.27
     cpu 1
     mem 1
@@ -1043,8 +1043,8 @@ graph
     id 69
     name "robot_sq1_fogNode_9"
     type "fogNode"
-    lon -3.75584560091847
-    lat 40.2654083676704
+    lon -3.7538899985986
+    lat 40.2629772221958
     cost 15.27
     cpu 1
     mem 1
@@ -1058,8 +1058,8 @@ graph
     id 70
     name "robot_sq1_fogNode_10"
     type "fogNode"
-    lon -3.75607723956282
-    lat 40.2631011938324
+    lon -3.75463478579143
+    lat 40.264206125792
     cost 15.27
     cpu 1
     mem 1
@@ -1073,173 +1073,8 @@ graph
     id 71
     name "endpoint_sq1"
     type "endpoint"
-    lon -3.75607723956282
-    lat 40.2631011938324
-    cost 15.27
-    cpu 0
-    mem 0
-    disk 0
-    size ""
-    coverageRadius 0
-    delay 0
-  ]
-  node
-  [
-    id 72
-    name "robot_sq2_fogNode_1"
-    type "fogNode"
-    lon -3.7510498874834
-    lat 40.2625059616959
-    cost 15.27
-    cpu 1
-    mem 1
-    disk 10
-    size ""
-    coverageRadius 0
-    delay 0
-  ]
-  node
-  [
-    id 73
-    name "robot_sq2_fogNode_2"
-    type "fogNode"
-    lon -3.74901090572009
-    lat 40.264073886896
-    cost 15.27
-    cpu 1
-    mem 1
-    disk 10
-    size ""
-    coverageRadius 0
-    delay 0
-  ]
-  node
-  [
-    id 74
-    name "robot_sq2_fogNode_3"
-    type "fogNode"
-    lon -3.75060873051857
-    lat 40.263649126728
-    cost 15.27
-    cpu 1
-    mem 1
-    disk 10
-    size ""
-    coverageRadius 0
-    delay 0
-  ]
-  node
-  [
-    id 75
-    name "robot_sq2_fogNode_4"
-    type "fogNode"
-    lon -3.75075624236114
-    lat 40.2619102965765
-    cost 15.27
-    cpu 1
-    mem 1
-    disk 10
-    size ""
-    coverageRadius 0
-    delay 0
-  ]
-  node
-  [
-    id 76
-    name "robot_sq2_fogNode_5"
-    type "fogNode"
-    lon -3.75005361097294
-    lat 40.2622859669186
-    cost 15.27
-    cpu 1
-    mem 1
-    disk 10
-    size ""
-    coverageRadius 0
-    delay 0
-  ]
-  node
-  [
-    id 77
-    name "robot_sq2_fogNode_6"
-    type "fogNode"
-    lon -3.74857130713771
-    lat 40.2634710058688
-    cost 15.27
-    cpu 1
-    mem 1
-    disk 10
-    size ""
-    coverageRadius 0
-    delay 0
-  ]
-  node
-  [
-    id 78
-    name "robot_sq2_fogNode_7"
-    type "fogNode"
-    lon -3.74946023111118
-    lat 40.2626900078344
-    cost 15.27
-    cpu 1
-    mem 1
-    disk 10
-    size ""
-    coverageRadius 0
-    delay 0
-  ]
-  node
-  [
-    id 79
-    name "robot_sq2_fogNode_8"
-    type "fogNode"
-    lon -3.74868996270674
-    lat 40.2624004610399
-    cost 15.27
-    cpu 1
-    mem 1
-    disk 10
-    size ""
-    coverageRadius 0
-    delay 0
-  ]
-  node
-  [
-    id 80
-    name "robot_sq2_fogNode_9"
-    type "fogNode"
-    lon -3.74888885921408
-    lat 40.2611291857915
-    cost 15.27
-    cpu 1
-    mem 1
-    disk 10
-    size ""
-    coverageRadius 0
-    delay 0
-  ]
-  node
-  [
-    id 81
-    name "robot_sq2_fogNode_10"
-    type "fogNode"
-    lon -3.74977733449242
-    lat 40.2629917174561
-    cost 15.27
-    cpu 1
-    mem 1
-    disk 10
-    size ""
-    coverageRadius 0
-    delay 0
-  ]
-  node
-  [
-    id 82
-    name "endpoint_sq2"
-    type "endpoint"
-    lon -3.74977733449242
-    lat 40.2629917174561
+    lon -3.75463478579143
+    lat 40.264206125792
     cost 15.27
     cpu 0
     mem 0
@@ -1256,7 +1091,7 @@ graph
     bandwidthUnits "Gb/s"
     distance 1286.38
     distanceUnits "meters"
-    delay 1.06091958163386
+    delay 1.48738745798692
   ]
   edge
   [
@@ -1266,7 +1101,7 @@ graph
     bandwidthUnits "Gb/s"
     distance 992.99
     distanceUnits "meters"
-    delay 1.13014110568038
+    delay 1.67632414302131
   ]
   edge
   [
@@ -1276,7 +1111,7 @@ graph
     bandwidthUnits "Gb/s"
     distance 888.22
     distanceUnits "meters"
-    delay 1.51581889770156
+    delay 1.21598096379613
   ]
   edge
   [
@@ -1286,7 +1121,7 @@ graph
     bandwidthUnits "Gb/s"
     distance 486.91
     distanceUnits "meters"
-    delay 3.05240481664492
+    delay 1.21135897790908
   ]
   edge
   [
@@ -1296,7 +1131,7 @@ graph
     bandwidthUnits "Gb/s"
     distance 414.41
     distanceUnits "meters"
-    delay 1.68298284901951
+    delay 2.75338119423903
   ]
   edge
   [
@@ -1306,7 +1141,7 @@ graph
     bandwidthUnits "Gb/s"
     distance 377.04
     distanceUnits "meters"
-    delay 1.51581889770156
+    delay 2.75338119423903
   ]
   edge
   [
@@ -1314,9 +1149,9 @@ graph
     target 6
     bandwidth 10
     bandwidthUnits "Gb/s"
-    distance 882.2
+    distance 843.22
     distanceUnits "meters"
-    delay 1.29261420081369
+    delay 1.238777135991
   ]
   edge
   [
@@ -1324,9 +1159,9 @@ graph
     target 7
     bandwidth 10
     bandwidthUnits "Gb/s"
-    distance 706.73
+    distance 1050.62
     distanceUnits "meters"
-    delay 2.05433773918788
+    delay 1.56417929286197
   ]
   edge
   [
@@ -1334,9 +1169,9 @@ graph
     target 8
     bandwidth 10
     bandwidthUnits "Gb/s"
-    distance 1824.76
+    distance 1330.36
     distanceUnits "meters"
-    delay 1.93617622522626
+    delay 5.26179467635226
   ]
   edge
   [
@@ -1344,9 +1179,9 @@ graph
     target 9
     bandwidth 10
     bandwidthUnits "Gb/s"
-    distance 279.12
+    distance 954.85
     distanceUnits "meters"
-    delay 1.62966338342658
+    delay 1.84794142211079
   ]
   edge
   [
@@ -1354,9 +1189,9 @@ graph
     target 10
     bandwidth 10
     bandwidthUnits "Gb/s"
-    distance 888.04
+    distance 641.93
     distanceUnits "meters"
-    delay 1.00206554719244
+    delay 1.29261420081369
   ]
   edge
   [
@@ -1364,9 +1199,9 @@ graph
     target 11
     bandwidth 10
     bandwidthUnits "Gb/s"
-    distance 1374.59
+    distance 495.6
     distanceUnits "meters"
-    delay 3.96098785577718
+    delay 1.11371870070634
   ]
   edge
   [
@@ -1374,9 +1209,9 @@ graph
     target 12
     bandwidth 10
     bandwidthUnits "Gb/s"
-    distance 670.33
+    distance 1160.37
     distanceUnits "meters"
-    delay 1.11356408246787
+    delay 1.71650684818903
   ]
   edge
   [
@@ -1384,9 +1219,9 @@ graph
     target 13
     bandwidth 10
     bandwidthUnits "Gb/s"
-    distance 1687.69
+    distance 137.88
     distanceUnits "meters"
-    delay 1.30169963300123
+    delay 1.58325448218523
   ]
   edge
   [
@@ -1394,9 +1229,9 @@ graph
     target 14
     bandwidth 10
     bandwidthUnits "Gb/s"
-    distance 1041.77
+    distance 412.83
     distanceUnits "meters"
-    delay 1.11371870070634
+    delay 1.30169963300123
   ]
   edge
   [
@@ -1404,9 +1239,9 @@ graph
     target 15
     bandwidth 10
     bandwidthUnits "Gb/s"
-    distance 813.11
+    distance 897.36
     distanceUnits "meters"
-    delay 3.3469066984669
+    delay 1.51178913740677
   ]
   edge
   [
@@ -1414,9 +1249,9 @@ graph
     target 16
     bandwidth 10
     bandwidthUnits "Gb/s"
-    distance 412.38
+    distance 1062.57
     distanceUnits "meters"
-    delay 9.65514191653675
+    delay 1.71650684818903
   ]
   edge
   [
@@ -1424,9 +1259,9 @@ graph
     target 17
     bandwidth 10
     bandwidthUnits "Gb/s"
-    distance 647.86
+    distance 421.63
     distanceUnits "meters"
-    delay 1.68298284901951
+    delay 4.79416787026456
   ]
   edge
   [
@@ -1434,19 +1269,19 @@ graph
     target 18
     bandwidth 10
     bandwidthUnits "Gb/s"
-    distance 533.29
+    distance 450.1
     distanceUnits "meters"
-    delay 3.3469066984669
+    delay 2.38334443693588
   ]
   edge
   [
-    source 47
+    source 46
     target 19
     bandwidth 10
     bandwidthUnits "Gb/s"
-    distance 238.6
+    distance 1509.44
     distanceUnits "meters"
-    delay 1.28193324109199
+    delay 2.29363199871112
   ]
   edge
   [
@@ -1454,9 +1289,9 @@ graph
     target 20
     bandwidth 10
     bandwidthUnits "Gb/s"
-    distance 866.51
+    distance 1420.43
     distanceUnits "meters"
-    delay 1.02626005280501
+    delay 2.16248642175496
   ]
   edge
   [
@@ -1464,49 +1299,49 @@ graph
     target 21
     bandwidth 10
     bandwidthUnits "Gb/s"
-    distance 577.33
+    distance 1070.18
     distanceUnits "meters"
-    delay 2.030053599998
+    delay 1.92518754204822
   ]
   edge
   [
-    source 46
+    source 47
     target 22
     bandwidth 10
     bandwidthUnits "Gb/s"
-    distance 1057.25
+    distance 948.7
     distanceUnits "meters"
-    delay 1.58325448218523
-  ]
-  edge
-  [
-    source 47
-    target 23
-    bandwidth 10
-    bandwidthUnits "Gb/s"
-    distance 370.83
-    distanceUnits "meters"
-    delay 2.030053599998
-  ]
-  edge
-  [
-    source 47
-    target 24
-    bandwidth 10
-    bandwidthUnits "Gb/s"
-    distance 1061.86
-    distanceUnits "meters"
-    delay 2.37718000073054
+    delay 2.03469514476256
   ]
   edge
   [
     source 46
+    target 23
+    bandwidth 10
+    bandwidthUnits "Gb/s"
+    distance 882.35
+    distanceUnits "meters"
+    delay 1.649233488788
+  ]
+  edge
+  [
+    source 46
+    target 24
+    bandwidth 10
+    bandwidthUnits "Gb/s"
+    distance 874.41
+    distanceUnits "meters"
+    delay 4.79416787026456
+  ]
+  edge
+  [
+    source 47
     target 25
     bandwidth 10
     bandwidthUnits "Gb/s"
-    distance 1236.76
+    distance 909.95
     distanceUnits "meters"
-    delay 1.38892013577722
+    delay 1.02626005280501
   ]
   edge
   [
@@ -1514,9 +1349,9 @@ graph
     target 26
     bandwidth 10
     bandwidthUnits "Gb/s"
-    distance 1924.73
+    distance 977.61
     distanceUnits "meters"
-    delay 2.87115144140872
+    delay 2.79157006074178
   ]
   edge
   [
@@ -1524,9 +1359,9 @@ graph
     target 27
     bandwidth 10
     bandwidthUnits "Gb/s"
-    distance 1633.6
+    distance 198.79
     distanceUnits "meters"
-    delay 1.649233488788
+    delay 1.93617622522626
   ]
   edge
   [
@@ -1534,79 +1369,79 @@ graph
     target 28
     bandwidth 10
     bandwidthUnits "Gb/s"
-    distance 1921.45
+    distance 102.45
     distanceUnits "meters"
-    delay 2.03403761090507
+    delay 2.75338119423903
   ]
   edge
   [
-    source 47
+    source 46
     target 29
     bandwidth 10
     bandwidthUnits "Gb/s"
-    distance 1657.5
+    distance 811.41
     distanceUnits "meters"
-    delay 1.53713426785444
+    delay 1.19036490762139
   ]
   edge
   [
-    source 47
+    source 46
     target 30
     bandwidth 10
     bandwidthUnits "Gb/s"
-    distance 869.81
+    distance 450.87
     distanceUnits "meters"
-    delay 1.30169963300123
+    delay 1.79128757167644
+  ]
+  edge
+  [
+    source 46
+    target 31
+    bandwidth 10
+    bandwidthUnits "Gb/s"
+    distance 330.45
+    distanceUnits "meters"
+    delay 1.36313352804285
   ]
   edge
   [
     source 47
-    target 31
-    bandwidth 10
-    bandwidthUnits "Gb/s"
-    distance 579.66
-    distanceUnits "meters"
-    delay 3.96098785577718
-  ]
-  edge
-  [
-    source 46
     target 32
     bandwidth 10
     bandwidthUnits "Gb/s"
-    distance 1797.34
+    distance 207.57
     distanceUnits "meters"
-    delay 1.14777714103555
+    delay 2.38334443693588
   ]
   edge
   [
-    source 46
+    source 47
     target 33
     bandwidth 10
     bandwidthUnits "Gb/s"
-    distance 558.73
+    distance 1207.5
     distanceUnits "meters"
     delay 3.34608350476619
   ]
   edge
   [
-    source 46
+    source 47
     target 34
     bandwidth 10
     bandwidthUnits "Gb/s"
-    distance 1632.75
+    distance 938.32
     distanceUnits "meters"
-    delay 2.80339782175298
+    delay 1.649233488788
   ]
   edge
   [
-    source 46
+    source 47
     target 35
     bandwidth 10
     bandwidthUnits "Gb/s"
-    distance 771.83
+    distance 837.37
     distanceUnits "meters"
-    delay 1.36313352804285
+    delay 2.90119368020669
   ]
   edge
   [
@@ -1614,39 +1449,39 @@ graph
     target 36
     bandwidth 10
     bandwidthUnits "Gb/s"
-    distance 674.01
+    distance 2528.57
     distanceUnits "meters"
-    delay 2.19101722556823
-  ]
-  edge
-  [
-    source 47
-    target 37
-    bandwidth 10
-    bandwidthUnits "Gb/s"
-    distance 124.65
-    distanceUnits "meters"
-    delay 1.20837096546071
+    delay 2.66783913462173
   ]
   edge
   [
     source 46
-    target 38
+    target 37
     bandwidth 10
     bandwidthUnits "Gb/s"
-    distance 338.52
+    distance 743.21
     distanceUnits "meters"
-    delay 4.55416722468295
+    delay 1.238777135991
   ]
   edge
   [
     source 47
+    target 38
+    bandwidth 10
+    bandwidthUnits "Gb/s"
+    distance 1030.61
+    distanceUnits "meters"
+    delay 3.3469066984669
+  ]
+  edge
+  [
+    source 46
     target 39
     bandwidth 10
     bandwidthUnits "Gb/s"
-    distance 353.09
+    distance 872.48
     distanceUnits "meters"
-    delay 1.749653834876
+    delay 1.87417256943622
   ]
   edge
   [
@@ -1654,9 +1489,9 @@ graph
     target 40
     bandwidth 10
     bandwidthUnits "Gb/s"
-    distance 1887.96
+    distance 858.24
     distanceUnits "meters"
-    delay 4.05378483175645
+    delay 1.37192001926641
   ]
   edge
   [
@@ -1664,9 +1499,9 @@ graph
     target 41
     bandwidth 10
     bandwidthUnits "Gb/s"
-    distance 1427.63
+    distance 583.39
     distanceUnits "meters"
-    delay 1.21135897790908
+    delay 1.17315372734401
   ]
   edge
   [
@@ -1674,19 +1509,19 @@ graph
     target 42
     bandwidth 10
     bandwidthUnits "Gb/s"
-    distance 998.25
+    distance 1070.06
     distanceUnits "meters"
-    delay 1.19036490762139
+    delay 1.20211606053961
   ]
   edge
   [
-    source 46
+    source 47
     target 43
     bandwidth 10
     bandwidthUnits "Gb/s"
-    distance 847.29
+    distance 933.26
     distanceUnits "meters"
-    delay 1.92518754204822
+    delay 3.34608350476619
   ]
   edge
   [
@@ -1694,9 +1529,9 @@ graph
     target 44
     bandwidth 10
     bandwidthUnits "Gb/s"
-    distance 808.52
+    distance 386.16
     distanceUnits "meters"
-    delay 1.21135897790908
+    delay 7.22332902500871
   ]
   edge
   [
@@ -1704,9 +1539,9 @@ graph
     target 45
     bandwidth 300
     bandwidthUnits "Gb/s"
-    distance 703.05
+    distance 1243.22
     distanceUnits "meters"
-    delay 2.79157006074178
+    delay 3.00745159136723
   ]
   edge
   [
@@ -1714,9 +1549,9 @@ graph
     target 46
     bandwidth 300
     bandwidthUnits "Gb/s"
-    distance 752.65
+    distance 811.39
     distanceUnits "meters"
-    delay 2.86273743993546
+    delay 2.08477010954163
   ]
   edge
   [
@@ -1724,9 +1559,9 @@ graph
     target 47
     bandwidth 300
     bandwidthUnits "Gb/s"
-    distance 43.78
+    distance 97.9
     distanceUnits "meters"
-    delay 2.80339782175298
+    delay 2.79157006074178
   ]
   edge
   [
@@ -1734,9 +1569,9 @@ graph
     target 48
     bandwidth 300
     bandwidthUnits "Gb/s"
-    distance 88.65
+    distance 21.05
     distanceUnits "meters"
-    delay 1.0963421287802
+    delay 1.649233488788
   ]
   edge
   [
@@ -1744,9 +1579,9 @@ graph
     target 49
     bandwidth 300
     bandwidthUnits "Gb/s"
-    distance 86.32
+    distance 7.68
     distanceUnits "meters"
-    delay 3.89673013493085
+    delay 1.11393235124274
   ]
   edge
   [
@@ -1754,9 +1589,9 @@ graph
     target 50
     bandwidth 300
     bandwidthUnits "Gb/s"
-    distance 398.35
+    distance 421.59
     distanceUnits "meters"
-    delay 1.00206554719244
+    delay 1.98301967767084
   ]
   edge
   [
@@ -1764,9 +1599,9 @@ graph
     target 45
     bandwidth 300
     bandwidthUnits "Gb/s"
-    distance 1089.79
+    distance 614.73
     distanceUnits "meters"
-    delay 0.00363263333333333
+    delay 0.0020491
   ]
   edge
   [
@@ -1774,9 +1609,9 @@ graph
     target 51
     bandwidth 6
     bandwidthUnits "Tb/s"
-    distance 88.73
+    distance 50.94
     distanceUnits "meters"
-    delay 7.48505115735882
+    delay 1.56417929286197
   ]
   edge
   [
@@ -1784,9 +1619,9 @@ graph
     target 52
     bandwidth 6
     bandwidthUnits "Tb/s"
-    distance 105.2
+    distance 8.09
     distanceUnits "meters"
-    delay 1.02294575760163
+    delay 2.50478688770195
   ]
   edge
   [
@@ -1794,9 +1629,9 @@ graph
     target 53
     bandwidth 6
     bandwidthUnits "Tb/s"
-    distance 50.76
+    distance 112.75
     distanceUnits "meters"
-    delay 3.89673013493085
+    delay 1.79128757167644
   ]
   edge
   [
@@ -1804,9 +1639,9 @@ graph
     target 54
     bandwidth 6
     bandwidthUnits "Tb/s"
-    distance 129.1
+    distance 66.86
     distanceUnits "meters"
-    delay 1.51178913740677
+    delay 2.52621242954007
   ]
   edge
   [
@@ -1814,9 +1649,9 @@ graph
     target 55
     bandwidth 6
     bandwidthUnits "Tb/s"
-    distance 108.06
+    distance 38.74
     distanceUnits "meters"
-    delay 1.00206554719244
+    delay 1.13014110568038
   ]
   edge
   [
@@ -1824,9 +1659,9 @@ graph
     target 56
     bandwidth 6
     bandwidthUnits "Tb/s"
-    distance 380.2
+    distance 187.37
     distanceUnits "meters"
-    delay 0.00126733333333333
+    delay 0.000624566666666667
   ]
   edge
   [
@@ -1834,9 +1669,9 @@ graph
     target 57
     bandwidth 6
     bandwidthUnits "Tb/s"
-    distance 380.2
+    distance 187.37
     distanceUnits "meters"
-    delay 2.29363199871112
+    delay 1.13848915791015
   ]
   edge
   [
@@ -1844,9 +1679,9 @@ graph
     target 51
     bandwidth 6
     bandwidthUnits "Tb/s"
-    distance 89.1
+    distance 53.68
     distanceUnits "meters"
-    delay 0.000297
+    delay 0.000178933333333333
   ]
   edge
   [
@@ -1874,7 +1709,7 @@ graph
     target 61
     bandwidth 12
     bandwidthUnits "Mbps"
-    distance 97.12
+    distance 161.38
     distanceUnits "meter"
     delay 0.2
   ]
@@ -1884,7 +1719,7 @@ graph
     target 61
     bandwidth 12
     bandwidthUnits "Mbps"
-    distance 328.76
+    distance 364.88
     distanceUnits "meter"
     delay 0.2
   ]
@@ -1894,7 +1729,7 @@ graph
     target 61
     bandwidth 12
     bandwidthUnits "Mbps"
-    distance 276.97
+    distance 312.05
     distanceUnits "meter"
     delay 0.2
   ]
@@ -1904,7 +1739,7 @@ graph
     target 61
     bandwidth 12
     bandwidthUnits "Mbps"
-    distance 48.61
+    distance 181.25
     distanceUnits "meter"
     delay 0.2
   ]
@@ -1914,7 +1749,7 @@ graph
     target 61
     bandwidth 12
     bandwidthUnits "Mbps"
-    distance 317.12
+    distance 197.07
     distanceUnits "meter"
     delay 0.2
   ]
@@ -1924,7 +1759,7 @@ graph
     target 61
     bandwidth 12
     bandwidthUnits "Mbps"
-    distance 213.6
+    distance 95.27
     distanceUnits "meter"
     delay 0.2
   ]
@@ -1934,7 +1769,7 @@ graph
     target 61
     bandwidth 12
     bandwidthUnits "Mbps"
-    distance 395.72
+    distance 313.95
     distanceUnits "meter"
     delay 0.2
   ]
@@ -1944,7 +1779,7 @@ graph
     target 61
     bandwidth 12
     bandwidthUnits "Mbps"
-    distance 348.11
+    distance 23.14
     distanceUnits "meter"
     delay 0.2
   ]
@@ -1954,7 +1789,7 @@ graph
     target 61
     bandwidth 12
     bandwidthUnits "Mbps"
-    distance 377.75
+    distance 128.19
     distanceUnits "meter"
     delay 0.2
   ]
@@ -1964,7 +1799,7 @@ graph
     target 62
     bandwidth 12
     bandwidthUnits "Mbps"
-    distance 254.88
+    distance 409.29
     distanceUnits "meter"
     delay 0.2
   ]
@@ -1974,7 +1809,7 @@ graph
     target 62
     bandwidth 12
     bandwidthUnits "Mbps"
-    distance 247.32
+    distance 319.67
     distanceUnits "meter"
     delay 0.2
   ]
@@ -1984,7 +1819,7 @@ graph
     target 62
     bandwidth 12
     bandwidthUnits "Mbps"
-    distance 82.53
+    distance 51.53
     distanceUnits "meter"
     delay 0.2
   ]
@@ -1994,7 +1829,7 @@ graph
     target 62
     bandwidth 12
     bandwidthUnits "Mbps"
-    distance 252.6
+    distance 110.11
     distanceUnits "meter"
     delay 0.2
   ]
@@ -2004,7 +1839,7 @@ graph
     target 62
     bandwidth 12
     bandwidthUnits "Mbps"
-    distance 120.37
+    distance 150.12
     distanceUnits "meter"
     delay 0.2
   ]
@@ -2014,7 +1849,7 @@ graph
     target 62
     bandwidth 12
     bandwidthUnits "Mbps"
-    distance 298.76
+    distance 286.89
     distanceUnits "meter"
     delay 0.2
   ]
@@ -2024,7 +1859,7 @@ graph
     target 62
     bandwidth 12
     bandwidthUnits "Mbps"
-    distance 254.28
+    distance 147.64
     distanceUnits "meter"
     delay 0.2
   ]
@@ -2034,7 +1869,7 @@ graph
     target 62
     bandwidth 12
     bandwidthUnits "Mbps"
-    distance 330.03
+    distance 241.62
     distanceUnits "meter"
     delay 0.2
   ]
@@ -2044,7 +1879,7 @@ graph
     target 63
     bandwidth 12
     bandwidthUnits "Mbps"
-    distance 153.58
+    distance 108.9
     distanceUnits "meter"
     delay 0.2
   ]
@@ -2054,7 +1889,7 @@ graph
     target 63
     bandwidth 12
     bandwidthUnits "Mbps"
-    distance 334.64
+    distance 459.69
     distanceUnits "meter"
     delay 0.2
   ]
@@ -2064,7 +1899,7 @@ graph
     target 63
     bandwidth 12
     bandwidthUnits "Mbps"
-    distance 40.05
+    distance 316.66
     distanceUnits "meter"
     delay 0.2
   ]
@@ -2074,7 +1909,7 @@ graph
     target 63
     bandwidth 12
     bandwidthUnits "Mbps"
-    distance 239.58
+    distance 284.52
     distanceUnits "meter"
     delay 0.2
   ]
@@ -2084,7 +1919,7 @@ graph
     target 63
     bandwidth 12
     bandwidthUnits "Mbps"
-    distance 240.93
+    distance 175.53
     distanceUnits "meter"
     delay 0.2
   ]
@@ -2094,7 +1929,7 @@ graph
     target 63
     bandwidth 12
     bandwidthUnits "Mbps"
-    distance 129.98
+    distance 383.9
     distanceUnits "meter"
     delay 0.2
   ]
@@ -2104,7 +1939,7 @@ graph
     target 63
     bandwidth 12
     bandwidthUnits "Mbps"
-    distance 127.94
+    distance 246.75
     distanceUnits "meter"
     delay 0.2
   ]
@@ -2114,7 +1949,7 @@ graph
     target 64
     bandwidth 12
     bandwidthUnits "Mbps"
-    distance 304.51
+    distance 371.15
     distanceUnits "meter"
     delay 0.2
   ]
@@ -2124,7 +1959,7 @@ graph
     target 64
     bandwidth 12
     bandwidthUnits "Mbps"
-    distance 114.85
+    distance 218.06
     distanceUnits "meter"
     delay 0.2
   ]
@@ -2134,7 +1969,7 @@ graph
     target 64
     bandwidth 12
     bandwidthUnits "Mbps"
-    distance 300.96
+    distance 219.75
     distanceUnits "meter"
     delay 0.2
   ]
@@ -2144,7 +1979,7 @@ graph
     target 64
     bandwidth 12
     bandwidthUnits "Mbps"
-    distance 375.74
+    distance 68.25
     distanceUnits "meter"
     delay 0.2
   ]
@@ -2154,7 +1989,7 @@ graph
     target 64
     bandwidth 12
     bandwidthUnits "Mbps"
-    distance 270.14
+    distance 326.81
     distanceUnits "meter"
     delay 0.2
   ]
@@ -2164,7 +1999,7 @@ graph
     target 64
     bandwidth 12
     bandwidthUnits "Mbps"
-    distance 111.4
+    distance 219.3
     distanceUnits "meter"
     delay 0.2
   ]
@@ -2174,7 +2009,7 @@ graph
     target 65
     bandwidth 12
     bandwidthUnits "Mbps"
-    distance 328.7
+    distance 160.35
     distanceUnits "meter"
     delay 0.2
   ]
@@ -2184,7 +2019,7 @@ graph
     target 65
     bandwidth 12
     bandwidthUnits "Mbps"
-    distance 183.24
+    distance 192.4
     distanceUnits "meter"
     delay 0.2
   ]
@@ -2194,7 +2029,7 @@ graph
     target 65
     bandwidth 12
     bandwidthUnits "Mbps"
-    distance 370.24
+    distance 337.95
     distanceUnits "meter"
     delay 0.2
   ]
@@ -2204,7 +2039,7 @@ graph
     target 65
     bandwidth 12
     bandwidthUnits "Mbps"
-    distance 335.33
+    distance 162.64
     distanceUnits "meter"
     delay 0.2
   ]
@@ -2214,7 +2049,7 @@ graph
     target 65
     bandwidth 12
     bandwidthUnits "Mbps"
-    distance 398.56
+    distance 279.76
     distanceUnits "meter"
     delay 0.2
   ]
@@ -2224,7 +2059,7 @@ graph
     target 66
     bandwidth 12
     bandwidthUnits "Mbps"
-    distance 256.18
+    distance 126.6
     distanceUnits "meter"
     delay 0.2
   ]
@@ -2234,7 +2069,7 @@ graph
     target 66
     bandwidth 12
     bandwidthUnits "Mbps"
-    distance 278.06
+    distance 178.16
     distanceUnits "meter"
     delay 0.2
   ]
@@ -2244,7 +2079,7 @@ graph
     target 66
     bandwidth 12
     bandwidthUnits "Mbps"
-    distance 167.62
+    distance 196.07
     distanceUnits "meter"
     delay 0.2
   ]
@@ -2254,7 +2089,7 @@ graph
     target 66
     bandwidth 12
     bandwidthUnits "Mbps"
-    distance 96.74
+    distance 212.89
     distanceUnits "meter"
     delay 0.2
   ]
@@ -2264,7 +2099,7 @@ graph
     target 67
     bandwidth 12
     bandwidthUnits "Mbps"
-    distance 188.1
+    distance 218.69
     distanceUnits "meter"
     delay 0.2
   ]
@@ -2274,7 +2109,7 @@ graph
     target 67
     bandwidth 12
     bandwidthUnits "Mbps"
-    distance 178.36
+    distance 107.46
     distanceUnits "meter"
     delay 0.2
   ]
@@ -2284,7 +2119,7 @@ graph
     target 67
     bandwidth 12
     bandwidthUnits "Mbps"
-    distance 350.31
+    distance 93.69
     distanceUnits "meter"
     delay 0.2
   ]
@@ -2294,7 +2129,7 @@ graph
     target 68
     bandwidth 12
     bandwidthUnits "Mbps"
-    distance 110.98
+    distance 324.6
     distanceUnits "meter"
     delay 0.2
   ]
@@ -2304,7 +2139,7 @@ graph
     target 68
     bandwidth 12
     bandwidthUnits "Mbps"
-    distance 367.82
+    distance 245.76
     distanceUnits "meter"
     delay 0.2
   ]
@@ -2314,7 +2149,7 @@ graph
     target 69
     bandwidth 12
     bandwidthUnits "Mbps"
-    distance 256.94
+    distance 150.45
     distanceUnits "meter"
     delay 0.2
   ]
@@ -2324,467 +2159,7 @@ graph
     target 70
     bandwidth 12
     bandwidthUnits "Mbps"
-    distance 256.94
-    distanceUnits "meter"
-    delay 0
-  ]
-  edge
-  [
-    source 73
-    target 72
-    bandwidth 12
-    bandwidthUnits "Mbps"
-    distance 245.75
-    distanceUnits "meter"
-    delay 0.2
-  ]
-  edge
-  [
-    source 74
-    target 72
-    bandwidth 12
-    bandwidthUnits "Mbps"
-    distance 132.37
-    distanceUnits "meter"
-    delay 0.2
-  ]
-  edge
-  [
-    source 75
-    target 72
-    bandwidth 12
-    bandwidthUnits "Mbps"
-    distance 70.7
-    distanceUnits "meter"
-    delay 0.2
-  ]
-  edge
-  [
-    source 76
-    target 72
-    bandwidth 12
-    bandwidthUnits "Mbps"
-    distance 88.2
-    distanceUnits "meter"
-    delay 0.2
-  ]
-  edge
-  [
-    source 77
-    target 72
-    bandwidth 12
-    bandwidthUnits "Mbps"
-    distance 236.51
-    distanceUnits "meter"
-    delay 0.2
-  ]
-  edge
-  [
-    source 78
-    target 72
-    bandwidth 12
-    bandwidthUnits "Mbps"
-    distance 136.76
-    distanceUnits "meter"
-    delay 0.2
-  ]
-  edge
-  [
-    source 79
-    target 72
-    bandwidth 12
-    bandwidthUnits "Mbps"
-    distance 201.09
-    distanceUnits "meter"
-    delay 0.2
-  ]
-  edge
-  [
-    source 80
-    target 72
-    bandwidth 12
-    bandwidthUnits "Mbps"
-    distance 239.09
-    distanceUnits "meter"
-    delay 0.2
-  ]
-  edge
-  [
-    source 81
-    target 72
-    bandwidth 12
-    bandwidthUnits "Mbps"
-    distance 120.94
-    distanceUnits "meter"
-    delay 0.2
-  ]
-  edge
-  [
-    source 74
-    target 73
-    bandwidth 12
-    bandwidthUnits "Mbps"
-    distance 143.87
-    distanceUnits "meter"
-    delay 0.2
-  ]
-  edge
-  [
-    source 75
-    target 73
-    bandwidth 12
-    bandwidthUnits "Mbps"
-    distance 282.42
-    distanceUnits "meter"
-    delay 0.2
-  ]
-  edge
-  [
-    source 76
-    target 73
-    bandwidth 12
-    bandwidthUnits "Mbps"
-    distance 217.44
-    distanceUnits "meter"
-    delay 0.2
-  ]
-  edge
-  [
-    source 77
-    target 73
-    bandwidth 12
-    bandwidthUnits "Mbps"
-    distance 76.68
-    distanceUnits "meter"
-    delay 0.2
-  ]
-  edge
-  [
-    source 78
-    target 73
-    bandwidth 12
-    bandwidthUnits "Mbps"
-    distance 158.35
-    distanceUnits "meter"
-    delay 0.2
-  ]
-  edge
-  [
-    source 79
-    target 73
-    bandwidth 12
-    bandwidthUnits "Mbps"
-    distance 187.81
-    distanceUnits "meter"
-    delay 0.2
-  ]
-  edge
-  [
-    source 80
-    target 73
-    bandwidth 12
-    bandwidthUnits "Mbps"
-    distance 327.14
-    distanceUnits "meter"
-    delay 0.2
-  ]
-  edge
-  [
-    source 81
-    target 73
-    bandwidth 12
-    bandwidthUnits "Mbps"
-    distance 136.71
-    distanceUnits "meter"
-    delay 0.2
-  ]
-  edge
-  [
-    source 75
-    target 74
-    bandwidth 12
-    bandwidthUnits "Mbps"
-    distance 193.49
-    distanceUnits "meter"
-    delay 0.2
-  ]
-  edge
-  [
-    source 76
-    target 74
-    bandwidth 12
-    bandwidthUnits "Mbps"
-    distance 158.56
-    distanceUnits "meter"
-    delay 0.2
-  ]
-  edge
-  [
-    source 77
-    target 74
-    bandwidth 12
-    bandwidthUnits "Mbps"
-    distance 174.44
-    distanceUnits "meter"
-    delay 0.2
-  ]
-  edge
-  [
-    source 78
-    target 74
-    bandwidth 12
-    bandwidthUnits "Mbps"
-    distance 144.52
-    distanceUnits "meter"
-    delay 0.2
-  ]
-  edge
-  [
-    source 79
-    target 74
-    bandwidth 12
-    bandwidthUnits "Mbps"
-    distance 214.16
-    distanceUnits "meter"
-    delay 0.2
-  ]
-  edge
-  [
-    source 80
-    target 74
-    bandwidth 12
-    bandwidthUnits "Mbps"
-    distance 315.75
-    distanceUnits "meter"
-    delay 0.2
-  ]
-  edge
-  [
-    source 81
-    target 74
-    bandwidth 12
-    bandwidthUnits "Mbps"
-    distance 101.64
-    distanceUnits "meter"
-    delay 0.2
-  ]
-  edge
-  [
-    source 76
-    target 75
-    bandwidth 12
-    bandwidthUnits "Mbps"
-    distance 72.89
-    distanceUnits "meter"
-    delay 0.2
-  ]
-  edge
-  [
-    source 77
-    target 75
-    bandwidth 12
-    bandwidthUnits "Mbps"
-    distance 254.12
-    distanceUnits "meter"
-    delay 0.2
-  ]
-  edge
-  [
-    source 78
-    target 75
-    bandwidth 12
-    bandwidthUnits "Mbps"
-    distance 140.18
-    distanceUnits "meter"
-    delay 0.2
-  ]
-  edge
-  [
-    source 79
-    target 75
-    bandwidth 12
-    bandwidthUnits "Mbps"
-    distance 184
-    distanceUnits "meter"
-    delay 0.2
-  ]
-  edge
-  [
-    source 80
-    target 75
-    bandwidth 12
-    bandwidthUnits "Mbps"
-    distance 180.99
-    distanceUnits "meter"
-    delay 0.2
-  ]
-  edge
-  [
-    source 81
-    target 75
-    bandwidth 12
-    bandwidthUnits "Mbps"
-    distance 146.13
-    distanceUnits "meter"
-    delay 0.2
-  ]
-  edge
-  [
-    source 77
-    target 76
-    bandwidth 12
-    bandwidthUnits "Mbps"
-    distance 182.25
-    distanceUnits "meter"
-    delay 0.2
-  ]
-  edge
-  [
-    source 78
-    target 76
-    bandwidth 12
-    bandwidthUnits "Mbps"
-    distance 67.53
-    distanceUnits "meter"
-    delay 0.2
-  ]
-  edge
-  [
-    source 79
-    target 76
-    bandwidth 12
-    bandwidthUnits "Mbps"
-    distance 116.69
-    distanceUnits "meter"
-    delay 0.2
-  ]
-  edge
-  [
-    source 80
-    target 76
-    bandwidth 12
-    bandwidthUnits "Mbps"
-    distance 162.22
-    distanceUnits "meter"
-    delay 0.2
-  ]
-  edge
-  [
-    source 81
-    target 76
-    bandwidth 12
-    bandwidthUnits "Mbps"
-    distance 81.81
-    distanceUnits "meter"
-    delay 0.2
-  ]
-  edge
-  [
-    source 78
-    target 77
-    bandwidth 12
-    bandwidthUnits "Mbps"
-    distance 115.06
-    distanceUnits "meter"
-    delay 0.2
-  ]
-  edge
-  [
-    source 79
-    target 77
-    bandwidth 12
-    bandwidthUnits "Mbps"
-    distance 119.3
-    distanceUnits "meter"
-    delay 0.2
-  ]
-  edge
-  [
-    source 80
-    target 77
-    bandwidth 12
-    bandwidthUnits "Mbps"
-    distance 261.43
-    distanceUnits "meter"
-    delay 0.2
-  ]
-  edge
-  [
-    source 81
-    target 77
-    bandwidth 12
-    bandwidthUnits "Mbps"
-    distance 115.57
-    distanceUnits "meter"
-    delay 0.2
-  ]
-  edge
-  [
-    source 79
-    target 78
-    bandwidth 12
-    bandwidthUnits "Mbps"
-    distance 72.99
-    distanceUnits "meter"
-    delay 0.2
-  ]
-  edge
-  [
-    source 80
-    target 78
-    bandwidth 12
-    bandwidthUnits "Mbps"
-    distance 180
-    distanceUnits "meter"
-    delay 0.2
-  ]
-  edge
-  [
-    source 81
-    target 78
-    bandwidth 12
-    bandwidthUnits "Mbps"
-    distance 43.01
-    distanceUnits "meter"
-    delay 0.2
-  ]
-  edge
-  [
-    source 80
-    target 79
-    bandwidth 12
-    bandwidthUnits "Mbps"
-    distance 142.17
-    distanceUnits "meter"
-    delay 0.2
-  ]
-  edge
-  [
-    source 81
-    target 79
-    bandwidth 12
-    bandwidthUnits "Mbps"
-    distance 113.43
-    distanceUnits "meter"
-    delay 0.2
-  ]
-  edge
-  [
-    source 81
-    target 80
-    bandwidth 12
-    bandwidthUnits "Mbps"
-    distance 220.19
-    distanceUnits "meter"
-    delay 0.2
-  ]
-  edge
-  [
-    source 82
-    target 81
-    bandwidth 12
-    bandwidthUnits "Mbps"
-    distance 220.19
+    distance 150.45
     distanceUnits "meter"
     delay 0
   ]
