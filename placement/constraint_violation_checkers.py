@@ -87,10 +87,19 @@ class DelayAndCoverageViolationChecker(BaseConstraintViolationChecker):
         self.affected_nfs = [v for u,v in self.sfc_path]
         self.coverage_threshold = coverage_threshold
         self.time_interval_count = time_interval_count
+        # if a class is instantiated set the value to non existing, and from this point on, any instance of the class is executed,
+        # it must give the same AP selection in all subintervals OR set it back to none, if its constraint is violated.
+        DelayAndCoverageViolationChecker.chosen_ap_ids = None
 
     def get_cheapest_ap_id(self, subinterval):
+        """
+        Choose the cheapest AP which meets the coverage threshold. We still need to choose an access point, even if we do not need to
+        communicate though the wireless channel.
+
+        :param subinterval:
+        :return:
+        """
         master_mobile_id = list(self.infra.ap_coverage_probabilities.keys())[0]
-        # choose the cheapest AP which meets the coverage threshold
         min_ap_cost = float('inf')
         min_cost_ap_id = None
         for ap_id, coverage_prob in self.infra.ap_coverage_probabilities[master_mobile_id][subinterval].items():
@@ -133,7 +142,7 @@ class DelayAndCoverageViolationChecker(BaseConstraintViolationChecker):
         inf_count_subinterval = 0
         negative_rem_delay_subinterval = 0
         # stores the AP id for each time interval which, has the lowest delay, obeying the coverage probability
-        chosen_ap_ids = dict()
+        current_chosen_ap_ids = dict()
         for subinterval in range(1, self.time_interval_count+1):
             rem_delay_in_subint = remaining_delay
             min_delay_though_ap_id = None
@@ -163,10 +172,10 @@ class DelayAndCoverageViolationChecker(BaseConstraintViolationChecker):
                         rem_delay_in_subint -= min_wireless_delay_with_cov
             if inf_count_subinterval == 0 and negative_rem_delay_subinterval == 0:
                 if min_delay_though_ap_id is not None:
-                    chosen_ap_ids[subinterval] = min_delay_though_ap_id
+                    current_chosen_ap_ids[subinterval] = min_delay_though_ap_id
                 elif remaining_delay == rem_delay_in_subint:
                     # if all nodes are mapped inside the cluster or inside the fixed infra part, we
-                    chosen_ap_ids[subinterval] = self.get_cheapest_ap_id(subinterval)
+                    current_chosen_ap_ids[subinterval] = self.get_cheapest_ap_id(subinterval)
                 else:
                     raise Exception("AP must always be selected if the delay and coverage are OK in a mapping!")
             else:
@@ -174,7 +183,14 @@ class DelayAndCoverageViolationChecker(BaseConstraintViolationChecker):
 
         # if the delay and coverage values are violated in none of the subintervals, then we have an AP selection
         if inf_count_subinterval == 0 and negative_rem_delay_subinterval == 0:
-            DelayAndCoverageViolationChecker.chosen_ap_ids = chosen_ap_ids
+            if DelayAndCoverageViolationChecker.chosen_ap_ids is not None:
+                # check if the AP selection matches with the earlier one, all SFC-s need to agree on one!
+                for subinterval, ap_id in DelayAndCoverageViolationChecker.chosen_ap_ids.items():
+                    if DelayAndCoverageViolationChecker.chosen_ap_ids[subinterval] != current_chosen_ap_ids[subinterval]:
+                        raise Exception("Some SFC-s do not agree on the selected access points in time interval {} based on "
+                                        "minimal delay, coverage obeying method!".format(subinterval))
+            else:
+                DelayAndCoverageViolationChecker.chosen_ap_ids = current_chosen_ap_ids
 
         return inf_count_subinterval, negative_rem_delay_subinterval
 
@@ -241,6 +257,7 @@ class DelayAndCoverageViolationChecker(BaseConstraintViolationChecker):
         :return:
         """
         total_ap_cost = None
+        subinterval_list = [i for i in range(1, infra.time_interval_count+1)]
         if DelayAndCoverageViolationChecker.chosen_ap_ids is not None:
             total_ap_cost = 0.0
             for subinterval, selected_ap_id in DelayAndCoverageViolationChecker.chosen_ap_ids.items():
@@ -248,16 +265,70 @@ class DelayAndCoverageViolationChecker(BaseConstraintViolationChecker):
                 # (similarly to the cost of a vCPU for the whole interval)
                 # BUT then we need to modify the AMPL model objective function too for reasonable comparison!!!!
                 total_ap_cost += infra.nodes[selected_ap_id][infra.access_point_usage_cost_str]
+                subinterval_list.remove(subinterval)
+        if len(subinterval_list) != 0 and total_ap_cost is not None:
+            raise Exception("Access point not selected for subintervals: {}".format(subinterval_list))
         return total_ap_cost
 
 
 class BatteryConstraintViolationChecker(BaseConstraintViolationChecker):
 
-    def __init__(self, items, bins, infra : InfrastructureGMLGraph, ns : ServiceGMLGraph, item_move_function):
+    def __init__(self, items, bins, infra : InfrastructureGMLGraph, ns : ServiceGMLGraph, item_move_function, battery_threshold):
         super(BatteryConstraintViolationChecker, self).__init__(items, bins, infra, ns, item_move_function)
+        self.battery_threshold = battery_threshold
+
+    def get_battery_alive_prob(self, allocated_load, total_capacity):
+        """
+        Calculates battery alive probability according to battery constraint.
+        Currently we assume all mobile nodes have the same battery characteristics.
+
+        :param allocated_load:
+        :param total_capacity:
+        :return:
+        """
+        linear_coeff = self.infra.unloaded_battery_alive_prob - self.infra.full_loaded_battery_alive_prob
+        probability = self.infra.unloaded_battery_alive_prob - allocated_load/total_capacity * linear_coeff
+        # overloading might happen due to invalid capacity allocation
+        if probability < 0:
+            probability = 0
+        # it should never go above 1.0
+        if probability <= 1:
+            return probability
+        else:
+            raise Exception("Invalid battery alive probability! Wrong battery characteristic specification?")
 
     def get_violating_items(self):
-        pass
+        """
+        Checks the loads on the mobile nodes, if they are not overloaded in terms of battery usage. Returns items on overloaded in bins,
+        which refer to overloaded mobile nodes.
+
+        :return:
+        """
+        violating_items = []
+        for bin in self.bins:
+            if bin['id'] in self.infra.mobile_ids:
+                if self.get_battery_alive_prob(bin.total_load, bin['capacity']) < self.battery_threshold:
+                    violating_items.extend(bin.mapped_here)
+        return violating_items
 
     def item_move_improvement_score(self, item_to_be_moved : Item, target_bin : Bin):
-        pass
+        """
+        Prefers a move which decreases the number of violating items.
+
+        :param item_to_be_moved:
+        :param target_bin:
+        :return:
+        """
+        violating_items_count_before = len(self.get_violating_items())
+        original_bin = item_to_be_moved.mapped_to
+        # temporariliy move the item to evaluate the changes
+        self.item_move_function(item_to_be_moved, target_bin)
+        violating_items_count_after = len(self.get_violating_items())
+        # move the item back, moving decision is not to be made here.
+        self.item_move_function(item_to_be_moved, original_bin)
+        if violating_items_count_before > violating_items_count_after:
+            return 1
+        elif violating_items_count_before < violating_items_count_after:
+            return -1
+        else:
+            return 0

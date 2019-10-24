@@ -178,7 +178,7 @@ class ConstructiveMapperFromFractional(AbstractMapper):
         """
         violating_items = set()
         improvement_score_stats = dict()
-        key_gen = lambda checker: checker.__class__.__name__+str(int(hash(checker)/10000000000))
+        key_gen = lambda checker: checker.__class__.__name__+str(int(id(checker)))
         for checker in self.violation_checkers:
             violating_items = violating_items.union(checker.get_violating_items())
             improvement_score_stats[key_gen(checker)] = []
@@ -304,6 +304,9 @@ class ConstructiveMapperFromFractional(AbstractMapper):
                     else:
                         raise Exception("Wrong item mapping structure, each item must be in exactly one bin!")
                 self.objective_value_of_integer_solution += bin['fixed_cost']
+        if len(all_items) != 0:
+            raise Exception("Item not found in mapped_here structure in any bin!")
+        # check if we have a complete allocation for the APs (which implies meeting the delay and coverage constraints)
         total_ap_selection_cost = cvc.DelayAndCoverageViolationChecker.calculate_current_ap_selection_cost(infra)
         if total_ap_selection_cost is None:
             self.objective_value_of_integer_solution = None
@@ -311,9 +314,12 @@ class ConstructiveMapperFromFractional(AbstractMapper):
         else:
             self.log.debug("Total cost of access point selections: {}".format(total_ap_selection_cost))
             self.objective_value_of_integer_solution += total_ap_selection_cost
-        # TODO: check other constraints too!
-        if len(all_items) != 0:
-            raise Exception("Item not found in mapped_here structure in any bin!")
+        # easiest is to instantiate a new checker and run its violation checker
+        battery_checker = cvc.BatteryConstraintViolationChecker(self.items, self.bins, self.infra, self.ns,
+                                                                ConstructiveMapperFromFractional.move_item_to_bin,
+                                                                self.battery_threshold)
+        if len(battery_checker.get_violating_items()) > 0:
+            return False
         return True
 
     def construct_output_mapping(self, mapping):
@@ -343,9 +349,16 @@ class ConstructiveMapperFromFractional(AbstractMapper):
         self.ns = ns
 
     def instantiate_violation_checkers(self):
-        # TODO: add Violation checker for the battery constraints!
+        """
+        Creates violation checkers for all constraints considered by the heuristic algorithm.
+
+        :return:
+        """
         self.violation_checkers = [cvc.BinCapacityViolationChecker(self.items, self.bins, self.infra, self.ns,
-                                                                   ConstructiveMapperFromFractional.move_item_to_bin)]
+                                                                   ConstructiveMapperFromFractional.move_item_to_bin),
+                                   cvc.BatteryConstraintViolationChecker(self.items, self.bins, self.infra, self.ns,
+                                                                         ConstructiveMapperFromFractional.move_item_to_bin,
+                                                                         self.battery_threshold)]
         # add a separate checker for each SFC
         for sfc_delay, sfc_path in self.ns.sfc_delays_list:
             self.violation_checkers.append(cvc.DelayAndCoverageViolationChecker(self.items, self.bins, self.infra, self.ns,
