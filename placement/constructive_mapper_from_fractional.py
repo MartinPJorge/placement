@@ -1,404 +1,12 @@
-from abc import ABCMeta, abstractmethod
 import logging
 from rainbow_logging_handler import RainbowLoggingHandler
 import sys
 import math
 
 from .mapper import AbstractMapper
-from .checker import AbstractChecker
-from graphs.generate_service import ServiceGMLGraph, InfrastructureGMLGraph
 from graphs.mapping_structure import VolatileResourcesMapping
-
-
-class UnfeasibleVolatileResourcesProblem(Exception):
-
-    def __init__(self, msg, *args, **kwargs):
-        super(UnfeasibleVolatileResourcesProblem, self).__init__(*args, **kwargs)
-        self.msg = msg
-
-
-class VolatileResourcesChecker(AbstractChecker):
-
-    def __init__(self):
-        super(VolatileResourcesChecker, self).__init__()
-
-    def check_infra(self, infra) -> bool:
-        """
-
-
-        :param infra:
-        :type infra: simulator.generate_service.InfrastructureGMLGraph
-        :return:
-        """
-        return infra.check_graph()
-
-    def check_ns(self, ns) -> bool:
-        """
-
-
-        :param ns:
-        :type ns: simulator.generate_service.ServiceGMLGraph
-        :return:
-        """
-        return ns.check_graph()
-
-
-class Item(dict):
-
-    def __init__(self, id, weight, node_dict, possible_bins, seq=None, mapped_to = None, **kwargs):
-        """
-        Class to store information about an item of the bin packing problem.
-        The mapped_to key represents the Bin object bin where this is mapped, None by default.
-
-        :param weight:  weight to be used for placement
-        :param node_dict: dictionary of the correspoinding VNF read from the input
-        :param seq:
-        :param possible_bins: list of Bin objects where this item might possibly go.
-        :param kwargs:
-        """
-        super(Item, self).__init__(seq=seq, id=id, node_dict=node_dict, weight=weight, **kwargs)
-        self.mapped_to = mapped_to
-        self.possible_bins = possible_bins
-
-    def __repr__(self):
-        return "Item(id={}, weight={}, mapped_to={})".format(self['id'], self['weight'], self.mapped_to)
-
-    def __hash__(self):
-        # ID uniquely defines the Item, it is ensured by the NetworkX graph
-        return hash(str(self['id']))
-
-
-class Bin(dict):
-
-    def __init__(self, id, capacity, fixed_cost, unit_cost, node_dict, mapped_here, seq=None, **kwargs):
-        """
-        Class to store and calculate info for a bin of the bin packing problem.
-        The mapped_here attribute stores the items mapped here.
-
-        :param id:
-        :param capacity:
-        :param fixed_cost:
-        :param unit_cost:
-        :param node_dict:
-        :param seq:
-        :param kwargs:
-        """
-        super(Bin, self).__init__(seq=seq, id=id, capacity=capacity, fixed_cost=fixed_cost,
-                                  unit_cost=unit_cost, node_dict=node_dict, **kwargs)
-        self.mapped_here = mapped_here
-        self.preference = None
-
-    @property
-    def filled_unit_cost(self):
-        if self['capacity'] > 0:
-            fixed_part = self['fixed_cost'] / self['capacity']
-        else:
-            fixed_part = float('inf')
-        return fixed_part + self['unit_cost']
-
-    @property
-    def total_load(self):
-        return sum(map(lambda i: i['weight'], self.mapped_here))
-
-    @property
-    def is_overloaded(self):
-        return self['capacity'] < self.total_load
-
-    def does_item_fit(self, item):
-        return self['capacity'] >= self.total_load + item['weight']
-
-    def get_variable_cost_of_mapping(self, item):
-        return item['weight'] * self['unit_cost']
-
-    def __repr__(self):
-        return "Bin(id={}, capacity={})".format(self['id'], self['capacity'])
-
-
-class BasePruningStep(metaclass=ABCMeta):
-
-    def __init__(self):
-        super(BasePruningStep, self).__init__()
-
-    @abstractmethod
-    def prune_possible_mappings(self, infra, ns, items : list, bins : list) -> tuple:
-        """
-        The result of the pruning must be relfected in the Item.possible_bins attribute of the results
-
-        :param infra:
-        :param ns:
-        :param items: list of Items
-        :param bins: list of Bins
-        :return: tuple of the pruned items and bins
-        """
-        pass
-
-
-class PruneLocalityConstraints(BasePruningStep):
-
-    def prune_possible_mappings(self, infra : InfrastructureGMLGraph, ns : ServiceGMLGraph, items : list, bins : list):
-        """
-        Remove possible bins which contradict the locality constraints stored in the VNF/their corresponding Item.
-
-        :param infra:
-        :param ns:
-        :param items:
-        :param bins:
-        :return:
-        """
-        for item in items:
-            if ns.location_constr_str in item['node_dict']:
-                # we need to make a list from the bins, otherwise we couldnt remove from it
-                for bin in list(item.possible_bins):
-                    if bin['id'] not in item['node_dict'][ns.location_constr_str]:
-                        item.possible_bins.remove(bin)
-        return items, bins
-
-
-class BaseConstraintViolationChecker(metaclass=ABCMeta):
-
-    def __init__(self, items, bins, infra : InfrastructureGMLGraph, ns : ServiceGMLGraph):
-        super(BaseConstraintViolationChecker, self).__init__()
-        self.bins = bins
-        self.items = items
-        self.ns = ns
-        self.infra = infra
-        self.violating_items = None
-        self.id_item_map = {i['id'] : i for i in self.items}
-
-    @abstractmethod
-    def get_violating_items(self) -> list:
-        """
-        Returns a list of items which somehow violate the constraints, sets the elf.violating_items list.
-
-        :return:
-        """
-        pass
-
-    @abstractmethod
-    def item_move_improvement_score(self, item_to_be_moved : Item, target_bin : Bin) -> int:
-        """
-        Returns +1, 0, -1 to indicate whether the input item move is desired, neutral or undesired for easing
-        the violation of this constraint.
-
-        :param item_to_be_moved:
-        :param target_bin:
-        :return:
-        """
-        pass
-
-
-class BinCapacityViolationChecker(BaseConstraintViolationChecker):
-
-    def __init__(self, items, bins, infra : InfrastructureGMLGraph, ns : ServiceGMLGraph):
-        super(BinCapacityViolationChecker, self).__init__(items, bins, infra, ns)
-
-    def get_violating_items(self):
-        """
-        Returns all items, which are in overloaded bins.
-
-        :return:
-        """
-        violating_items = []
-        for bin in self.bins:
-            if bin.is_overloaded:
-                violating_items.extend(bin.mapped_here)
-        return violating_items
-
-    def item_move_improvement_score(self, item_to_be_moved: Item, target_bin: Bin):
-        """
-        Prefers if the number of violating items/violated bins decrease.
-
-        :param item_to_be_moved:
-        :param target_bin:
-        :return:
-        """
-        origin_bin_not_overloaded = item_to_be_moved.mapped_to.total_load - item_to_be_moved['weight'] < \
-                                    item_to_be_moved.mapped_to['capacity']
-        if target_bin.does_item_fit(item_to_be_moved):
-            return 1
-        elif origin_bin_not_overloaded:
-            return 0
-        else:
-            # NOTE: it is possible that the total number of violating items wont increase in this case either, if there was no item mapped
-            # to target bin, but then it still doesnot make sense it map a not fitting item there.
-            return -1
-
-
-class DelayAndCoverageViolationChecker(BaseConstraintViolationChecker):
-
-    # stores the AP id for each time interval which, has the lowest delay, obeying the coverage probability
-    # The variable needs to be class level, because the AP selection must agree for all SFC-s. It is set to None
-    chosen_ap_ids = None
-
-    def __init__(self, items, bins, infra : InfrastructureGMLGraph, ns : ServiceGMLGraph, sfc_delay, sfc_path,
-                 time_interval_count, coverage_threshold):
-        super(DelayAndCoverageViolationChecker, self).__init__(items, bins, infra, ns)
-        self.sfc_delay = sfc_delay
-        self.sfc_path = sfc_path
-        self.affected_nfs = [v for u,v in self.sfc_path]
-        self.coverage_threshold = coverage_threshold
-        self.time_interval_count = time_interval_count
-
-    def get_cheapest_ap_id(self, subinterval):
-        master_mobile_id = list(self.infra.ap_coverage_probabilities.keys())[0]
-        # choose the cheapest AP which meets the coverage threshold
-        min_ap_cost = float('inf')
-        min_cost_ap_id = None
-        for ap_id, coverage_prob in self.infra.ap_coverage_probabilities[master_mobile_id][subinterval].items():
-            if coverage_prob > self.coverage_threshold:
-                ap_cost = self.infra.nodes[ap_id][self.infra.access_point_usage_cost_str]
-                if ap_cost < min_ap_cost:
-                    min_ap_cost = ap_cost
-                    min_cost_ap_id = ap_id
-        if min_cost_ap_id is not None:
-            return min_cost_ap_id
-        else:
-            raise UnfeasibleVolatileResourcesProblem("No access point found for the cluster with the given coverage probability, "
-                                                     "even without checking the delay requirements!")
-
-    def calculate_violations(self):
-        """
-        Calculates the number of violating time intervals in the current allocation, respecting the coverage probability,
-        described by a tuple:
-            (number of subintervals, where the SFC delay is infinite;
-            number of subintervals, where remaining SFC delay is negative)
-        Second number is only informative, if the first number is 0.
-        Updates the DelayAndCoverageViolationChecker.chosen_ap_ids dictionary to reflect the violation metrics returned by the function.
-
-        :return: int tuple
-        """
-        remaining_delay = float(self.sfc_delay)
-        all_mobile_node_ids = self.infra.cluster_endpoint_ids + self.infra.mobile_ids
-        # VNFs cannot be mapped to APs, ID-s which are connected to the fixed infra part are not stored separately
-        all_fixed_node_ids = self.infra.server_ids + [n for n in self.infra.endpoint_ids if n not in self.infra.cluster_endpoint_ids]
-        for u, v in self.sfc_path:
-            u_host_id = self.id_item_map[u].mapped_to['id']
-            v_host_id = self.id_item_map[v].mapped_to['id']
-            # collect the time/place independent latency the current allocation
-            if (u_host_id in all_mobile_node_ids and v_host_id in all_mobile_node_ids) or\
-                (u_host_id in all_fixed_node_ids and v_host_id in all_fixed_node_ids):
-                remaining_delay -= self.infra.delay_distance(u_host_id, v_host_id)
-        if remaining_delay == -float('inf') or remaining_delay == float('inf'):
-            raise Exception("Remaining delay cannot be -inf or inf at this point!")
-
-        inf_count_subinterval = 0
-        negative_rem_delay_subinterval = 0
-        # stores the AP id for each time interval which, has the lowest delay, obeying the coverage probability
-        chosen_ap_ids = dict()
-        for subinterval in range(1, self.time_interval_count+1):
-            rem_delay_in_subint = remaining_delay
-            min_delay_though_ap_id = None
-            for u, v in self.sfc_path:
-                u_host_id = self.id_item_map[u].mapped_to['id']
-                v_host_id = self.id_item_map[v].mapped_to['id']
-                # filter for links mapped over the wireless channel
-                if (u_host_id in all_mobile_node_ids and v_host_id in all_fixed_node_ids) or \
-                        (u_host_id in all_fixed_node_ids and v_host_id in all_mobile_node_ids):
-                    # find the best possible delay, which obeys the coverage probabilty through ANY access point.
-                    # NOTE: We cannot select the cheapest AP, even if there are multiple access points which obey the delay requirement,
-                    # because then multiple SFC delays could result in different AP selections. So we need to select the lowest delay one
-                    # and save it in a static class variable
-                    min_wireless_delay_with_cov = float('inf')
-                    for ap_id in self.infra.access_point_ids:
-                        curr_wireless_delay_with_cov = self.infra.delay_distance(u_host_id, v_host_id, subinterval,
-                                                                                 self.coverage_threshold, ap_id)
-                        if curr_wireless_delay_with_cov < min_wireless_delay_with_cov:
-                            min_wireless_delay_with_cov = curr_wireless_delay_with_cov
-                            min_delay_though_ap_id = ap_id
-                    # evaluate the situation for the output numbers
-                    if min_wireless_delay_with_cov == float('inf'):
-                        inf_count_subinterval += 1
-                    elif rem_delay_in_subint < min_wireless_delay_with_cov:
-                        negative_rem_delay_subinterval += 1
-                    else:
-                        rem_delay_in_subint -= min_wireless_delay_with_cov
-            if inf_count_subinterval == 0 and negative_rem_delay_subinterval == 0:
-                if min_delay_though_ap_id is not None:
-                    chosen_ap_ids[subinterval] = min_delay_though_ap_id
-                elif remaining_delay == rem_delay_in_subint:
-                    # if all nodes are mapped inside the cluster or inside the fixed infra part, we
-                    chosen_ap_ids[subinterval] = self.get_cheapest_ap_id(subinterval)
-                else:
-                    raise Exception("AP must always be selected if the delay and coverage are OK in a mapping!")
-            else:
-                DelayAndCoverageViolationChecker.chosen_ap_ids = None
-
-        # if the delay and coverage values are violated in none of the subintervals, then we have an AP selection
-        if inf_count_subinterval == 0 and negative_rem_delay_subinterval == 0:
-            DelayAndCoverageViolationChecker.chosen_ap_ids = chosen_ap_ids
-
-        return inf_count_subinterval, negative_rem_delay_subinterval
-
-    def get_violating_items(self):
-        """
-        Returns the non-endpoint items of an SFC, if its delay or coverage probability is violated.
-
-        :return:
-        """
-        violating_items = []
-        inf_count_subinterval, negative_rem_delay_subinterval = self.calculate_violations()
-        if inf_count_subinterval == 0 and negative_rem_delay_subinterval == 0:
-            # no violations are happening for the delay OR coverage req of this SFC in any subinterval
-            return violating_items
-        else:
-            # The allocation of this SFC is not OK, we need to move something
-            for u, v in self.sfc_path:
-                # the last and the first item/vnf in the SFC is an endpoint.
-                v_host_id = self.id_item_map[v].mapped_to['id']
-                if v_host_id not in self.infra.endpoint_ids:
-                    violating_items.append(self.id_item_map[v])
-        return violating_items
-
-    def item_move_improvement_score(self, item_to_be_moved : Item, target_bin : Bin):
-        """
-        Identifies the item move's improvement score based on the violation metrics calculated by self.calculate_violations()
-
-        :param item_to_be_moved:
-        :param target_bin:
-        :return:
-        """
-        improvement_score = 0
-        if item_to_be_moved['id'] in self.affected_nfs:
-            inf_count_subinterval_before, neg_rem_delay_subinterval_before = self.calculate_violations()
-
-            original_bin = item_to_be_moved.mapped_to
-            # Temporarily execute the item moving on the structure
-            ConstructiveMapperFromFractional.move_item_to_bin(item_to_be_moved, target_bin)
-
-            inf_count_subinterval_after, neg_rem_delay_subinterval_after = self.calculate_violations()
-
-            if inf_count_subinterval_before == 0:
-                if neg_rem_delay_subinterval_after < neg_rem_delay_subinterval_before:
-                    improvement_score = 1
-                elif neg_rem_delay_subinterval_after > neg_rem_delay_subinterval_before:
-                    improvement_score = -1
-            elif inf_count_subinterval_after < inf_count_subinterval_before:
-                improvement_score = 1
-            elif inf_count_subinterval_after > inf_count_subinterval_before:
-                improvement_score = -1
-
-            # undo the temporary bin move
-            ConstructiveMapperFromFractional.move_item_to_bin(item_to_be_moved, original_bin)
-
-        return improvement_score
-
-    @staticmethod
-    def calculate_current_ap_selection_cost(infra : InfrastructureGMLGraph):
-        """
-        Sums the cost of the currently selected AP-s if the last calculated constraint violation function found a coverage and delay
-        respecting allocation for all subintervals.
-
-        :param infra:
-        :return:
-        """
-        total_ap_cost = None
-        if DelayAndCoverageViolationChecker.chosen_ap_ids is not None:
-            total_ap_cost = 0.0
-            for subinterval, selected_ap_id in DelayAndCoverageViolationChecker.chosen_ap_ids.items():
-                # divide by the number of time intervals as the meaning of an AP cost is to use that for the whole interval
-                # (similarly to the cost of a vCPU for the whole interval)
-                total_ap_cost += infra.nodes[selected_ap_id][infra.access_point_usage_cost_str] / float(infra.time_interval_count)
-        return total_ap_cost
+import heuristic.placement.constraint_violation_checkers as cvc
+from .support_classes import *
 
 
 class ConstructiveMapperFromFractional(AbstractMapper):
@@ -442,6 +50,10 @@ class ConstructiveMapperFromFractional(AbstractMapper):
         self.coverage_threshold = coverage_threshold
         # variable to communicate between the new best bins and the item move improvement step functions
         self.possible_bins_needed = []
+        self.infra = None
+        self.ns = None
+        # list of BinCapacityViolationChecker objects instantiated in the save_global_mapping_task_information fucntion
+        self.violation_checkers = None
 
     @property
     def total_item_weight(self):
@@ -512,7 +124,7 @@ class ConstructiveMapperFromFractional(AbstractMapper):
             raise UnfeasibleVolatileResourcesProblem("Total item weight {} is more than all the bin capacities {}".
                                                      format(self.total_item_weight, total_bin_capacity))
 
-    def map_all_items_to_bins(self, best_bins, infra, ns):
+    def map_all_items_to_bins(self, best_bins):
         """
         Round the fractional optimal solution defined by the best_bins.
         Round the x_ij mapping variable to the highest one, aka, get the highest capacity bin from the
@@ -521,8 +133,6 @@ class ConstructiveMapperFromFractional(AbstractMapper):
         Ignores all other constrains from infra and ns
 
         :param best_bins:
-        :param infra:
-        :param ns:
         :return:
         """
         for item in self.items:
@@ -559,28 +169,24 @@ class ConstructiveMapperFromFractional(AbstractMapper):
         # set its mapping to the target bin
         item_to_be_moved.mapped_to = target_bin
 
-    def improve_item_to_bin_mappings(self, best_bins, infra, ns):
+    def improve_item_to_bin_mappings(self, best_bins):
         """
         Moves the item, which increases the objective the least, to one of the best bins where it fits.
 
         :param best_bins: moving target can only be to these bins
-        :param infra:
-        :param ns:
         :return: bool tuple, whether there is anything left to improve; whether more improvement is needed
         """
-        # NOTE: violation checkers are only in a local scope, but some refactor could be done, to instantiate them at the constructor.
-        violation_checkers = [BinCapacityViolationChecker(self.items, self.bins, infra, ns)]
-        # add a separate checker for each SFC
-        for sfc_delay, sfc_path in ns.sfc_delays_list:
-            violation_checkers.append(DelayAndCoverageViolationChecker(self.items, self.bins, infra, ns, sfc_delay, sfc_path,
-                                                                       self.time_interval_count, self.coverage_threshold))
         violating_items = set()
         improvement_score_stats = dict()
         key_gen = lambda checker: checker.__class__.__name__+str(int(hash(checker)/10000000000))
-        for checker in violation_checkers:
+        for checker in self.violation_checkers:
             violating_items = violating_items.union(checker.get_violating_items())
             improvement_score_stats[key_gen(checker)] = []
         if len(violating_items) == 0:
+            # if the delay violation checker didn't return violating items either, then it must have calculated a complete AP selection!
+            # (not the nicest way to communicate this information...)
+            if cvc.DelayAndCoverageViolationChecker.calculate_current_ap_selection_cost(self.infra) is None:
+                raise Exception("If no violations are found by any ViolationChecker, a complete AP selection must exist!")
             return False, False
         else:
             cost_of_cheapest_improvement = float('inf')
@@ -599,7 +205,7 @@ class ConstructiveMapperFromFractional(AbstractMapper):
                 for bin in best_bins:
                     if bin is not item.mapped_to and bin in item.possible_bins:
                         total_item_move_improvement_score = 0
-                        for checker in violation_checkers:
+                        for checker in self.violation_checkers:
                             improvement_score = checker.item_move_improvement_score(item, bin)
                             total_item_move_improvement_score += improvement_score
                             improvement_score_stats[key_gen(checker)].append(improvement_score)
@@ -641,18 +247,16 @@ class ConstructiveMapperFromFractional(AbstractMapper):
             else:
                 return False, True
 
-    def get_new_best_bins(self, best_bins, infra, ns) -> tuple:
+    def get_new_best_bins(self, best_bins) -> tuple:
         """
         Returns the new list of the best bins (moving/adding possible),
         and bool to indicate wether we can add another bin if necessary.
         This implementation always only adds the next bin according to their filled unit cost.
 
         :param best_bins:
-        :param infra:
-        :param ns:
         :return:
         """
-        if self.check_all_constraints_calculate_objective(infra):
+        if self.check_all_constraints_calculate_objective(self.infra):
             # we dont have to add next bin, everything is mapped to the current best bins
             return best_bins, False
         else:
@@ -700,18 +304,19 @@ class ConstructiveMapperFromFractional(AbstractMapper):
                     else:
                         raise Exception("Wrong item mapping structure, each item must be in exactly one bin!")
                 self.objective_value_of_integer_solution += bin['fixed_cost']
-        total_ap_selection_cost = DelayAndCoverageViolationChecker.calculate_current_ap_selection_cost(infra)
+        total_ap_selection_cost = cvc.DelayAndCoverageViolationChecker.calculate_current_ap_selection_cost(infra)
         if total_ap_selection_cost is None:
             self.objective_value_of_integer_solution = None
             return False
         else:
+            self.log.debug("Total cost of access point selections: {}".format(total_ap_selection_cost))
             self.objective_value_of_integer_solution += total_ap_selection_cost
         # TODO: check other constraints too!
         if len(all_items) != 0:
             raise Exception("Item not found in mapped_here structure in any bin!")
         return True
 
-    def construct_output_mapping(self, mapping, ns : ServiceGMLGraph, infra : InfrastructureGMLGraph):
+    def construct_output_mapping(self, mapping):
         """
         Constructs an output mapping object
 
@@ -720,9 +325,33 @@ class ConstructiveMapperFromFractional(AbstractMapper):
         """
         mapping['worked'] = True
         for i in self.items:
-            mapping[i['node_dict'][ns.node_name_str]] = i.mapped_to['node_dict'][infra.node_name_str]
+            mapping[i['node_dict'][self.ns.node_name_str]] = i.mapped_to['node_dict'][self.infra.node_name_str]
 
         return mapping
+
+    def save_global_mapping_task_information(self, infra : InfrastructureGMLGraph, ns : ServiceGMLGraph):
+        """
+        The AbstractMapper interface the constructor does not receive the infra and ns instances, but they are constant during the
+        algorithm, so we can save it to the instance.
+        # TODO (refactor): remove infra and ns from the function step interfaces, they are the same objects as self.infra and self.ns...
+
+        :param infra:
+        :param ns:
+        :return:
+        """
+        self.infra = infra
+        self.ns = ns
+
+    def instantiate_violation_checkers(self):
+        # TODO: add Violation checker for the battery constraints!
+        self.violation_checkers = [cvc.BinCapacityViolationChecker(self.items, self.bins, self.infra, self.ns,
+                                                                   ConstructiveMapperFromFractional.move_item_to_bin)]
+        # add a separate checker for each SFC
+        for sfc_delay, sfc_path in self.ns.sfc_delays_list:
+            self.violation_checkers.append(cvc.DelayAndCoverageViolationChecker(self.items, self.bins, self.infra, self.ns,
+                                                                                ConstructiveMapperFromFractional.move_item_to_bin,
+                                                                                sfc_delay, sfc_path, self.time_interval_count,
+                                                                                self.coverage_threshold))
 
     def map(self, infra, ns) -> dict:
         mapping = VolatileResourcesMapping()
@@ -730,7 +359,9 @@ class ConstructiveMapperFromFractional(AbstractMapper):
         if not self.__checker.check_infra(infra) or not self.__checker.check_ns(ns):
             return mapping
 
+        self.save_global_mapping_task_information(infra, ns)
         self.get_base_bin_packing_problem(infra, ns)
+        self.instantiate_violation_checkers()
         for pruning in self.pruning_steps_collection:
             self.items, self.bins = pruning.prune_possible_mappings(infra, ns, self.items, self.bins)
 
@@ -741,18 +372,18 @@ class ConstructiveMapperFromFractional(AbstractMapper):
             best_bins = self.get_fist_best_bins()
             # get rounding : map all items somewhere, not neccessarily respecting the constraints.
             # NOTE: With another heuristic it might be needed to be run again, after a new bin is introduced.
-            self.map_all_items_to_bins(best_bins, infra, ns)
+            self.map_all_items_to_bins(best_bins)
             can_add_next_bin = True
             while can_add_next_bin:
                 anything_left_to_improve = True
                 any_violation_left = True
                 while anything_left_to_improve:
                     # get mapping improvement : improve on the item mappings
-                    anything_left_to_improve, any_violation_left = self.improve_item_to_bin_mappings(best_bins, infra, ns)
+                    anything_left_to_improve, any_violation_left = self.improve_item_to_bin_mappings(best_bins)
                 if not any_violation_left:
                     break
                 # get new bin : if there is nothing left to improve with the current bins, we can introduce new ones
-                best_bins, can_add_next_bin = self.get_new_best_bins(best_bins, infra, ns)
+                best_bins, can_add_next_bin = self.get_new_best_bins(best_bins)
         except UnfeasibleVolatileResourcesProblem as ubp:
             self.log.exception(ubp.msg)
             raise ubp
@@ -766,7 +397,7 @@ class ConstructiveMapperFromFractional(AbstractMapper):
         else:
             self.log.info("Bin packing solution found with objective value {}, while fractional optimal value is {}".
                           format(self.objective_value_of_integer_solution, self.objective_value_of_fractional_opt))
-            mapping = self.construct_output_mapping(mapping, ns, infra)
+            mapping = self.construct_output_mapping(mapping)
             if not mapping.validate_mapping(ns, infra):
                 self.log.error("Heuristic algorithm solution does not respect some constraint!")
                 raise Exception("Heuristic algorithm solution does not respect some constraint!")
