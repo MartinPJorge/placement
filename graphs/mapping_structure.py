@@ -7,6 +7,7 @@ class VolatileResourcesMapping(dict):
     WORKED = 'worked'
     # key to store a dict of AP names, for each time instance which is selected to serve the mobility cluster.
     AP_SELECTION = 'AP_selection'
+    OBJECTIVE_VALUE = 'Objective_value'
 
     def __init__(self, *args, **kwargs):
         """
@@ -22,6 +23,8 @@ class VolatileResourcesMapping(dict):
         if VolatileResourcesMapping.AP_SELECTION not in self:
             # keyed by subinterval index and value is AP name
             self[VolatileResourcesMapping.AP_SELECTION] = {}
+        if VolatileResourcesMapping.OBJECTIVE_VALUE not in self:
+            self[VolatileResourcesMapping.OBJECTIVE_VALUE] = None
 
     def add_access_point_selection(self, subinterval : int, ap_name):
         self[VolatileResourcesMapping.AP_SELECTION][int(subinterval)] = ap_name

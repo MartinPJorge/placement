@@ -99,6 +99,7 @@ class AMPLSolverSupport(object):
                             ap_name, subinterval = key
                             mapping.add_access_point_selection(subinterval, ap_name)
 
+            mapping[mapping.OBJECTIVE_VALUE] = objective.value()
             if not mapping.validate_mapping(self.service_instance, self.substrate_network, **self.optimization_kwargs):
                 raise Exception("Mapping of the AMPL model is invalid!")
             self.log.info("Mapping structure validation is successful!")
