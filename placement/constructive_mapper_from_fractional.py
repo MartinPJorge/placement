@@ -198,7 +198,8 @@ class ConstructiveMapperFromFractional(AbstractMapper):
             for item in violating_items:
                 if not any(b in item.possible_bins for b in best_bins):
                     self.log.debug("Violating item {} cannot be moved to any of the current best bins due to its possible bins list".format(item))
-                    # TODO: it might happen that this goes on for a long time, and many improvement steps fail due to not having possible bins in the best bins. If this is the case, maybe we could choose the next best bins from these possible bins.
+                    # it might happen that this goes on for a long time, and many improvement steps fail due to not having possible bins
+                    # in the best bins. If this is the case, we choose the next best bins from these possible bins.
                     current_possible_bins_needed.extend(item.possible_bins)
                     unmovable_violating_items.append(item)
                     continue
@@ -233,6 +234,8 @@ class ConstructiveMapperFromFractional(AbstractMapper):
                 # if there are improvements, do not interfere with the algorithm
                 self.possible_bins_needed = []
             elif len(unmovable_violating_items) > 0:
+                # If no improvement score calculations happened, and there is an unmoveable item,
+                # let's introduce bins from its possible_bins
                 self.log.debug("Saving next bins for unmovable violating items: {}".format(unmovable_violating_items))
                 # self.possible_bins_needed stores the bins required
                 self.possible_bins_needed = current_possible_bins_needed
@@ -322,7 +325,7 @@ class ConstructiveMapperFromFractional(AbstractMapper):
             return False
         return True
 
-    def construct_output_mapping(self, mapping):
+    def construct_output_mapping(self, mapping : VolatileResourcesMapping):
         """
         Constructs an output mapping object
 
@@ -330,8 +333,11 @@ class ConstructiveMapperFromFractional(AbstractMapper):
         :return:
         """
         mapping['worked'] = True
+        mapping[mapping.OBJECTIVE_VALUE] = self.objective_value_of_integer_solution
         for i in self.items:
             mapping[i['node_dict'][self.ns.node_name_str]] = i.mapped_to['node_dict'][self.infra.node_name_str]
+        for subinterval, ap_id in cvc.DelayAndCoverageViolationChecker.chosen_ap_ids.items():
+            mapping.add_access_point_selection(subinterval, self.infra.nodes[ap_id][self.infra.node_name_str])
 
         return mapping
 
@@ -411,7 +417,8 @@ class ConstructiveMapperFromFractional(AbstractMapper):
             self.log.info("Bin packing solution found with objective value {}, while fractional optimal value is {}".
                           format(self.objective_value_of_integer_solution, self.objective_value_of_fractional_opt))
             mapping = self.construct_output_mapping(mapping)
-            if not mapping.validate_mapping(ns, infra):
+            if not mapping.validate_mapping(ns, infra,
+                                            self.time_interval_count, self.coverage_threshold, self.battery_threshold):
                 self.log.error("Heuristic algorithm solution does not respect some constraint!")
                 raise Exception("Heuristic algorithm solution does not respect some constraint!")
             else:
