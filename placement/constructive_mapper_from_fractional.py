@@ -54,6 +54,7 @@ class ConstructiveMapperFromFractional(AbstractMapper):
         self.ns = None
         # list of BinCapacityViolationChecker objects instantiated in the save_global_mapping_task_information fucntion
         self.violation_checkers = None
+        self.hashes_of_visited_mappings = set()
 
     @property
     def total_item_weight(self):
@@ -169,6 +170,32 @@ class ConstructiveMapperFromFractional(AbstractMapper):
         # set its mapping to the target bin
         item_to_be_moved.mapped_to = target_bin
 
+    def hash_of_current_mapping(self):
+        """
+        Creates a hashable structure which identifies the current mapping, and returns its hash
+
+        :return:
+        """
+        bins_items = list()
+        for bin in self.bins:
+            bins_items.append(frozenset(bin.mapped_here))
+        return hash(tuple(bins_items))
+
+    def hash_of_mapping_after_item_move(self, item_to_be_moved, target_bin):
+        """
+        Calculates the hash of a mapping after the item is moved to the target bin
+
+        :param item_to_be_moved:
+        :param target_bin:
+        :return:
+        """
+        original_bin = item_to_be_moved.mapped_to
+        ConstructiveMapperFromFractional.move_item_to_bin(item_to_be_moved, target_bin)
+        mapping_hash = self.hash_of_current_mapping()
+        ConstructiveMapperFromFractional.move_item_to_bin(item_to_be_moved, original_bin)
+        return mapping_hash
+
+
     def improve_item_to_bin_mappings(self, best_bins):
         """
         Moves the item, which increases the objective the least, to one of the best bins where it fits.
@@ -205,6 +232,9 @@ class ConstructiveMapperFromFractional(AbstractMapper):
                     continue
                 for bin in best_bins:
                     if bin is not item.mapped_to and bin in item.possible_bins:
+                        if self.hash_of_mapping_after_item_move(item, bin) in self.hashes_of_visited_mappings:
+                            # self.log.debug("Skipping moving item {} to bin {} as we have already visited this mapping".format(item, bin))
+                            continue
                         total_item_move_improvement_score = 0
                         for checker in self.violation_checkers:
                             improvement_score = checker.item_move_improvement_score(item, bin)
@@ -245,6 +275,7 @@ class ConstructiveMapperFromFractional(AbstractMapper):
                 self.log.debug("Improving mapping by moving item {} to target bin {}".
                                format(item_to_be_moved, target_bin))
                 ConstructiveMapperFromFractional.move_item_to_bin(item_to_be_moved, target_bin)
+                self.hashes_of_visited_mappings.add(self.hash_of_current_mapping())
                 # NOTE: even if this is the very last improvement, it will turn out in the next call of this function
                 return True, True
             else:
