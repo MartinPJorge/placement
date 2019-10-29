@@ -159,6 +159,7 @@ class ConstructiveMapperFromFractional(AbstractMapper):
                         break
             else:
                 raise UnfeasibleVolatileResourcesProblem("Item {} cannot be mapped anywhere".format(item))
+        self.hashes_of_visited_mappings.add(self.hash_of_current_mapping())
 
     @staticmethod
     def move_item_to_bin(item_to_be_moved, target_bin):
@@ -280,7 +281,7 @@ class ConstructiveMapperFromFractional(AbstractMapper):
             else:
                 return False, True
 
-    def get_new_best_bins(self, best_bins) -> tuple:
+    def get_new_best_bins(self, best_bins, any_violations_left=False) -> tuple:
         """
         Returns the new list of the best bins (moving/adding possible),
         and bool to indicate wether we can add another bin if necessary.
@@ -289,7 +290,7 @@ class ConstructiveMapperFromFractional(AbstractMapper):
         :param best_bins:
         :return:
         """
-        if self.check_all_constraints_calculate_objective(self.infra):
+        if self.check_all_constraints_calculate_objective(self.infra) and not any_violations_left:
             # we dont have to add next bin, everything is mapped to the current best bins
             return best_bins, False
         else:
@@ -417,6 +418,7 @@ class ConstructiveMapperFromFractional(AbstractMapper):
         # get fractional solution: it is completely defined by listing the first 'k' bins according to
         # the definition of the paper in section 2.1.
         # NOTE: 'k' = len(best_bins)
+        any_violation_left = True
         try:
             best_bins = self.get_fist_best_bins()
             # get rounding : map all items somewhere, not neccessarily respecting the constraints.
@@ -425,23 +427,22 @@ class ConstructiveMapperFromFractional(AbstractMapper):
             can_add_next_bin = True
             while can_add_next_bin:
                 anything_left_to_improve = True
-                any_violation_left = True
                 while anything_left_to_improve:
                     # get mapping improvement : improve on the item mappings
                     anything_left_to_improve, any_violation_left = self.improve_item_to_bin_mappings(best_bins)
                 if not any_violation_left:
                     break
                 # get new bin : if there is nothing left to improve with the current bins, we can introduce new ones
-                best_bins, can_add_next_bin = self.get_new_best_bins(best_bins)
+                best_bins, can_add_next_bin = self.get_new_best_bins(best_bins, any_violation_left)
         except UnfeasibleVolatileResourcesProblem as ubp:
             self.log.info(ubp.msg)
             return mapping
 
-        if not self.check_all_constraints_calculate_objective(infra):
-            self.log.info("Bin packing solution not found by the heuristic!")
+        if not self.check_all_constraints_calculate_objective(infra) or any_violation_left:
+            self.log.info("Volatile resources solution not found by the heuristic!")
             return mapping
         else:
-            self.log.info("Bin packing solution found with objective value {}, while fractional optimal value is {}".
+            self.log.info("Volatile resources solution found with objective value {}, while the bin packing fractional optimal value is {}".
                           format(self.objective_value_of_integer_solution, self.objective_value_of_fractional_opt))
             mapping = self.construct_output_mapping(mapping)
             if not mapping.validate_mapping(ns, infra,

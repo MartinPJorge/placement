@@ -124,6 +124,7 @@ class DelayAndCoverageViolationChecker(BaseConstraintViolationChecker):
         """
         remaining_delay = float(self.sfc_delay)
         all_mobile_node_ids = self.infra.cluster_endpoint_ids + self.infra.mobile_ids
+        negative_rem_delay_subinterval = 0
         # VNFs cannot be mapped to APs, ID-s which are connected to the fixed infra part are not stored separately
         all_fixed_node_ids = self.infra.server_ids + [n for n in self.infra.endpoint_ids if n not in self.infra.cluster_endpoint_ids]
         for u, v in self.sfc_path:
@@ -135,9 +136,11 @@ class DelayAndCoverageViolationChecker(BaseConstraintViolationChecker):
                 remaining_delay -= self.infra.delay_distance(u_host_id, v_host_id)
         if remaining_delay == -float('inf') or remaining_delay == float('inf'):
             raise Exception("Remaining delay cannot be -inf or inf at this point!")
+        if remaining_delay < 0:
+            # if the delay is already negative in the fixed delay, then it will be negative in all intervals
+            negative_rem_delay_subinterval = self.time_interval_count
 
         inf_count_subinterval = 0
-        negative_rem_delay_subinterval = 0
         # stores the AP id for each time interval which, has the lowest delay, obeying the coverage probability
         current_chosen_ap_ids = dict()
         for subinterval in range(1, self.time_interval_count+1):
@@ -163,7 +166,8 @@ class DelayAndCoverageViolationChecker(BaseConstraintViolationChecker):
                     # evaluate the situation for the output numbers
                     if min_wireless_delay_with_cov == float('inf'):
                         inf_count_subinterval += 1
-                    elif rem_delay_in_subint < min_wireless_delay_with_cov:
+                    # we should not go above the negative remaining delay intervals above the total number of intervals
+                    elif rem_delay_in_subint < min_wireless_delay_with_cov and negative_rem_delay_subinterval < self.time_interval_count:
                         negative_rem_delay_subinterval += 1
                     else:
                         rem_delay_in_subint -= min_wireless_delay_with_cov
