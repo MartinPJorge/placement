@@ -74,14 +74,14 @@ def run_without_config_file():
     #                                                       {'time_interval_count': 12, 'coverage_threshold': 0.9, 'battery_threshold': 0.2})
 
 
-def run_with_config(config : dict) -> tuple:
+def run_with_config(config : dict, root_logger_name = 'simulator') -> tuple:
     """
     Executes the simulation with the given configuration.
 
     :param config:
     :return:
     """
-    root_logger = logging.Logger('simulator')
+    root_logger = logging.Logger(root_logger_name)
     consol_handler = RainbowLoggingHandler(sys.stderr, color_funcName=('black', 'yellow', True))
     file_handler = logging.FileHandler(config['simulator']['log_file'], 'w')
     formatter = logging.Formatter('%(asctime)s.%(name)s.%(levelname).3s: %(message)s')
@@ -183,7 +183,7 @@ def run_from_meta_config(meta_config : dict):
     consol_handler.setFormatter(formatter)
     simulation_name = meta_config['simulation_name']
     os.system("mkdir results/{}".format(simulation_name))
-    file_handler = logging.FileHandler("results/{}/simulation.log".format(simulation_name))
+    file_handler = logging.FileHandler("results/{}/simulation.log".format(simulation_name), mode="w")
     logger.addHandler(file_handler)
     file_handler.setFormatter(formatter)
     base_config = meta_config['base_config_file']
@@ -236,7 +236,7 @@ def run_from_meta_config(meta_config : dict):
                     logger.info("Starting simulation \'{}\' with id: {}".format(simulation_name, simulation_id))
                     setup_environment_for_single_execution(meta_config, simulation_id, current_config, original_log_file_name)
                     try:
-                        heur_mapping, ampl_mapping, algorithm_errors = run_with_config(current_config)
+                        heur_mapping, ampl_mapping, algorithm_errors = run_with_config(current_config, root_logger_name="{}-{}".format(simulation_name, simulation_id))
                         for trace in algorithm_errors:
                             logger.error("Algorithm error encountered: {}".format(trace))
                         logger.info("Saving simulations results...")
