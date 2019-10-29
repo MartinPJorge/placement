@@ -8,3 +8,5 @@ meta_config_values:                                                         # un
     gml_file: ["../graphs/infras/cobo-calleja/pico-and-micro-cobo-calleja-ref-1.gml", "../graphs/infras/cobo-calleja/pico-and-micro-cobo-calleja-ref-2.gml", "../graphs/infras/cobo-calleja/pico-and-micro-cobo-calleja-ref-3.gml"]
     unloaded_battery_alive_prob: [0.99, 0.8, 0.7]
     full_loaded_battery_alive_prob: [0.2, 0.1, 0.05]
+  optimization:
+    improvement_score_limit: [-1, 0, 1]

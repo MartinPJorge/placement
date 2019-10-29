@@ -214,12 +214,16 @@ def run_from_meta_config(meta_config : dict):
                         section_key_value_tuples = list()
                         for value in value_list:
                             section_key_value_tuples.append((section, key, value))
+                            if section not in current_config or key not in current_config[section]:
+                                raise Exception("Invalid meta config param, not found in base config: {}, {}".format(section, key))
                         unpacked_non_products[group_id].append(section_key_value_tuples)
                         break
                 else:
                     # if the for cycle finishes (or is empty), aka this section, key is not in the values to be zipped.
                     for value in value_list:
                         value_lists_for_product.append((section, key, value))
+                        if section not in current_config or key not in current_config[section]:
+                            raise Exception("Invalid meta config param, not found in base config: {}, {}".format(section, key))
 
         os.system("git show > results/{}/git-shows.txt".format(simulation_name))
         os.system("cd ../heuristic && git show >> ../simulator/results/{}/git-shows.txt && cd -".format(simulation_name))
@@ -232,6 +236,7 @@ def run_from_meta_config(meta_config : dict):
                     current_config[section][key] = value
                     parallel_sim_config_str += "{}.{}: {}; ".format(section, key, value)
                 for psection, pkey, pvalue in value_lists_for_product:
+                    # TODO: add here one more layer of fors!
                     current_config[psection][pkey] = pvalue
                     simulation_id += 1
                     full_sim_config_str = "{}.{}: {}; ".format(psection, pkey, pvalue) + parallel_sim_config_str
