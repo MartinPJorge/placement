@@ -74,7 +74,7 @@ def run_without_config_file():
     #                                                       {'time_interval_count': 12, 'coverage_threshold': 0.9, 'battery_threshold': 0.2})
 
 
-def run_with_config(config : dict, root_logger_name = 'simulator') -> tuple:
+def run_with_config(config : dict, root_logger_name='simulator') -> tuple:
     """
     Executes the simulation with the given configuration.
 
@@ -227,18 +227,22 @@ def run_from_meta_config(meta_config : dict):
         original_log_file_name = current_config['simulator']['log_file']
         for non_product_tuple_list in unpacked_non_products.values():
             for sec_key_vals_to_set_at_once in zip(*non_product_tuple_list):
+                parallel_sim_config_str = ""
                 for section, key, value in sec_key_vals_to_set_at_once:
                     current_config[section][key] = value
+                    parallel_sim_config_str += "{}.{}: {}; ".format(section, key, value)
                 for psection, pkey, pvalue in value_lists_for_product:
                     current_config[psection][pkey] = pvalue
                     simulation_id += 1
+                    full_sim_config_str = "{}.{}: {}; ".format(psection, pkey, pvalue) + parallel_sim_config_str
                     logger.info("=============================================================================================================")
                     logger.info("Starting simulation \'{}\' with id: {}".format(simulation_name, simulation_id))
+                    logger.info("Current variable setting: {}".format(full_sim_config_str))
                     setup_environment_for_single_execution(meta_config, simulation_id, current_config, original_log_file_name)
                     try:
                         heur_mapping, ampl_mapping, algorithm_errors = run_with_config(current_config, root_logger_name="{}-{}".format(simulation_name, simulation_id))
                         for trace in algorithm_errors:
-                            logger.error("Algorithm error encountered: {}".format(trace))
+                            logger.error("Algorithm errors encountered: {}".format(trace))
                         logger.info("Saving simulations results...")
                         save_solution_for_single_execution(meta_config, simulation_id, current_config, logger, heur_mapping, ampl_mapping)
                     except Exception as e:
