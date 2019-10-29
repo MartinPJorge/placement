@@ -6,3 +6,4 @@ venv/
 *.log
 ampl/system-model-generated.dat
 .ipynb_checkpoints*
+simulator/results/*
