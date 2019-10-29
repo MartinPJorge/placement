@@ -5,6 +5,6 @@ non_product_groups:                                                         # li
   - [infrastructure.unloaded_battery_alive_prob, infrastructure.full_loaded_battery_alive_prob]
 meta_config_values:                                                         # under this a full single config structure can be given, but
   infrastructure:                                                           # each value should be a list of values
-    gml_file: ["../graphs/infras/cobo-calleja/small-variant.gml", "../graphs/infras/cobo-calleja/small-variant.gml", "../graphs/infras/cobo-calleja/small-variant.gml"]
+    gml_file: ["../graphs/infras/cobo-calleja/pico-and-micro-cobo-calleja-ref-1.gml", "../graphs/infras/cobo-calleja/pico-and-micro-cobo-calleja-ref-2.gml", "../graphs/infras/cobo-calleja/pico-and-micro-cobo-calleja-ref-3.gml"]
     unloaded_battery_alive_prob: [0.99, 0.8, 0.7]
     full_loaded_battery_alive_prob: [0.2, 0.1, 0.05]

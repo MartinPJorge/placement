@@ -30,9 +30,9 @@ optimization:
                                                       # optimization interval with the allocated load.
 #================= Simulator settings =================#
 simulator:
-  log_file: "simulator.log"
+  log_file: "mapping.log"
   console_log_level: "DEBUG"
   file_log_level: "DEBUG"
   ampl_model_path: '../../ampl/system-model.mod'                           # AMPL model location for the volatile resources model
   run_heuristic: True                                                  # Flags to set which algoritms to run
-  run_ampl: True
+  run_ampl: False

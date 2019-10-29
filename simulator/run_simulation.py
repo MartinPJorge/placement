@@ -3,12 +3,14 @@ import argparse
 import yaml
 import os
 import logging
-import itertools
+import json
+import traceback
 from rainbow_logging_handler import RainbowLoggingHandler
 sys.path.append(os.path.abspath(".."))
 
 from ampl.ampl_support import AMPLSolverSupport
 import graphs.generate_service as gs
+from graphs.mapping_structure import VolatileResourcesMapping
 import heuristic.placement.constructive_mapper_from_fractional as cmf
 
 
@@ -72,7 +74,7 @@ def run_without_config_file():
     #                                                       {'time_interval_count': 12, 'coverage_threshold': 0.9, 'battery_threshold': 0.2})
 
 
-def run_with_config(config : dict):
+def run_with_config(config : dict) -> tuple:
     """
     Executes the simulation with the given configuration.
 
@@ -97,16 +99,18 @@ def run_with_config(config : dict):
     root_logger.info("Generating service graph...")
     service_instance = gs.ServiceGMLGraph(substrate_network, **config['service'], log=root_logger)
 
+    algorithm_errors = list()
+    heur_mapping_result_dict = None
     if config['simulator']['run_heuristic']:
         try:
             checker = cmf.VolatileResourcesChecker()
             mapper = cmf.ConstructiveMapperFromFractional(checker, log=root_logger, **config['optimization'])
-            mapping_result_dict = mapper.map(substrate_network, service_instance)
+            heur_mapping_result_dict = mapper.map(substrate_network, service_instance)
         except Exception as e:
             root_logger.exception("Error during heuristic solution: ")
-            # for development keep it raised
-            raise
+            algorithm_errors.append(traceback.format_exc())
 
+    ampl_mapping_result_dict = None
     if config['simulator']['run_ampl']:
         try:
             root_logger.info("Creating AMPL solver support class...")
@@ -116,11 +120,53 @@ def run_with_config(config : dict):
                                                     config['optimization'], log=root_logger,
                                                     export_ampl_data_path=export_data_if_needed)
             root_logger.info("Solving AMPL...")
-            ampl_solver_support.solve()
+            ampl_mapping_result_dict = ampl_solver_support.solve()
         except Exception as e:
             root_logger.exception("Error during AMPL solution: ")
-            # for development keep raised
-            raise
+            algorithm_errors.append(traceback.format_exc())
+
+    return heur_mapping_result_dict, ampl_mapping_result_dict, algorithm_errors
+
+
+def setup_environment_for_single_execution(meta_config, simulation_id, current_config, original_log_file_name):
+    """
+    Creates a folder and log file for an execution
+
+    :param meta_config:
+    :param simulation_id:
+    :param current_config:
+    :return:
+    """
+    simulation_name = meta_config['simulation_name']
+    folder_path = "results/{}/{}".format(simulation_name, simulation_id)
+    os.system("mkdir {}".format(folder_path))
+    # set the current config to log to the newly created folder
+    current_config['simulator']['log_file'] = "/".join((folder_path, original_log_file_name))
+    # save the configuration file for this execution (so it is fully reproducible)
+    with open("/".join((folder_path, "config.yml")), "w") as f:
+        yaml.dump(current_config, f)
+
+
+def save_solution_for_single_execution(meta_config : dict, simulation_id : int, current_config : dict, log,
+                                       heur_mapping : VolatileResourcesMapping, ampl_mapping : VolatileResourcesMapping):
+    """
+    Saves the solutions into json files
+
+    :param meta_config:
+    :param simulation_id:
+    :param current_config:
+    :return:
+    """
+    simulation_name = meta_config['simulation_name']
+    folder_path = "results/{}/{}".format(simulation_name, simulation_id)
+    if heur_mapping is not None:
+        with open("/".join((folder_path, "heuristic_solution.json")), "w") as f:
+            log.debug("Dumping heuristic solution, feasible: {}".format(heur_mapping[VolatileResourcesMapping.WORKED]))
+            json.dump(heur_mapping, f)
+    if ampl_mapping is not None:
+        with open("/".join((folder_path, "ampl_solution.json")), "w") as f:
+            log.debug("Dumping AMPL solution, feasible: {}".format(ampl_mapping[VolatileResourcesMapping.WORKED]))
+            json.dump(ampl_mapping, f)
 
 
 def run_from_meta_config(meta_config : dict):
@@ -135,8 +181,12 @@ def run_from_meta_config(meta_config : dict):
     logger.addHandler(consol_handler)
     formatter = logging.Formatter('%(asctime)s.%(name)s.%(levelname).3s: %(message)s')
     consol_handler.setFormatter(formatter)
-    base_config = meta_config['base_config_file']
     simulation_name = meta_config['simulation_name']
+    os.system("mkdir results/{}".format(simulation_name))
+    file_handler = logging.FileHandler("results/{}/simulation.log".format(simulation_name))
+    logger.addHandler(file_handler)
+    file_handler.setFormatter(formatter)
+    base_config = meta_config['base_config_file']
     meta_config_values = meta_config['meta_config_values']
     with open(base_config) as f:
         current_config = yaml.load(f.read())
@@ -171,13 +221,28 @@ def run_from_meta_config(meta_config : dict):
                     for value in value_list:
                         value_lists_for_product.append((section, key, value))
 
+        os.system("git show > results/{}/git-shows.txt".format(simulation_name))
+        os.system("cd ../heuristic && git show >> ../simulator/results/{}/git-shows.txt && cd -".format(simulation_name))
+        simulation_id = 0
+        original_log_file_name = current_config['simulator']['log_file']
         for non_product_tuple_list in unpacked_non_products.values():
-            for sec_key_vals in non_product_tuple_list:
-                for section, key, value in sec_key_vals:
+            for sec_key_vals_to_set_at_once in zip(*non_product_tuple_list):
+                for section, key, value in sec_key_vals_to_set_at_once:
                     current_config[section][key] = value
-            for section, key, value in value_lists_for_product:
-                current_config[section][key] = value
-                run_with_config(current_config)
+                for psection, pkey, pvalue in value_lists_for_product:
+                    current_config[psection][pkey] = pvalue
+                    simulation_id += 1
+                    logger.info("=============================================================================================================")
+                    logger.info("Starting simulation \'{}\' with id: {}".format(simulation_name, simulation_id))
+                    setup_environment_for_single_execution(meta_config, simulation_id, current_config, original_log_file_name)
+                    try:
+                        heur_mapping, ampl_mapping, algorithm_errors = run_with_config(current_config)
+                        for trace in algorithm_errors:
+                            logger.error("Algorithm error encountered: {}".format(trace))
+                        logger.info("Saving simulations results...")
+                        save_solution_for_single_execution(meta_config, simulation_id, current_config, logger, heur_mapping, ampl_mapping)
+                    except Exception as e:
+                        logger.exception("Unhandled exception during simulation {} with id {}: ".format(simulation_name, simulation_id))
 
 
 if __name__ == '__main__':
