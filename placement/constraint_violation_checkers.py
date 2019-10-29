@@ -95,6 +95,7 @@ class DelayAndCoverageViolationChecker(BaseConstraintViolationChecker):
         """
         Choose the cheapest AP which meets the coverage threshold. We still need to choose an access point, even if we do not need to
         communicate though the wireless channel.
+        Returns None if no such AP exists.
 
         :param subinterval:
         :return:
@@ -108,11 +109,7 @@ class DelayAndCoverageViolationChecker(BaseConstraintViolationChecker):
                 if ap_cost < min_ap_cost:
                     min_ap_cost = ap_cost
                     min_cost_ap_id = ap_id
-        if min_cost_ap_id is not None:
-            return min_cost_ap_id
-        else:
-            raise UnfeasibleVolatileResourcesProblem("No access point found for the cluster with the given coverage probability, "
-                                                     "even without checking the delay requirements!")
+        return min_cost_ap_id
 
     def calculate_violations(self):
         """
@@ -174,8 +171,14 @@ class DelayAndCoverageViolationChecker(BaseConstraintViolationChecker):
                 if min_delay_though_ap_id is not None:
                     current_chosen_ap_ids[subinterval] = min_delay_though_ap_id
                 elif remaining_delay == rem_delay_in_subint:
-                    # if all nodes are mapped inside the cluster or inside the fixed infra part, we
-                    current_chosen_ap_ids[subinterval] = self.get_cheapest_ap_id(subinterval)
+                    # if all nodes are mapped inside the cluster or inside the fixed infra part, we still need to select an AP
+                    cheapest_ap_id = self.get_cheapest_ap_id(subinterval)
+                    if cheapest_ap_id is not None:
+                        current_chosen_ap_ids[subinterval] = cheapest_ap_id
+                    else:
+                        # if AP cannot be selected (due to only coverage criteria, this is a bad mapping in this subinterval
+                        inf_count_subinterval += 1
+                        DelayAndCoverageViolationChecker.chosen_ap_ids = None
                 else:
                     raise Exception("AP must always be selected if the delay and coverage are OK in a mapping!")
             else:

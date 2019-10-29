@@ -195,7 +195,6 @@ class ConstructiveMapperFromFractional(AbstractMapper):
         ConstructiveMapperFromFractional.move_item_to_bin(item_to_be_moved, original_bin)
         return mapping_hash
 
-
     def improve_item_to_bin_mappings(self, best_bins):
         """
         Moves the item, which increases the objective the least, to one of the best bins where it fits.
@@ -435,11 +434,8 @@ class ConstructiveMapperFromFractional(AbstractMapper):
                 # get new bin : if there is nothing left to improve with the current bins, we can introduce new ones
                 best_bins, can_add_next_bin = self.get_new_best_bins(best_bins)
         except UnfeasibleVolatileResourcesProblem as ubp:
-            self.log.exception(ubp.msg)
-            raise ubp
-            # TODO: for development keep it raised!
-            # mapping['worked'] = False
-            # return mapping
+            self.log.info(ubp.msg)
+            return mapping
 
         if not self.check_all_constraints_calculate_objective(infra):
             self.log.info("Bin packing solution not found by the heuristic!")
