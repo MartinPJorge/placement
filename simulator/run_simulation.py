@@ -201,6 +201,7 @@ def run_from_meta_config(meta_config : dict):
                 for item in group:
                     section, key = item.split(".")
                     value_dict_for_zip[group_id].append((section, key))
+                group_id += 1
         value_lists_for_product = list()
 
         # collect the values to be used
@@ -232,32 +233,38 @@ def run_from_meta_config(meta_config : dict):
         os.system("cd ../heuristic && git show >> ../simulator/results/{}/git-shows.txt && cd -".format(simulation_name))
         simulation_id = 0
         original_log_file_name = current_config['simulator']['log_file']
-        for non_product_tuple_list in unpacked_non_products.values():
-            for sec_key_vals_to_set_at_once in zip(*non_product_tuple_list):
-                parallel_sim_config_str = ""
-                # set the next values of each parallel parameters
-                for section, key, value in sec_key_vals_to_set_at_once:
-                    current_config[section][key] = value
-                    parallel_sim_config_str += "{}.{}: {}; ".format(section, key, value)
-                for values_one_of_each in itertools.product(*value_lists_for_product):
-                    product_sim_config_str = ""
-                    for psection, pkey, pvalue in values_one_of_each:
-                        current_config[psection][pkey] = pvalue
-                        product_sim_config_str += "{}.{}: {}; ".format(psection, pkey, pvalue)
-                    simulation_id += 1
-                    full_sim_config_str = product_sim_config_str + parallel_sim_config_str
-                    logger.info("=============================================================================================================")
-                    logger.info("Starting simulation \'{}\' with id: {}".format(simulation_name, simulation_id))
-                    logger.info("Current variable setting: {}".format(full_sim_config_str))
-                    setup_environment_for_single_execution(meta_config, simulation_id, current_config, original_log_file_name)
-                    try:
-                        heur_mapping, ampl_mapping, algorithm_errors = run_with_config(current_config, root_logger_name="{}-{}".format(simulation_name, simulation_id))
-                        for trace in algorithm_errors:
-                            logger.error("Algorithm errors encountered: {}".format(trace))
-                        logger.info("Saving simulations results...")
-                        save_solution_for_single_execution(meta_config, simulation_id, current_config, logger, heur_mapping, ampl_mapping)
-                    except Exception as e:
-                        logger.exception("Unhandled exception during simulation {} with id {}: ".format(simulation_name, simulation_id))
+
+        # zip the elements of all non product groups
+        zipped_unpacked_non_products = {k: zip(*v) for k, v in unpacked_non_products.items()}
+
+        for one_of_each_zipped_non_product_group in itertools.product(*list(zipped_unpacked_non_products.values())):
+            sec_key_vals_to_set_at_once = []
+            for tuple_to_flatten in one_of_each_zipped_non_product_group:
+                sec_key_vals_to_set_at_once.extend(tuple_to_flatten)
+            parallel_sim_config_str = ""
+            # set the next values of each parallel parameters
+            for section, key, value in sec_key_vals_to_set_at_once:
+                current_config[section][key] = value
+                parallel_sim_config_str += "{}.{}: {}; ".format(section, key, value)
+            for values_one_of_each in itertools.product(*value_lists_for_product):
+                product_sim_config_str = ""
+                for psection, pkey, pvalue in values_one_of_each:
+                    current_config[psection][pkey] = pvalue
+                    product_sim_config_str += "{}.{}: {}; ".format(psection, pkey, pvalue)
+                simulation_id += 1
+                full_sim_config_str = product_sim_config_str + parallel_sim_config_str
+                logger.info("=============================================================================================================")
+                logger.info("Starting simulation \'{}\' with id: {}".format(simulation_name, simulation_id))
+                logger.info("Current variable setting: {}".format(full_sim_config_str))
+                setup_environment_for_single_execution(meta_config, simulation_id, current_config, original_log_file_name)
+                try:
+                    heur_mapping, ampl_mapping, algorithm_errors = run_with_config(current_config, root_logger_name="{}-{}".format(simulation_name, simulation_id))
+                    for trace in algorithm_errors:
+                        logger.error("Algorithm errors encountered: {}".format(trace))
+                    logger.info("Saving simulations results...")
+                    save_solution_for_single_execution(meta_config, simulation_id, current_config, logger, heur_mapping, ampl_mapping)
+                except Exception as e:
+                    logger.exception("Unhandled exception during simulation {} with id {}: ".format(simulation_name, simulation_id))
 
 
 if __name__ == '__main__':

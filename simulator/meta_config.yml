@@ -3,6 +3,7 @@ base_config_file: "test_base_config.yml"                                     # P
 simulation_name: "tests"                                                    # String identifying the experiment (folder created for it)
 non_product_groups:                                                         # list of keys from the config file, where instead of product, zipping should be applied for creating the single configs
   - [infrastructure.unloaded_battery_alive_prob, infrastructure.full_loaded_battery_alive_prob]
+  - [optimization.improvement_score_limit, simulator.run_ampl]
 meta_config_values:                                                         # under this a full single config structure can be given, but
   infrastructure:                                                           # each value should be a list of values
     gml_file: ["../graphs/infras/cobo-calleja/pico-and-micro-cobo-calleja-ref-1.gml", "../graphs/infras/cobo-calleja/pico-and-micro-cobo-calleja-ref-2.gml", "../graphs/infras/cobo-calleja/pico-and-micro-cobo-calleja-ref-3.gml"]
@@ -10,3 +11,5 @@ meta_config_values:                                                         # un
     full_loaded_battery_alive_prob: [0.2, 0.1, 0.05]
   optimization:
     improvement_score_limit: [-1, 0, 1]
+  simulator:
+    run_ampl: [True, False, False]
