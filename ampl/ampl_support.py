@@ -1,6 +1,7 @@
 import logging
 import sys
 from rainbow_logging_handler import RainbowLoggingHandler
+import traceback
 
 import amplpy
 
@@ -81,9 +82,13 @@ class AMPLSolverSupport(object):
         :return:
         """
         mapping = VolatileResourcesMapping()
-        if objective.result() == 'infeasible':
+        try:
+            result_str = objective.result()
+        except RuntimeError as e:
             return mapping
-        elif objective.result() == 'solved':
+        if result_str == 'infeasible':
+            return mapping
+        elif result_str == 'solved':
             mapping[VolatileResourcesMapping.WORKED] = True
             for var_name, var in self.ampl.getVariables():
                 # node mapping decision variables
@@ -104,6 +109,9 @@ class AMPLSolverSupport(object):
                 raise Exception("Mapping of the AMPL model is invalid!")
             self.log.info("Mapping structure validation is successful!")
             return mapping
+        elif '?' in result_str:
+            # happens for example in case of too big model for a demo license
+            return mapping
         else:
             self.log.error("Unhandled AMPL result variant!")
             raise NotImplementedError("Unhandled AMPL result variant!")
@@ -118,10 +126,19 @@ class AMPLSolverSupport(object):
         self.log.info("Starting AMPL solver...")
         self.ampl.solve()
         objective = self.ampl.getObjective("Total_cost")
+        try:
+            # the demo license (above 300 constraints/variables) fails here, raising runtime error
+            obj_message = objective.message()
+            obj_result = objective.result()
+            obj_value = objective.value()
+        except RuntimeError as re:
+            obj_message = traceback.format_exc()
+            obj_result = "?"
+            obj_value = "N/A"
         self.log.info("AMPL solver finished:\n"
                       "\t\t\tresult: {}\n"
                       "\t\t\tmessage: {}\n"
-                      "\t\t\tobjective value: {}\n".format(objective.result(), objective.message(), objective.value()))
+                      "\t\t\tobjective value: {}\n".format(obj_result, obj_message, obj_value))
         return self.construct_mapping(objective)
 
 

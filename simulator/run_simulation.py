@@ -5,6 +5,7 @@ import os
 import logging
 import json
 import traceback
+import itertools
 from rainbow_logging_handler import RainbowLoggingHandler
 sys.path.append(os.path.abspath(".."))
 
@@ -220,10 +221,12 @@ def run_from_meta_config(meta_config : dict):
                         break
                 else:
                     # if the for cycle finishes (or is empty), aka this section, key is not in the values to be zipped.
+                    values_of_single_key = []
                     for value in value_list:
-                        value_lists_for_product.append((section, key, value))
+                        values_of_single_key.append((section, key, value))
                         if section not in current_config or key not in current_config[section]:
                             raise Exception("Invalid meta config param, not found in base config: {}, {}".format(section, key))
+                    value_lists_for_product.append(values_of_single_key)
 
         os.system("git show > results/{}/git-shows.txt".format(simulation_name))
         os.system("cd ../heuristic && git show >> ../simulator/results/{}/git-shows.txt && cd -".format(simulation_name))
@@ -232,14 +235,17 @@ def run_from_meta_config(meta_config : dict):
         for non_product_tuple_list in unpacked_non_products.values():
             for sec_key_vals_to_set_at_once in zip(*non_product_tuple_list):
                 parallel_sim_config_str = ""
+                # set the next values of each parallel parameters
                 for section, key, value in sec_key_vals_to_set_at_once:
                     current_config[section][key] = value
                     parallel_sim_config_str += "{}.{}: {}; ".format(section, key, value)
-                for psection, pkey, pvalue in value_lists_for_product:
-                    # TODO: add here one more layer of fors!
-                    current_config[psection][pkey] = pvalue
+                for values_one_of_each in itertools.product(*value_lists_for_product):
+                    product_sim_config_str = ""
+                    for psection, pkey, pvalue in values_one_of_each:
+                        current_config[psection][pkey] = pvalue
+                        product_sim_config_str += "{}.{}: {}; ".format(psection, pkey, pvalue)
                     simulation_id += 1
-                    full_sim_config_str = "{}.{}: {}; ".format(psection, pkey, pvalue) + parallel_sim_config_str
+                    full_sim_config_str = product_sim_config_str + parallel_sim_config_str
                     logger.info("=============================================================================================================")
                     logger.info("Starting simulation \'{}\' with id: {}".format(simulation_name, simulation_id))
                     logger.info("Current variable setting: {}".format(full_sim_config_str))

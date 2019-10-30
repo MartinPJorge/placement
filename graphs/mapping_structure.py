@@ -48,12 +48,13 @@ class VolatileResourcesMapping(dict):
                         return host_id
 
     def validate_mapping(self, ns: ServiceGMLGraph, infra: InfrastructureGMLGraph,
-                         time_interval_count, coverage_threshold, battery_threshold):
+                         time_interval_count, coverage_threshold, battery_threshold, **kwargs):
         """
         Checks whether the mapping task defined by the ns and infra is solved by this mapping object
 
         :param ns:
         :param infra:
+        :param kwargs: some optimization parameters of the solution provided by the heuristic are irrelevant for the validation
         :return:
         """
         if self[VolatileResourcesMapping.WORKED]:
