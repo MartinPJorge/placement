@@ -163,11 +163,11 @@ def save_solution_for_single_execution(meta_config : dict, simulation_id : int, 
     if heur_mapping is not None:
         with open("/".join((folder_path, "heuristic_solution.json")), "w") as f:
             log.debug("Dumping heuristic solution, feasible: {}".format(heur_mapping[VolatileResourcesMapping.WORKED]))
-            json.dump(heur_mapping, f)
+            json.dump(heur_mapping, f, indent=4)
     if ampl_mapping is not None:
         with open("/".join((folder_path, "ampl_solution.json")), "w") as f:
             log.debug("Dumping AMPL solution, feasible: {}".format(ampl_mapping[VolatileResourcesMapping.WORKED]))
-            json.dump(ampl_mapping, f)
+            json.dump(ampl_mapping, f, indent=4)
 
 
 def run_from_meta_config(meta_config : dict):

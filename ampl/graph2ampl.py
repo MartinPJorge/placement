@@ -64,6 +64,8 @@ class AMPLDataConstructor(object):
             for id_ in infra.server_ids]
         self.mobile_names = [infra.nodes[id_][infra.node_name_str]
             for id_ in infra.mobile_ids]
+        self.cluster_endpoint_names = [infra.nodes[id_][infra.node_name_str]
+            for id_ in infra.cluster_endpoint_ids]
         self.infra_names = self.endpoint_names + self.access_point_names + self.server_names + \
                            self.mobile_names
 
@@ -71,7 +73,7 @@ class AMPLDataConstructor(object):
         ampl.set['vertices'][infra.name] = self.infra_names
         ampl.set['APs'] = self.access_point_names
         ampl.set['servers'] = self.server_names
-        ampl.set['mobiles'] = self.mobile_names
+        ampl.set['mobiles'] = self.mobile_names + self.cluster_endpoint_names
 
         # add the mobile cluster's master node
         self.master_mobile_id = list(infra.ap_coverage_probabilities.keys())[0]
@@ -107,11 +109,11 @@ class AMPLDataConstructor(object):
         # fill the battery probability constraints
         ampl.getParameter('full_loaded_battery_alive_prob').setValues({
             mobile_node: infra.full_loaded_battery_alive_prob
-            for mobile_node in self.mobile_names
+            for mobile_node in self.mobile_names + self.cluster_endpoint_names
         })
         ampl.getParameter('unloaded_battery_alive_prob').setValues({
             mobile_node: infra.unloaded_battery_alive_prob
-            for mobile_node in self.mobile_names
+            for mobile_node in self.mobile_names + self.cluster_endpoint_names
         })
 
     def fill_AP_coverage_probabilities(self, ampl: AMPL, infra: gs.InfrastructureGMLGraph, interval_length: int) -> None:
@@ -185,8 +187,8 @@ class AMPLDataConstructor(object):
 
         # set mobile internal delays
         mobile_mobile_delay_dict = {}
-        for mobile_id1 in infra.mobile_ids:
-            for mobile_id2 in infra.mobile_ids:
+        for mobile_id1 in infra.mobile_ids + infra.cluster_endpoint_ids:
+            for mobile_id2 in infra.mobile_ids + infra.cluster_endpoint_ids:
                 ampl_df_key = (infra.nodes[mobile_id1][infra.node_name_str], infra.nodes[mobile_id2][infra.node_name_str])
                 mobile_mobile_delay_dict[ampl_df_key] = infra.delay_distance(mobile_id1, mobile_id2, 1)
         df = DataFrame(("mobile_name1", "mobile_name2"), "delay")
