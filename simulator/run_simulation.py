@@ -106,7 +106,7 @@ def run_with_config(config : dict, root_logger_name='simulator') -> tuple:
         try:
             checker = cmf.VolatileResourcesChecker()
             mapper = cmf.ConstructiveMapperFromFractional(checker, log=root_logger, **config['optimization'])
-            # heur_mapping_result_dict = mapper.map(substrate_network, service_instance)
+            heur_mapping_result_dict = mapper.map(substrate_network, service_instance)
         except Exception as e:
             root_logger.exception("Error during heuristic solution: ")
             algorithm_errors.append(traceback.format_exc())
@@ -121,7 +121,7 @@ def run_with_config(config : dict, root_logger_name='simulator') -> tuple:
                                                     config['optimization'], log=root_logger,
                                                     export_ampl_data_path=export_data_if_needed)
             root_logger.info("Solving AMPL...")
-            # ampl_mapping_result_dict = ampl_solver_support.solve()
+            ampl_mapping_result_dict = ampl_solver_support.solve()
         except Exception as e:
             root_logger.exception("Error during AMPL solution: ")
             algorithm_errors.append(traceback.format_exc())
