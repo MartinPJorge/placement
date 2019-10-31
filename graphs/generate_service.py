@@ -242,6 +242,15 @@ class InfrastructureGMLGraph(GMLGraph):
                         self.ap_coverage_probabilities[master_mobile][time_interval_idx][ap_id] = \
                             self.get_coverage_probability(current_p, ap_id)
 
+    def distance_to_raw_probability_1(self, dist, ap_reach):
+        return - (dist / (ap_reach)) ** 2 + 1.0
+
+    def distance_to_raw_probability_2(self, dist, ap_reach):
+        if dist < ap_reach:
+            return - (dist / 20.0 / ap_reach) + 1.0
+        else:
+            return - (5.0 * 0.95 * dist / ap_reach) + 4.0 * 0.95
+
     def get_coverage_probability(self, current_mobile_pos, ap_id):
         """
         Calculates the probabilty of covering the mobile node in its current position by the given AP.
@@ -260,7 +269,7 @@ class InfrastructureGMLGraph(GMLGraph):
         # TODO: get better model for coverage probability dropping based on research
         # drops to 0.0 probability somewhere after 20% beyond the reach of the AP, decreases squared from 1.0
         probability = 1.0
-        raw_probability = - (dist / (reach)) ** 2 + 1.0
+        raw_probability = self.distance_to_raw_probability_2(dist, reach)
         if raw_probability < 0.0:
             probability = 0.0
         elif raw_probability < 1.0:

@@ -4,7 +4,7 @@ infrastructure:
   gml_file: ""
   name: "infra"                                       # name of the graph object
   label: "id"                                         # GML node attribute to be used as graph node id
-  time_interval_count: 24                             # the number of time frames for the optimization t \in (t0, t1)
+  time_interval_count: 12                             # the number of time frames for the optimization t \in (t0, t1)
   cluster_move_distances: [0.0025]              # list of lengths of each cluster's line mobility pattern where the cluster goes there and back
                                                       # during the simulated time interval. The list's length identifies the number of clusters.
                                                       # Measured in 'GPS coordinate' lengths
@@ -15,17 +15,17 @@ infrastructure:
 #================= Service description section =================#
 service:
   name: "service"                                     # name of the graph object
-  connected_component_sizes: [3]                      # list of integers describing the number (by its length) and size of the connected
+  connected_component_sizes: [20]                      # list of integers describing the number (by its length) and size of the connected
                                                       # service graph components. Each components is a series parallel graph
-  sfc_delays: [0.4]                                 # list of delay values, which the chains can take (infra GML measures them in seconds)
+  sfc_delays: [5, 10, 15]                                 # list of delay values, which the chains can take (infra GML measures them in ms)
   series_parallel_ratio: 0.7                          # ratio of the series and parallel operations at the service graph generation
-  mobile_nfs_per_sfc: 2                               # The number of NFs in each SFC which must be located in the corresponding mobile cluster
+  mobile_nfs_per_sfc: 10                               # The number of NFs in each SFC which must be located in the corresponding mobile cluster
                                                       # (if a chain is shorter, at most all of the NFs are set but not more).
   seed: 0                                             # randomization seed (can be different from infra, but they together define the task)
 #================= Optimization description section =================#
 optimization:
-  time_interval_count: 24                             # same as infrastructure.time_interval_count
-  coverage_threshold: 0.14                             # Least probability the cluster should be covered at all time instances.
+  time_interval_count: 12                             # same as infrastructure.time_interval_count
+  coverage_threshold: 0.8                             # Least probability the cluster should be covered at all time instances.
   battery_threshold: 0.2                              # Least probability which the mobile clusters are not depleted by the end of the
                                                       # optimization interval with the allocated load.
   improvement_score_limit: 1

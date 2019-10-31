@@ -106,7 +106,7 @@ def run_with_config(config : dict, root_logger_name='simulator') -> tuple:
         try:
             checker = cmf.VolatileResourcesChecker()
             mapper = cmf.ConstructiveMapperFromFractional(checker, log=root_logger, **config['optimization'])
-            heur_mapping_result_dict = mapper.map(substrate_network, service_instance)
+            # heur_mapping_result_dict = mapper.map(substrate_network, service_instance)
         except Exception as e:
             root_logger.exception("Error during heuristic solution: ")
             algorithm_errors.append(traceback.format_exc())
@@ -121,7 +121,7 @@ def run_with_config(config : dict, root_logger_name='simulator') -> tuple:
                                                     config['optimization'], log=root_logger,
                                                     export_ampl_data_path=export_data_if_needed)
             root_logger.info("Solving AMPL...")
-            ampl_mapping_result_dict = ampl_solver_support.solve()
+            # ampl_mapping_result_dict = ampl_solver_support.solve()
         except Exception as e:
             root_logger.exception("Error during AMPL solution: ")
             algorithm_errors.append(traceback.format_exc())
@@ -146,6 +146,9 @@ def setup_environment_for_single_execution(meta_config, simulation_id, current_c
     # save the configuration file for this execution (so it is fully reproducible)
     with open("/".join((folder_path, "config.yml")), "w") as f:
         yaml.dump(current_config, f)
+    # if the export path is given in the model, export the data to the testcase folder instead the original path.
+    if "export_ampl_data_path" in current_config['simulator']:
+        current_config['simulator']['export_ampl_data_path'] = "/".join((folder_path, "ampl_export.dat"))
 
 
 def save_solution_for_single_execution(meta_config : dict, simulation_id : int, current_config : dict, log,
