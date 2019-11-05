@@ -58,11 +58,11 @@ class DataExtractor(object):
                 # maintain error checking and plot data structures
                 dep_sec, dep_key = dependent_section_key.split(self.sep)
                 dependent_value = config[dep_sec][dep_key]
-                if type(dependent_value, list):
-                    dependent_value = tuple(dependent_value)
+                if type(dependent_value) is list:
+                    dependent_value = str(dependent_value)
                 if dependent_value not in plot_data:
                     plot_data[dependent_value] = []
-                    aggr_value_tuples[dependent_value] = set()
+                    aggr_value_tuples[dependent_value] = list()
 
                 # check if we are not adding some values twice!
                 aggr_value_tup = list()
@@ -74,7 +74,7 @@ class DataExtractor(object):
                     raise Exception("Encoutnered the same aggregation value {} twice for dependent value {}".
                                     format(aggr_value_tup, dependent_value))
                 else:
-                    aggr_value_tuples[dependent_value].add(aggr_value_tup)
+                    aggr_value_tuples[dependent_value].append(aggr_value_tup)
 
                 # parse the solution
                 with open("/".join((experiment_path, sim_id_str, sol_file_name))) as sol_f:
