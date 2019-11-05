@@ -1,5 +1,8 @@
 import json
 import yaml
+import os
+import sys
+sys.path.append(os.path.abspath(".."))
 from graphs.mapping_structure import VolatileResourcesMapping
 
 
@@ -55,6 +58,8 @@ class DataExtractor(object):
                 # maintain error checking and plot data structures
                 dep_sec, dep_key = dependent_section_key.split(self.sep)
                 dependent_value = config[dep_sec][dep_key]
+                if type(dependent_value, list):
+                    dependent_value = tuple(dependent_value)
                 if dependent_value not in plot_data:
                     plot_data[dependent_value] = []
                     aggr_value_tuples[dependent_value] = set()
