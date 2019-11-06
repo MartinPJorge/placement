@@ -2,13 +2,32 @@ import json
 import yaml
 import os
 import sys
+import logging
+import numpy as np
+from rainbow_logging_handler import RainbowLoggingHandler
+import matplotlib.pyplot as plt
 sys.path.append(os.path.abspath(".."))
 from graphs.mapping_structure import VolatileResourcesMapping
 
 
+log = logging.getLogger("Plotter")
+consol_handler = RainbowLoggingHandler(sys.stderr, color_funcName=('black', 'yellow', True))
+formatter = logging.Formatter('%(asctime)s.%(name)s.%(levelname).3s: %(message)s')
+consol_handler.setFormatter(formatter)
+consol_handler.setLevel("DEBUG")
+log.addHandler(consol_handler)
+
+
+config_section_key_to_axis_label_dict = {
+    "infrastructure.cluster_move_distances": "Cluster move length [Lat,Lon dist.]"
+}
+
+
 class DataExtractor(object):
 
-    def __init__(self, config_file_name='config.yml', section_key_separator='.'):
+    def __init__(self,  experiment_path, sim_id_num, config_file_name='config.yml', section_key_separator='.'):
+        self.experiment_path = experiment_path
+        self.sim_id_num = sim_id_num
         self.config_file_name = config_file_name
         self.sep = section_key_separator
 
@@ -26,7 +45,7 @@ class DataExtractor(object):
             plot_data[plot_data_key].append(mapping[mapping.OBJECTIVE_VALUE])
         return plot_data
 
-    def extract_plot_data(self, experiment_path, sim_id_num, sol_file_name : str, section_key_filters : dict,
+    def extract_plot_data(self, sol_file_name : str, section_key_filters : dict,
                           dependent_section_key : str, section_keys_to_aggr : list, plot_value_extractor):
         """
 
@@ -39,11 +58,13 @@ class DataExtractor(object):
         :param plot_value_extractor: Function to calculate the value to be plotted based on the mapping object
         :return:
         """
+        log.info("Extracting plot data based on params: \ndependent_section_key: {}\nsection_keys_to_aggr: {}\nsection_key_filters: {}".
+                 format(dependent_section_key, section_keys_to_aggr, section_key_filters))
         plot_data = {}
         aggr_value_tuples = {}
-        for sim_id in range(1, sim_id_num+1):
+        for sim_id in range(1, self.sim_id_num+1):
             sim_id_str = str(sim_id)
-            with open("/".join((experiment_path, sim_id_str, self.config_file_name))) as config_f:
+            with open("/".join((self.experiment_path, sim_id_str, self.config_file_name))) as config_f:
                 config = yaml.load(config_f)
                 skip_sim_id = False
                 # skip the simulation ID if any of the filters are not met
@@ -71,29 +92,50 @@ class DataExtractor(object):
                     aggr_value_tup.append(config[agg_sec][agg_key])
                 aggr_value_tup = tuple(aggr_value_tup)
                 if aggr_value_tup in aggr_value_tuples[dependent_value]:
-                    raise Exception("Encoutnered the same aggregation value {} twice for dependent value {}".
+                    raise Exception("Encountered the same aggregation value {} twice for dependent value {}".
                                     format(aggr_value_tup, dependent_value))
                 else:
                     aggr_value_tuples[dependent_value].append(aggr_value_tup)
 
                 # parse the solution
-                with open("/".join((experiment_path, sim_id_str, sol_file_name))) as sol_f:
+                with open("/".join((self.experiment_path, sim_id_str, sol_file_name))) as sol_f:
                     sol_dict = json.load(sol_f)
                     mapping = VolatileResourcesMapping(**sol_dict)
+                    log.debug("Mapping object of simulation id {}:\n{}".format(sim_id_str, mapping))
                     # extend the plotdata with the given method
                     plot_data = plot_value_extractor(mapping, plot_data, dependent_value)
-        print(json.dumps(aggr_value_tuples, indent=2))
+        log.debug("Aggregation value tuples: \n{}".format(json.dumps(aggr_value_tuples, indent=2)))
+        log.info("Data to be plotted: \n{}".format(json.dumps(pd, indent=2)))
         return plot_data
 
 
+class MakeBoxPlot(object):
+
+    def __init__(self, data_extractor: DataExtractor, output_filetype):
+        self.data_extractor = data_extractor
+        self.plots_path = os.path.join(data_extractor.experiment_path, "plots")
+        os.system("mkdir {}".format(self.plots_path))
+        self.output_filetype = "." + output_filetype
+
+    def plot(self, file_name, plot_data, dependent_section_key, y_axis_label):
+        """
+
+
+        :param plot_data:
+        :param y_axis_label:
+        :return:
+        """
+        fig, ax = plt.subplots()
+        pos = np.array(range(len(plot_data))) + 1
+        ax.boxplot(plot_data, positions=pos, whis=1.5,
+                   boxprops={'linewidth': 2}, medianprops={'linewidth': 3}, whiskerprops={'linewidth': 1.8})
+        ax.set_xticklabels(plot_data.keys())
+        ax.set_xlabel(config_section_key_to_axis_label_dict[dependent_section_key])
+        ax.set_ylabel(y_axis_label)
+        plt.savefig(os.path.join(self.plots_path, file_name) + self.output_filetype)
+
+
 if __name__ == "__main__":
-    filter_dict = {"simulator.run_ampl": True,
-                   "infrastructure.gml_file" : "../graphs/infras/cobo-calleja/pico-and-micro-cobo-calleja-ref-1.gml"}
-    pd = DataExtractor().extract_plot_data("results/large_tests/", 480, sol_file_name="ampl_solution.json",
-                                      section_key_filters=filter_dict,
-                                      dependent_section_key="infrastructure.cluster_move_distances",
-                                      section_keys_to_aggr=["service.seed"],
-                                      plot_value_extractor=DataExtractor.get_objective_function_value)
 
     # filter_dict = {"simulator.run_heuristic": True,
     #                "infrastructure.unloaded_battery_alive_prob" : 0.99}
@@ -102,13 +144,31 @@ if __name__ == "__main__":
     #                                   dependent_section_key="optimization.improvement_score_limit",
     #                                   section_keys_to_aggr=["infrastructure.gml_file"],
     #                                   plot_value_extractor=DataExtractor.get_objective_function_value)
-    print("AMPL\n", json.dumps(pd, indent=2))
 
-    filter_dict = {"simulator.run_ampl": True,
-                   "infrastructure.gml_file": "../graphs/infras/cobo-calleja/pico-and-micro-cobo-calleja-ref-1.gml"}
-    pd = DataExtractor().extract_plot_data("results/large_tests/", 480, sol_file_name="heuristic_solution.json",
-                                           section_key_filters=filter_dict,
-                                           dependent_section_key="infrastructure.cluster_move_distances",
-                                           section_keys_to_aggr=["service.seed"],
-                                           plot_value_extractor=DataExtractor.get_objective_function_value)
-    print("HEUR\n", json.dumps(pd, indent=2))
+    ref_to_path = {
+        'ref-1': "../graphs/infras/cobo-calleja/pico-and-micro-cobo-calleja-ref-1.gml",
+        'ref-2': "../graphs/infras/cobo-calleja/pico-and-micro-cobo-calleja-ref-2.gml",
+        'ref-3': "../graphs/infras/cobo-calleja/pico-and-micro-cobo-calleja-ref-3.gml"
+    }
+    de = DataExtractor("results/large_tests/", 480)
+    boxplotter = MakeBoxPlot(de, "png")
+    for ref in ('ref-1', 'ref-2', 'ref-3'):
+        for improvement_limit in (0, 1, 2, 3, 4):
+            filter_dict = {"optimization.improvement_score_limit": improvement_limit,
+                           "infrastructure.gml_file" : ref_to_path[ref]}
+            if improvement_limit == 0:
+                # this was the only non product group element, when the AMPL was run
+                pd1 = de.extract_plot_data(sol_file_name="ampl_solution.json",
+                                                  section_key_filters=filter_dict,
+                                                  dependent_section_key="infrastructure.cluster_move_distances",
+                                                  section_keys_to_aggr=["service.seed"],
+                                                  plot_value_extractor=DataExtractor.get_objective_function_value)
+                boxplotter.plot("ampl-on-{}".format(ref), pd1, "infrastructure.cluster_move_distances", "Objective value")
+
+            pd2 = de.extract_plot_data(sol_file_name="heuristic_solution.json",
+                                                   section_key_filters=filter_dict,
+                                                   dependent_section_key="infrastructure.cluster_move_distances",
+                                                   section_keys_to_aggr=["service.seed"],
+                                                   plot_value_extractor=DataExtractor.get_objective_function_value)
+            boxplotter.plot("heuristic-on-{}-impr-{}".format(ref, improvement_limit), pd2, "infrastructure.cluster_move_distances", "Objective value")
+
