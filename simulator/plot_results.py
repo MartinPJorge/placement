@@ -105,7 +105,7 @@ class DataExtractor(object):
                     # extend the plotdata with the given method
                     plot_data = plot_value_extractor(mapping, plot_data, dependent_value)
         log.debug("Aggregation value tuples: \n{}".format(json.dumps(aggr_value_tuples, indent=2)))
-        log.info("Data to be plotted: \n{}".format(json.dumps(pd, indent=2)))
+        log.info("Data to be plotted: \n{}".format(json.dumps(plot_data, indent=2)))
         return plot_data
 
 
@@ -127,6 +127,9 @@ class MakeBoxPlot(object):
         """
         fig, ax = plt.subplots()
         pos = np.array(range(len(plot_data))) + 1
+        values_to_plot = []
+        for k in plot_data.keys():
+            values_to_plot.append(plot_data[k])
         ax.boxplot(plot_data, positions=pos, whis=1.5,
                    boxprops={'linewidth': 2}, medianprops={'linewidth': 3}, whiskerprops={'linewidth': 1.8})
         ax.set_xticklabels(plot_data.keys())
