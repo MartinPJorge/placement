@@ -32,6 +32,12 @@ class DataExtractor(object):
         self.sep = section_key_separator
 
     @staticmethod
+    def get_running_time(mapping : VolatileResourcesMapping, plot_data, plot_data_key):
+        if mapping[mapping.RUNNING_TIME] is not None:
+            plot_data[plot_data_key].append(mapping[mapping.RUNNING_TIME])
+        return plot_data
+
+    @staticmethod
     def get_objective_function_value(mapping : VolatileResourcesMapping, plot_data, plot_data_key):
         """
         Function which can be used as "plot_value_extractor" to extract objective function if the case is feasible
