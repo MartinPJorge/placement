@@ -130,11 +130,17 @@ class MakeBoxPlot(object):
         values_to_plot = []
         for k in plot_data.keys():
             values_to_plot.append(plot_data[k])
-        ax.boxplot(plot_data, positions=pos, whis=1.5,
+        ax.boxplot(values_to_plot, positions=pos, whis=1.5,
                    boxprops={'linewidth': 2}, medianprops={'linewidth': 3}, whiskerprops={'linewidth': 1.8})
         ax.set_xticklabels(plot_data.keys())
         ax.set_xlabel(config_section_key_to_axis_label_dict[dependent_section_key])
         ax.set_ylabel(y_axis_label)
+
+        # show sample size
+        ax.text(0.0, 1.05, "sample size", transform=ax.get_xaxis_transform())
+        for xtick, data_label in zip(pos, plot_data.keys()):
+            ax.text(xtick, 1.05, str(len(plot_data[data_label])), transform=ax.get_xaxis_transform())
+
         plt.savefig(os.path.join(self.plots_path, file_name) + self.output_filetype)
 
 
@@ -166,12 +172,13 @@ if __name__ == "__main__":
                                                   dependent_section_key="infrastructure.cluster_move_distances",
                                                   section_keys_to_aggr=["service.seed"],
                                                   plot_value_extractor=DataExtractor.get_objective_function_value)
-                boxplotter.plot("ampl-on-{}".format(ref), pd1, "infrastructure.cluster_move_distances", "Objective value")
+                boxplotter.plot("ampl-on-{}".format(ref), pd1, "infrastructure.cluster_move_distances", "Objective function value")
 
             pd2 = de.extract_plot_data(sol_file_name="heuristic_solution.json",
                                                    section_key_filters=filter_dict,
                                                    dependent_section_key="infrastructure.cluster_move_distances",
                                                    section_keys_to_aggr=["service.seed"],
                                                    plot_value_extractor=DataExtractor.get_objective_function_value)
-            boxplotter.plot("heuristic-on-{}-impr-{}".format(ref, improvement_limit), pd2, "infrastructure.cluster_move_distances", "Objective value")
+            boxplotter.plot("heuristic-on-{}-impr-{}".format(ref, improvement_limit), pd2, "infrastructure.cluster_move_distances",
+                            "Objective function value")
 
