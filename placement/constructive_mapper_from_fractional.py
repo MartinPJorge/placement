@@ -2,6 +2,7 @@ import logging
 from rainbow_logging_handler import RainbowLoggingHandler
 import sys
 import math
+import time
 
 from .mapper import AbstractMapper
 from graphs.mapping_structure import VolatileResourcesMapping
@@ -76,7 +77,6 @@ class ConstructiveMapperFromFractional(AbstractMapper):
             self.items.append(Item(n, node_dict[ns.nf_demand_str], node_dict, possible_bins=[]))
         min_weighted_item = min(self.items, key=lambda i: i['weight'])
         for n, node_dict in infra.nodes(data=True):
-            # TODO: fill in from values of the node based on checker.
             bin = Bin(n, node_dict[infra.infra_node_capacity_str], node_dict[infra.infra_fixed_cost_str],
                       node_dict[infra.infra_unit_cost_str], node_dict, mapped_here=[])
             if bin['capacity'] >= min_weighted_item['weight']:
@@ -404,6 +404,7 @@ class ConstructiveMapperFromFractional(AbstractMapper):
                                                                                 self.coverage_threshold))
 
     def map(self, infra, ns) -> dict:
+        start_timestamp = time.time()
         mapping = VolatileResourcesMapping()
         # Check that graphs have correct format
         if not self.__checker.check_infra(infra) or not self.__checker.check_ns(ns):
@@ -436,8 +437,12 @@ class ConstructiveMapperFromFractional(AbstractMapper):
                 best_bins, can_add_next_bin = self.get_new_best_bins(best_bins, any_violation_left)
         except UnfeasibleVolatileResourcesProblem as ubp:
             self.log.info(ubp.msg)
+            mapping[mapping.RUNNING_TIME] = time.time() - start_timestamp
             return mapping
 
+        # we want to save timestamp for all possible outputs (success, not found,
+        # if unhandled exception is raised it will stay the default None)
+        mapping[mapping.RUNNING_TIME] = time.time() - start_timestamp
         if not self.check_all_constraints_calculate_objective(infra) or any_violation_left:
             self.log.info("Volatile resources solution not found by the heuristic!")
             return mapping
