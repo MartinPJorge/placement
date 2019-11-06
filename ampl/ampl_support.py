@@ -2,6 +2,7 @@ import logging
 import sys
 from rainbow_logging_handler import RainbowLoggingHandler
 import traceback
+import time
 
 import amplpy
 
@@ -73,6 +74,7 @@ class AMPLSolverSupport(object):
             self.ampl.exportData(export_ampl_data_path)
         self.log.info("Parsing to AMPL is successful!")
         self.ampl.setOption('solver', 'gurobi')
+        self.start_timestamp = None
 
     def construct_mapping(self, objective : amplpy.objective.Objective):
         """
@@ -87,6 +89,7 @@ class AMPLSolverSupport(object):
         except RuntimeError as e:
             return mapping
         if result_str == 'infeasible':
+            mapping[mapping.RUNNING_TIME] = time.time() - self.start_timestamp
             return mapping
         elif result_str == 'solved':
             mapping[VolatileResourcesMapping.WORKED] = True
@@ -104,10 +107,11 @@ class AMPLSolverSupport(object):
                             ap_name, subinterval = key
                             mapping.add_access_point_selection(subinterval, ap_name)
 
-            mapping[mapping.OBJECTIVE_VALUE] = objective.value()
             if not mapping.validate_mapping(self.service_instance, self.substrate_network, **self.optimization_kwargs):
                 raise Exception("Mapping of the AMPL model is invalid!")
             self.log.info("Mapping structure validation is successful!")
+            mapping[mapping.OBJECTIVE_VALUE] = objective.value()
+            mapping[mapping.RUNNING_TIME] = time.time() - self.start_timestamp
             return mapping
         elif '?' in result_str:
             # happens for example in case of too big model for a demo license
@@ -124,6 +128,7 @@ class AMPLSolverSupport(object):
         """
         # NOTE: error and warning handling are done by AMPLErrorHandler
         self.log.info("Starting AMPL solver...")
+        self.start_timestamp = time.time()
         self.ampl.solve()
         objective = self.ampl.getObjective("Total_cost")
         try:
