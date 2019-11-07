@@ -48,7 +48,8 @@ class GMLGraph(nx.DiGraph):
 
 class InfrastructureGMLGraph(GMLGraph):
 
-    def __init__(self, incoming_graph_data=None, gml_file=None, label='label', seed=0, cluster_move_distances=None,
+    def __init__(self, incoming_graph_data=None, gml_file=None, label='label', seed=0, cluster_move_distances=None, cluster_move_waypoints=None,
+                 coverage_blocking_areas=None,
                  time_interval_count=None, unloaded_battery_alive_prob=0.99, full_loaded_battery_alive_prob=0.2, **attr):
         """
         Reads a gml file constructed by mec-gen and generates the additional parameters.
@@ -120,9 +121,17 @@ class InfrastructureGMLGraph(GMLGraph):
         # a dict of each AP_id to their coverage probability. A mobile cluster is identified by one of its nodes (master node),
         # which relays the traffic of all mobile nodes towars the fixed part of the infra.
         self.ap_coverage_probabilities = {}
+        self.coverage_blocking_areas = coverage_blocking_areas
         if cluster_move_distances is not None:
             self.generate_mobility_pattern(cluster_move_distances)
-
+        elif cluster_move_waypoints is not None:
+            if self.coverage_blocking_areas is None:
+                raise Exception("Coverage blocking areas must be given if cluster move waypoints are given.")
+            else:
+                # list of 4-tuples of 2-tuples of floats, in order topleft, topright, bottomright, bottomleft
+                self.coverage_blocking_areas_coords = [((40.271401, -3.752911), (40.271360, -3.751570), (40.269780, -3.751132), (40.270615, -3.752761))]
+            # TODO: open and process the waypoints
+            self.generate_mobility_pattern_from_waypoints([(40.269342, -3.753353), (40.270131, -3.752146), (40.271217, -3.750646), (40.270353, -3.750454)])
         # Calculate on all unconnected components (i.e between the nodes of each clusters and the fixed part)
         self.shortest_paths_fixed_part = dict(nx.all_pairs_dijkstra_path_length(self, weight=self.link_delay_str))
 
@@ -205,6 +214,7 @@ class InfrastructureGMLGraph(GMLGraph):
 
         :return:
         """
+        # TODO: if compatibility with this cluster move distances and waypoints should be kept, might be some refactoring to avoid code duplication.
         # so we wont modify the input parameter by .pop()
         cluster_move_distances = list(cluster_move_distances)
         for connected_comp in self.get_connected_components():
@@ -237,10 +247,7 @@ class InfrastructureGMLGraph(GMLGraph):
                 for dir_mul in direction_multiplier_list:
                     current_p = push_point(init_master_coordinates, best_move_vector, dir_mul * dist_in_one_interval)
                     time_interval_idx = time_intervald_indexes.pop()
-                    self.ap_coverage_probabilities[master_mobile][time_interval_idx] = {}
-                    for ap_id in self.access_point_ids:
-                        self.ap_coverage_probabilities[master_mobile][time_interval_idx][ap_id] = \
-                            self.get_coverage_probability(current_p, ap_id)
+                    self.add_all_coverage_probs(master_mobile, time_interval_idx, current_p)
 
     def distance_to_raw_probability_1(self, dist, ap_reach):
         return - (dist / (ap_reach)) ** 2 + 1.0
@@ -251,7 +258,7 @@ class InfrastructureGMLGraph(GMLGraph):
         else:
             return - (5.0 * 0.95 * dist / ap_reach) + 4.0 * 0.95
 
-    def get_coverage_probability(self, current_mobile_pos, ap_id):
+    def get_coverage_probability(self, current_mobile_pos, ap_id, check_LoS=False):
         """
         Calculates the probabilty of covering the mobile node in its current position by the given AP.
         Uses the reach of the AP to get the probability. If the mobile position is on the border of the reach the
@@ -261,7 +268,11 @@ class InfrastructureGMLGraph(GMLGraph):
         :param ap_id:
         :return:
         """
-        Pjx, Pjy = self.relative_coordinates(current_mobile_pos, self.nodes[ap_id])
+        ap_data = self.nodes[ap_id]
+        if check_LoS:
+            if not self.is_line_of_sight(current_mobile_pos, (ap_data['lat'], ap_data['lon'])):
+                return 0.0
+        Pjx, Pjy = self.relative_coordinates(current_mobile_pos, ap_data)
         dist = math.sqrt(Pjx ** 2 + Pjy ** 2)
         # AP reach is given in meters, but we need it in degrees
         reach = self.nodes[ap_id][self.ap_reach_str] / self.one_degree_in_meters
@@ -374,6 +385,147 @@ class InfrastructureGMLGraph(GMLGraph):
             self.total_ap_distance_from_point(push_point(init_master_coordinates, (-unit_direction[0], -unit_direction[1]), dist_in_one_interval)):
             unit_direction = (-unit_direction[0], -unit_direction[1])
         return unit_direction
+
+    def generate_mobility_pattern_from_waypoints(self, cluster_waypoints):
+        """
+        Calculates the coverage probabilities of the cluster in each time instance by each AP.
+        The cluster moves in straight lines between the cluster waypoints.
+
+        :return:
+        """
+        for connected_comp in self.get_connected_components():
+            # see if this is a mobile node cluster
+            if any(m in connected_comp for m in self.mobile_ids):
+                # there must be at least one endpoint in each cluster
+                endpoints_in_component = list(filter(lambda m: m in self.endpoint_ids, connected_comp.nodes))
+                if len(endpoints_in_component) == 0:
+                    raise Exception("No endpoint found in mobile cluster {}".format(connected_comp.nodes))
+                else:
+                    endpoint = self.random.choice(endpoints_in_component)
+                self.cluster_endpoint_ids.append(endpoint)
+                master_mobile = self.random.choice([m for m in filter(lambda m: m in self.mobile_ids, connected_comp.nodes)])
+                self.log.debug("Generating mobility pattern for mobile cluster with master {}".format(master_mobile))
+                self.mobile_cluster_id_to_node_ids[master_mobile] = list(connected_comp.nodes()) + [endpoint]
+                self.ap_coverage_probabilities[master_mobile] = {}
+                # shifts p in direction of v by d units
+                push_point = lambda p, v, d: (p[0] + v[0]*d, p[1] + v[1]*d)
+                if len(cluster_waypoints) < 2:
+                    raise Exception("There must be at least 2 waypoints in the mobility pattern!")
+                total_path_length = 0
+                for wayp1, wayp2 in zip(cluster_waypoints[:-1], cluster_waypoints[1:]):
+                    total_path_length += self.length_of_segment(wayp1, wayp2)
+                move_dist_one_interval = total_path_length / self.time_interval_count
+                waypoint_dist_compensation = 0
+                for subinterval_index in range(1, self.time_interval_count+1):
+                    move_from_wayp1 = move_dist_one_interval
+                    for wayp1, wayp2 in zip(cluster_waypoints[:-1], cluster_waypoints[1:]):
+                        wayp_dist = self.length_of_segment(wayp1, wayp2) - waypoint_dist_compensation
+                        if move_from_wayp1 > wayp_dist:
+                            move_from_wayp1 -= wayp_dist
+                            # after reaching the wayp2, we do not need distance compensation
+                            waypoint_dist_compensation = 0
+                        else:
+                            # in the next interval we need to move this much less between these endpoints
+                            waypoint_dist_compensation = move_from_wayp1
+                            break
+                    # we know we need to move from wayp1 to the direction of wayp2 a distance of move_from_wayp1
+                    # NOTE: wayp-s are defined here, becuase there are at least 2 waypoints!
+                    wayp_dist = self.length_of_segment(wayp1, wayp2)
+                    move_direction = ((wayp2[0])-wayp1[0], (wayp2[1])-wayp1[1])
+                    current_p = push_point(wayp1, move_direction, move_from_wayp1/wayp_dist)
+                    self.add_all_coverage_probs(master_mobile, subinterval_index, current_p, check_LoS=True)
+
+    def add_all_coverage_probs(self, master_mobile, subinterval_index, current_p, check_LoS=False):
+        self.ap_coverage_probabilities[master_mobile][subinterval_index] = {}
+        for ap_id in self.access_point_ids:
+            self.ap_coverage_probabilities[master_mobile][subinterval_index][ap_id] = \
+                self.get_coverage_probability(current_p, ap_id, check_LoS)
+
+    def length_of_segment(self, x1y1, x2y2):
+        """
+        Calculates the length of a segment defined by the two points
+
+        :param x1y1:
+        :param x2y2:
+        :return:
+        """
+        x1, y1 = x1y1
+        x2, y2 = x2y2
+        return math.sqrt((x1 - x2)**2 + (y1 - y2)**2)
+
+    def does_segments_intersect(self, x1y1, x2y2, u1v1, u2v2):
+        """
+        Checks if two line segments between the defined points are intersecting inside the segments.
+        y = ax + c is the line through points x1y1, x2y2
+        y = bx + d is the line through points u1v1, u2v2
+
+        :param x1y1:
+        :param x2y2:
+        :param u1v1:
+        :param u2v2:
+        :return:
+        """
+        x1, y1 = x1y1
+        x2, y2 = x2y2
+        xy_len = self.length_of_segment(x1y1, x2y2)
+        u1, v1 = u1v1
+        u2, v2 = u2v2
+        uv_len = self.length_of_segment(u1v1, u2v2)
+        # Get intersection of a y = mx + b and x=x_axis_intersection lines.
+        get_intersection_of_yaxis_parallel = lambda x_0, m, b: (x_0, m * x_0 + b)
+        if x1 == x2:
+            if u1 == u2:
+                # both lines are parallel to the y axis
+                return False
+            else:
+                m = (v2 - v1) / (u2 - u1)
+                intersection = get_intersection_of_yaxis_parallel(x1, m, v1-m*u1)
+        else:
+            a = (y2 - y1) / (x2 - x1)
+            c = y1 - a * x1
+            if u1 == u2:
+                intersection = get_intersection_of_yaxis_parallel(u1, a, c)
+            else:
+                b = (v2 - v1) / (u2 - u1)
+                d = v1 - b * u1
+                if a == b:
+                    # the lines have the same angle (it might happen that they are exactly on each other, but we can handle it as it is
+                    # in the LOS)
+                    return False
+                else:
+                    intersection = ((d - c) / (a - b),
+                                    (a*d - b*c) / (a - b))
+        # the intersection is on the xy segment and on  the uv segment (this works in any parallel cases too!)
+        if self.length_of_segment(x1y1, intersection) < xy_len and self.length_of_segment(x2y2, intersection) < xy_len and\
+                    self.length_of_segment(u1v1, intersection) < uv_len and self.length_of_segment(u2v2, intersection) < uv_len:
+            return True
+        else:
+            return False
+
+    def is_line_of_sight(self, P1, P2):
+        """
+        Checks if the line between the P1 and P2 points blocked by any of the coverage blocking areas.
+
+        :param P1:
+        :param P2:
+        :return:
+        """
+        for cov_block_area in self.coverage_blocking_areas_coords:
+            tl, tr, br, bl = cov_block_area
+            number_of_segment_intersections = 0
+            # iterate on all sides of a block
+            for block_p1, block_p2 in zip([tl, tr, br, bl], [tr, br, bl, tl]):
+                if self.does_segments_intersect(P1, P2, block_p1, block_p2):
+                    number_of_segment_intersections += 1
+            if number_of_segment_intersections == 1:
+                raise Exception("Intersecting only one side of a coverage blocking area, meaning {} or {} is inside {}".
+                                format(P1, P2, cov_block_area))
+            elif number_of_segment_intersections == 0:
+                return True
+            elif number_of_segment_intersections == 2:
+                return False
+            else:
+                raise Exception("Intersecting more than 2 sides of a rectangle should not be possible!")
 
 
 class ServiceGMLGraph(GMLGraph):
