@@ -129,7 +129,7 @@ class InfrastructureGMLGraph(GMLGraph):
                 raise Exception("Coverage blocking areas must be given if cluster move waypoints are given.")
             else:
                 # list of 4-tuples of 2-tuples of floats, in order topleft, topright, bottomright, bottomleft
-                self.coverage_blocking_areas_coords = [((40.271401, -3.752911), (40.271360, -3.751570), (40.269780, -3.751132), (40.270615, -3.752761))]
+                self.coverage_blocking_areas_coords = [((40.271401, -3.752911), (40.271360, -3.751570), (40.270705, -3.752082), (40.270615, -3.752761))]
             # TODO: open and process the waypoints
             self.generate_mobility_pattern_from_waypoints([(40.269342, -3.753353), (40.270131, -3.752146), (40.271217, -3.750646), (40.270353, -3.750454)])
         # Calculate on all unconnected components (i.e between the nodes of each clusters and the fixed part)
@@ -412,28 +412,51 @@ class InfrastructureGMLGraph(GMLGraph):
                 if len(cluster_waypoints) < 2:
                     raise Exception("There must be at least 2 waypoints in the mobility pattern!")
                 total_path_length = 0
-                for wayp1, wayp2 in zip(cluster_waypoints[:-1], cluster_waypoints[1:]):
+                path_segments = list(zip(cluster_waypoints[:-1], cluster_waypoints[1:]))
+                for wayp1, wayp2 in path_segments:
                     total_path_length += self.length_of_segment(wayp1, wayp2)
-                move_dist_one_interval = total_path_length / self.time_interval_count
-                waypoint_dist_compensation = 0
-                for subinterval_index in range(1, self.time_interval_count+1):
-                    move_from_wayp1 = move_dist_one_interval
-                    for wayp1, wayp2 in zip(cluster_waypoints[:-1], cluster_waypoints[1:]):
-                        wayp_dist = self.length_of_segment(wayp1, wayp2) - waypoint_dist_compensation
-                        if move_from_wayp1 > wayp_dist:
-                            move_from_wayp1 -= wayp_dist
-                            # after reaching the wayp2, we do not need distance compensation
-                            waypoint_dist_compensation = 0
-                        else:
-                            # in the next interval we need to move this much less between these endpoints
-                            waypoint_dist_compensation = move_from_wayp1
-                            break
-                    # we know we need to move from wayp1 to the direction of wayp2 a distance of move_from_wayp1
-                    # NOTE: wayp-s are defined here, becuase there are at least 2 waypoints!
+                move_dist_one_interval = total_path_length / (self.time_interval_count-1)
+                current_p = cluster_waypoints[0]
+                distance_travelled = 0
+                subinterval_index = 1
+                # The first time moment is the first waypoint! (ignores the location of the cluster written in the infra GML file!)
+                move_required = 0
+                for wayp1, wayp2 in path_segments:
                     wayp_dist = self.length_of_segment(wayp1, wayp2)
-                    move_direction = ((wayp2[0])-wayp1[0], (wayp2[1])-wayp1[1])
-                    current_p = push_point(wayp1, move_direction, move_from_wayp1/wayp_dist)
-                    self.add_all_coverage_probs(master_mobile, subinterval_index, current_p, check_LoS=True)
+                    if wayp_dist > move_required:
+                        # the next point is between these waypoints
+                        move_direction = ((wayp2[0] - wayp1[0])/wayp_dist, (wayp2[1] - wayp1[1])/wayp_dist)
+                        current_p = push_point(current_p, move_direction, move_required)
+                        self.add_all_coverage_probs(master_mobile, subinterval_index, current_p, check_LoS=True)
+                        subinterval_index += 1
+                        # we might fit many current points between a single pair of waypoints
+                        distance_travelled_between_these_waypoints = move_required
+                        while distance_travelled_between_these_waypoints + move_dist_one_interval < wayp_dist:
+                            current_p = push_point(current_p, move_direction, move_dist_one_interval)
+                            self.add_all_coverage_probs(master_mobile, subinterval_index, current_p, check_LoS=True)
+                            subinterval_index += 1
+                            distance_travelled_between_these_waypoints += move_dist_one_interval
+                        # account for the original move required, and for any amount of intervals we travelled here
+                        distance_travelled += distance_travelled_between_these_waypoints
+                        # there might be some distance left to the next waypoint, which is smaller than a whole interval's move distance and
+                        # we need to account for at the next travelling. Set the position to waypoint 2
+                        small_dist_to_next_waypoint = wayp_dist - distance_travelled_between_these_waypoints
+                        distance_travelled += small_dist_to_next_waypoint
+                        # jump to the end of this waypoint segment
+                        current_p = wayp2
+                        move_required = move_dist_one_interval - small_dist_to_next_waypoint
+                    else:
+                        distance_travelled += wayp_dist
+                        move_required -= wayp_dist
+                        current_p = wayp2
+                # the last waypoint needs to be handled separately, subintervalindex is must be the last one
+                self.add_all_coverage_probs(master_mobile, subinterval_index, cluster_waypoints[-1], check_LoS=True)
+                if subinterval_index != self.time_interval_count:
+                    raise Exception("Mobility pattern generated to incorrect amount of subintervals: {} instead of {}".
+                                    format(subinterval_index, self.time_interval_count))
+                if math.fabs(distance_travelled - total_path_length) > 1e-6:
+                    raise Exception("Actual distance travelled deviates too much from the total path length: {} instead of {}".
+                                    format(distance_travelled, total_path_length))
 
     def add_all_coverage_probs(self, master_mobile, subinterval_index, current_p, check_LoS=False):
         self.ap_coverage_probabilities[master_mobile][subinterval_index] = {}
