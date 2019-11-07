@@ -145,3 +145,16 @@ class PruneLocalityConstraints(BasePruningStep):
                     if bin['id'] not in item['node_dict'][ns.location_constr_str]:
                         item.possible_bins.remove(bin)
         return items, bins
+
+
+class InvalidableAPSelectionDict(dict):
+
+    VALID_STR = "AP_selection_valid"
+
+    def __init__(self, *args, **kwargs):
+        super(InvalidableAPSelectionDict, self).__init__(*args, **kwargs)
+        if InvalidableAPSelectionDict.VALID_STR not in self:
+
+    def __getitem__(self, item):
+        if item !=
+
