@@ -1,6 +1,7 @@
 base_config_file: "test_base_config.yml"                                     # Path to config file which stores the structure and
                                                                             # the default simulation parameters.
 simulation_name: "tests"                                                    # String identifying the experiment (folder created for it)
+threads: 2                                                                  # number of parallel executions of simulations
 non_product_groups:                                                         # list of keys from the config file, where instead of product, zipping should be applied for creating the single configs
   - [infrastructure.unloaded_battery_alive_prob, infrastructure.full_loaded_battery_alive_prob]
   - [optimization.improvement_score_limit, simulator.run_ampl]
