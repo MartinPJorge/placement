@@ -444,7 +444,7 @@ class ServiceGMLGraph(GMLGraph):
                 G.add_edge(u, v)
         for u in G.nodes:
             # TODO: add parameters
-            self.add_node(u, weight=self.random.uniform(0.5, 1.05), name=self.get_node_name(u))
+            self.add_node(u, weight=self.random.uniform(0.05, 0.105), name=self.get_node_name(u))
         for u,v,k in G.edges:
             if u != v and not self.has_edge(u, v):
                 # TODO: add parameters
