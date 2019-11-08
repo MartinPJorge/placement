@@ -147,14 +147,33 @@ class PruneLocalityConstraints(BasePruningStep):
         return items, bins
 
 
-class InvalidableAPSelectionDict(dict):
+class InvalidableAPSelectionStruct(object):
 
-    VALID_STR = "AP_selection_valid"
+    def __init__(self):
+        """
+        Structure to store the AP selection mapping as a shared object between all SFC constraint violation checkers.
+        No variables should be accessed when the struct is invalid!
+        """
+        self.struct_valid = False
+        self.ap_selection = {}
 
-    def __init__(self, *args, **kwargs):
-        super(InvalidableAPSelectionDict, self).__init__(*args, **kwargs)
-        if InvalidableAPSelectionDict.VALID_STR not in self:
+    def __getitem__(self, subinterval_index):
+        assert self.struct_valid
+        return self.ap_selection[subinterval_index]
 
-    def __getitem__(self, item):
-        if item !=
+    def items(self):
+        assert self.struct_valid
+        for k, v in self.ap_selection.items():
+            yield k, v
+
+    def add_ap_selection_dict(self, full_selection : dict):
+        self.struct_valid = True
+        self.ap_selection = dict(full_selection)
+
+    def invalidate(self):
+        self.struct_valid = False
+
+    @property
+    def is_valid(self):
+        return self.struct_valid
 

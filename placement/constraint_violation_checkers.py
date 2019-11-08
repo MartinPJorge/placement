@@ -75,21 +75,19 @@ class BinCapacityViolationChecker(BaseConstraintViolationChecker):
 
 class DelayAndCoverageViolationChecker(BaseConstraintViolationChecker):
 
-    # stores the AP id for each time interval which, has the lowest delay, obeying the coverage probability
-    # The variable needs to be class level, because the AP selection must agree for all SFC-s. It is set to None
-    chosen_ap_ids = None
-
     def __init__(self, items, bins, infra : InfrastructureGMLGraph, ns : ServiceGMLGraph, item_move_function, sfc_delay, sfc_path,
-                 time_interval_count, coverage_threshold):
+                 time_interval_count, coverage_threshold, shared_ap_selection : InvalidableAPSelectionStruct):
         super(DelayAndCoverageViolationChecker, self).__init__(items, bins, infra, ns, item_move_function)
         self.sfc_delay = sfc_delay
         self.sfc_path = sfc_path
         self.affected_nfs = [v for u,v in self.sfc_path]
         self.coverage_threshold = coverage_threshold
         self.time_interval_count = time_interval_count
-        # if a class is instantiated set the value to non existing, and from this point on, any instance of the class is executed,
-        # it must give the same AP selection in all subintervals OR set it back to none, if its constraint is violated.
-        DelayAndCoverageViolationChecker.chosen_ap_ids = None
+        # stores the AP id for each time interval which, has the lowest delay, obeying the coverage probability
+        # The variable needs to be shared among all instances of the class, because the AP selection must agree for all SFC-s.
+        # From this point on, any instance of the class is executed,
+        # it must give the same AP selection in all subintervals OR set it back to invalid, if its constraint is violated.
+        self.chosen_ap_ids = shared_ap_selection
 
     def get_cheapest_ap_id(self, subinterval):
         """
@@ -118,7 +116,7 @@ class DelayAndCoverageViolationChecker(BaseConstraintViolationChecker):
             (number of subintervals, where the SFC delay is infinite;
             number of subintervals, where remaining SFC delay is negative)
         Second number is only informative, if the first number is 0.
-        Updates the DelayAndCoverageViolationChecker.chosen_ap_ids dictionary to reflect the violation metrics returned by the function.
+        Updates the shared chosen_ap_ids struct to reflect the violation metrics returned by the function.
 
         :return: int tuple
         """
@@ -182,22 +180,23 @@ class DelayAndCoverageViolationChecker(BaseConstraintViolationChecker):
                     else:
                         # if AP cannot be selected (due to only coverage criteria, this is a bad mapping in this subinterval
                         inf_count_subinterval += 1
-                        DelayAndCoverageViolationChecker.chosen_ap_ids = None
+                        self.chosen_ap_ids.invalidate()
                 else:
                     raise Exception("AP must always be selected if the delay and coverage are OK in a mapping!")
             else:
-                DelayAndCoverageViolationChecker.chosen_ap_ids = None
+                self.chosen_ap_ids.invalidate()
 
         # if the delay and coverage values are violated in none of the subintervals, then we have an AP selection
         if inf_count_subinterval == 0 and negative_rem_delay_subinterval == 0:
-            if DelayAndCoverageViolationChecker.chosen_ap_ids is not None:
+            if self.chosen_ap_ids.is_valid:
                 # check if the AP selection matches with the earlier one, all SFC-s need to agree on one!
-                for subinterval, ap_id in DelayAndCoverageViolationChecker.chosen_ap_ids.items():
-                    if DelayAndCoverageViolationChecker.chosen_ap_ids[subinterval] != current_chosen_ap_ids[subinterval]:
+                # (which is enforced by the way AP-s are selected, here we execute a check)
+                for subinterval, ap_id in self.chosen_ap_ids.items():
+                    if self.chosen_ap_ids[subinterval] != current_chosen_ap_ids[subinterval]:
                         raise Exception("Some SFC-s do not agree on the selected access points in time interval {} based on "
                                         "minimal delay, coverage obeying method!".format(subinterval))
             else:
-                DelayAndCoverageViolationChecker.chosen_ap_ids = current_chosen_ap_ids
+                self.chosen_ap_ids.add_ap_selection_dict(current_chosen_ap_ids)
 
         return inf_count_subinterval, negative_rem_delay_subinterval
 
@@ -253,29 +252,6 @@ class DelayAndCoverageViolationChecker(BaseConstraintViolationChecker):
             self.item_move_function(item_to_be_moved, original_bin)
 
         return improvement_score
-
-    @staticmethod
-    def calculate_current_ap_selection_cost(infra : InfrastructureGMLGraph):
-        """
-        Sums the cost of the currently selected AP-s if the last calculated constraint violation function found a coverage and delay
-        respecting allocation for all subintervals.
-
-        :param infra:
-        :return:
-        """
-        total_ap_cost = None
-        subinterval_list = [i for i in range(1, infra.time_interval_count+1)]
-        if DelayAndCoverageViolationChecker.chosen_ap_ids is not None:
-            total_ap_cost = 0.0
-            for subinterval, selected_ap_id in DelayAndCoverageViolationChecker.chosen_ap_ids.items():
-                # MAYBE: divide by the number of time intervals as the meaning of an AP cost is to use that for the whole interval
-                # (similarly to the cost of a vCPU for the whole interval)
-                # BUT then we need to modify the AMPL model objective function too for reasonable comparison!!!!
-                total_ap_cost += infra.nodes[selected_ap_id][infra.access_point_usage_cost_str]
-                subinterval_list.remove(subinterval)
-        if len(subinterval_list) != 0 and total_ap_cost is not None:
-            raise Exception("Access point not selected for subintervals: {}".format(subinterval_list))
-        return total_ap_cost
 
 
 class BatteryConstraintViolationChecker(BaseConstraintViolationChecker):

@@ -56,6 +56,7 @@ class ConstructiveMapperFromFractional(AbstractMapper):
         # list of BinCapacityViolationChecker objects instantiated in the save_global_mapping_task_information fucntion
         self.violation_checkers = None
         self.hashes_of_visited_mappings = set()
+        self.chosen_ap_ids = InvalidableAPSelectionStruct()
 
     @property
     def total_item_weight(self):
@@ -196,6 +197,28 @@ class ConstructiveMapperFromFractional(AbstractMapper):
         ConstructiveMapperFromFractional.move_item_to_bin(item_to_be_moved, original_bin)
         return mapping_hash
 
+    def calculate_current_ap_selection_cost(self):
+        """
+        Sums the cost of the currently selected AP-s if the last calculated constraint violation function found a coverage and delay
+        respecting allocation for all subintervals.
+
+        :param infra:
+        :return:
+        """
+        total_ap_cost = None
+        subinterval_list = [i for i in range(1, self.time_interval_count+1)]
+        if self.chosen_ap_ids.is_valid:
+            total_ap_cost = 0.0
+            for subinterval, selected_ap_id in self.chosen_ap_ids.items():
+                # MAYBE: divide by the number of time intervals as the meaning of an AP cost is to use that for the whole interval
+                # (similarly to the cost of a vCPU for the whole interval)
+                # BUT then we need to modify the AMPL model objective function too for reasonable comparison!!!!
+                total_ap_cost += self.infra.nodes[selected_ap_id][self.infra.access_point_usage_cost_str]
+                subinterval_list.remove(subinterval)
+        if len(subinterval_list) != 0 and total_ap_cost is not None:
+            raise Exception("Access point not selected for subintervals: {}".format(subinterval_list))
+        return total_ap_cost
+
     def improve_item_to_bin_mappings(self, best_bins):
         """
         Moves the item, which increases the objective the least, to one of the best bins where it fits.
@@ -212,7 +235,7 @@ class ConstructiveMapperFromFractional(AbstractMapper):
         if len(violating_items) == 0:
             # if the delay violation checker didn't return violating items either, then it must have calculated a complete AP selection!
             # (not the nicest way to communicate this information...)
-            if cvc.DelayAndCoverageViolationChecker.calculate_current_ap_selection_cost(self.infra) is None:
+            if self.calculate_current_ap_selection_cost() is None:
                 raise Exception("If no violations are found by any ViolationChecker, a complete AP selection must exist!")
             return False, False
         else:
@@ -290,7 +313,7 @@ class ConstructiveMapperFromFractional(AbstractMapper):
         :param best_bins:
         :return:
         """
-        if self.check_all_constraints_calculate_objective(self.infra) and not any_violations_left:
+        if self.check_all_constraints_calculate_objective(no_logs=True) and not any_violations_left:
             # we dont have to add next bin, everything is mapped to the current best bins
             return best_bins, False
         else:
@@ -311,7 +334,7 @@ class ConstructiveMapperFromFractional(AbstractMapper):
                 # it means, that all bins are already in the best bins.
                 return best_bins, False
 
-    def check_all_constraints_calculate_objective(self, infra):
+    def check_all_constraints_calculate_objective(self, no_logs=False):
         """
         Checks if the constructed solution for the bin packing is valid.
         Also calculates the objective_value_of_integer_solution if the solution is valid.
@@ -341,12 +364,11 @@ class ConstructiveMapperFromFractional(AbstractMapper):
         if len(all_items) != 0:
             raise Exception("Item not found in mapped_here structure in any bin!")
         # check if we have a complete allocation for the APs (which implies meeting the delay and coverage constraints)
-        total_ap_selection_cost = cvc.DelayAndCoverageViolationChecker.calculate_current_ap_selection_cost(infra)
+        total_ap_selection_cost = self.calculate_current_ap_selection_cost()
         if total_ap_selection_cost is None:
             self.objective_value_of_integer_solution = None
             return False
         else:
-            self.log.debug("Total cost of access point selections: {}".format(total_ap_selection_cost))
             self.objective_value_of_integer_solution += total_ap_selection_cost
         # easiest is to instantiate a new checker and run its violation checker
         battery_checker = cvc.BatteryConstraintViolationChecker(self.items, self.bins, self.infra, self.ns,
@@ -354,6 +376,10 @@ class ConstructiveMapperFromFractional(AbstractMapper):
                                                                 self.battery_threshold)
         if len(battery_checker.get_violating_items()) > 0:
             return False
+        if not no_logs:
+            self.log.debug("Total cost of access point selections: {}".format(total_ap_selection_cost))
+            self.log.info("Mapping found with all constraints being valid with objective function value {}".
+                          format(self.objective_value_of_integer_solution))
         return True
 
     def construct_output_mapping(self, mapping : VolatileResourcesMapping):
@@ -367,7 +393,7 @@ class ConstructiveMapperFromFractional(AbstractMapper):
         mapping[mapping.OBJECTIVE_VALUE] = self.objective_value_of_integer_solution
         for i in self.items:
             mapping[i['node_dict'][self.ns.node_name_str]] = i.mapped_to['node_dict'][self.infra.node_name_str]
-        for subinterval, ap_id in cvc.DelayAndCoverageViolationChecker.chosen_ap_ids.items():
+        for subinterval, ap_id in self.chosen_ap_ids.items():
             mapping.add_access_point_selection(subinterval, self.infra.nodes[ap_id][self.infra.node_name_str])
 
         return mapping
@@ -401,7 +427,8 @@ class ConstructiveMapperFromFractional(AbstractMapper):
             self.violation_checkers.append(cvc.DelayAndCoverageViolationChecker(self.items, self.bins, self.infra, self.ns,
                                                                                 ConstructiveMapperFromFractional.move_item_to_bin,
                                                                                 sfc_delay, sfc_path, self.time_interval_count,
-                                                                                self.coverage_threshold))
+                                                                                self.coverage_threshold,
+                                                                                shared_ap_selection=self.chosen_ap_ids))
 
     def map(self, infra, ns) -> dict:
         start_timestamp = time.time()
@@ -443,7 +470,7 @@ class ConstructiveMapperFromFractional(AbstractMapper):
         # we want to save timestamp for all possible outputs (success, not found,
         # if unhandled exception is raised it will stay the default None)
         mapping[mapping.RUNNING_TIME] = time.time() - start_timestamp
-        if not self.check_all_constraints_calculate_objective(infra) or any_violation_left:
+        if not self.check_all_constraints_calculate_objective() or any_violation_left:
             self.log.info("Volatile resources solution not found by the heuristic!")
             return mapping
         else:
