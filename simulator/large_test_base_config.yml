@@ -15,7 +15,7 @@ infrastructure:
 #================= Service description section =================#
 service:
   name: "service"                                     # name of the graph object
-  connected_component_sizes: [20]                      # list of integers describing the number (by its length) and size of the connected
+  connected_component_sizes: [90]                      # list of integers describing the number (by its length) and size of the connected
                                                       # service graph components. Each components is a series parallel graph
   sfc_delays: [5, 10, 15]                                 # list of delay values, which the chains can take (infra GML measures them in ms)
   series_parallel_ratio: 0.7                          # ratio of the series and parallel operations at the service graph generation

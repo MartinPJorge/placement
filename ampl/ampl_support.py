@@ -113,8 +113,12 @@ class AMPLSolverSupport(object):
             mapping[mapping.OBJECTIVE_VALUE] = objective.value()
             mapping[mapping.RUNNING_TIME] = time.time() - self.start_timestamp
             return mapping
+        elif result_str == 'failure':
+            self.log.warn("Failure in AMPL model!")
+            return mapping
         elif '?' in result_str:
             # happens for example in case of too big model for a demo license
+            self.log.warn("Question mark '?' in AMPL result!")
             return mapping
         else:
             self.log.error("Unhandled AMPL result variant!")

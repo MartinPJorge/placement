@@ -64,6 +64,9 @@ var delay {N1 in vertices[infraGraph], N2 in vertices[infraGraph], t_k in subint
 	else if N1 in servers and N2 in servers then server_server_delay[N1, N2];
 # if we have problems in amount of variables, merge delay constraints in one
 
+# continuous variable to eliminate X * X type constraints.
+var Y {v1 in vertices[serviceGraph], N1 in vertices[infraGraph], v2 in vertices[serviceGraph], N2 in vertices[infraGraph]} >= 0, <= 1;
+
 minimize Total_cost:
     sum {v in vertices[serviceGraph], N in vertices[infraGraph]}
          X[v, N] * demands[v] * cost_unit_demand[N] + 
@@ -88,4 +91,19 @@ subject to battery {N in mobiles}:
     resources[N] > 0 ==> unloaded_battery_alive_prob[N] - ((sum {v in vertices[serviceGraph]}  X[v, N] * demands[v])/resources[N])*(unloaded_battery_alive_prob[N] - full_loaded_battery_alive_prob[N]) >= battery_threshold;
 
 subject to SFC_delays {sfc in SFCs, t_k in subintervals}:
-    sum {(v1, v2) in SFC_paths[sfc]} sum {N1 in vertices[infraGraph], N2 in vertices[infraGraph]} X[v1, N1] * X[v2, N2] * delay[N1, N2, t_k] <= SFC_max_delays[sfc];
+    sum {(v1, v2) in SFC_paths[sfc]} sum {N1 in vertices[infraGraph], N2 in vertices[infraGraph]} Y[v1, N1, v2, N2] * delay[N1, N2, t_k] <= SFC_max_delays[sfc];
+
+#subject to product_elimination_1 {v1 in vertices[serviceGraph], N1 in vertices[infraGraph], v2 in vertices[serviceGraph], N2 in vertices[infraGraph]}:
+#    Y[v1, N1, v2, N2] <= 1;
+#
+#subject to product_elimination_2 {v1 in vertices[serviceGraph], N1 in vertices[infraGraph], v2 in vertices[serviceGraph], N2 in vertices[infraGraph]}:
+#    Y[v1, N1, v2, N2] >= 0;
+
+subject to product_elimination_1 {v1 in vertices[serviceGraph], N1 in vertices[infraGraph], v2 in vertices[serviceGraph], N2 in vertices[infraGraph]}:
+    Y[v1, N1, v2, N2] <= X[v1, N1];
+
+subject to product_elimination_2 {v1 in vertices[serviceGraph], N1 in vertices[infraGraph], v2 in vertices[serviceGraph], N2 in vertices[infraGraph]}:
+    Y[v1, N1, v2, N2] <= X[v2, N2];
+
+subject to product_elimination_3 {v1 in vertices[serviceGraph], N1 in vertices[infraGraph], v2 in vertices[serviceGraph], N2 in vertices[infraGraph]}:
+    Y[v1, N1, v2, N2] >= X[v1, N1] + X[v2, N2] - 1;

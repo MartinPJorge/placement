@@ -29,6 +29,13 @@ class VolatileResourcesMapping(dict):
         if VolatileResourcesMapping.RUNNING_TIME not in self:
             self[VolatileResourcesMapping.RUNNING_TIME] = None
 
+    def __repr__(self):
+        return "VolatileResourcesMapping(Feasible: {}, Obj.value: {}, Runtime: {})".\
+            format(self[self.WORKED], self[self.OBJECTIVE_VALUE], self[self.RUNNING_TIME])
+
+    def __str__(self):
+        return self.__repr__()
+
     def add_access_point_selection(self, subinterval : int, ap_name):
         self[VolatileResourcesMapping.AP_SELECTION][int(subinterval)] = ap_name
 
