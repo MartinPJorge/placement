@@ -1,5 +1,3 @@
-Creator "Jorge Martín Pérez"
-Version 1
 graph
 [
   directed 0
