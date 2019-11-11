@@ -25,9 +25,9 @@ if __name__ == '__main__':
             else:
                 type = 'path'
             paths_graph.add_node(base_label, **get_internal_point(container, col, row), type=type)
-    for u, v in nx.grid_graph([10, 6]).edges():
+    for u, v in nx.grid_graph([5, 9]).edges():
         row1, col1 = u
         row2, col2 = v
-        paths_graph.add_edge("r{}c{}".format(row1, col1), "r{}c{}".format(row2, col2))
+        paths_graph.add_edge("r{}c{}".format(row1+1, col1+1), "r{}c{}".format(row2+1, col2+1))
     nx.write_gml(paths_graph, "paths.gml")
 

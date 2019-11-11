@@ -49,7 +49,7 @@ class GMLGraph(nx.DiGraph):
 class InfrastructureGMLGraph(GMLGraph):
 
     def __init__(self, incoming_graph_data=None, gml_file=None, label='label', seed=0, cluster_move_distances=None, cluster_move_waypoints=None,
-                 coverage_blocking_areas=None,
+                 coverage_blocking_areas=None, cluster_src_dst_tuples=None,
                  time_interval_count=None, unloaded_battery_alive_prob=0.99, full_loaded_battery_alive_prob=0.2, **attr):
         """
         Reads a gml file constructed by mec-gen and generates the additional parameters.
@@ -121,19 +121,33 @@ class InfrastructureGMLGraph(GMLGraph):
         # a dict of each AP_id to their coverage probability. A mobile cluster is identified by one of its nodes (master node),
         # which relays the traffic of all mobile nodes towars the fixed part of the infra.
         self.ap_coverage_probabilities = {}
-        self.coverage_blocking_areas = coverage_blocking_areas
         if cluster_move_distances is not None:
             self.generate_mobility_pattern(cluster_move_distances)
         elif cluster_move_waypoints is not None:
-            if self.coverage_blocking_areas is None:
+            if coverage_blocking_areas is None:
                 raise Exception("Coverage blocking areas must be given if cluster move waypoints are given.")
             else:
                 # list of 4-tuples of 2-tuples of floats, in order topleft, topright, bottomright, bottomleft
                 self.coverage_blocking_areas_coords = [((40.271401, -3.752911), (40.271360, -3.751570), (40.270705, -3.752082), (40.270615, -3.752761))]
             # TODO: open and process the waypoints
-            self.generate_mobility_pattern_from_waypoints([(40.269342, -3.753353), (40.270131, -3.752146), (40.271217, -3.750646), (40.270353, -3.750454)])
+            self.generate_mobility_pattern_from_waypoints(self.waypoints_from_gml(cluster_src_dst_tuples, cluster_move_waypoints))
         # Calculate on all unconnected components (i.e between the nodes of each clusters and the fixed part)
         self.shortest_paths_fixed_part = dict(nx.all_pairs_dijkstra_path_length(self, weight=self.link_delay_str))
+
+    def read_coverage_blocking_areas(self, coverage_blocking_areas_gml_path):
+        pass
+
+    def waypoints_from_gml(self, cluster_src_dst_tuples, cluster_move_waypoints_gml_path):
+        if cluster_src_dst_tuples is None:
+            raise Exception("Start finish must be given!")
+        else:
+            if len(cluster_src_dst_tuples) != 1:
+                raise NotImplementedError("Start and finish only implemented for 1 cluster")
+            else:
+                start_label, finish_label = cluster_src_dst_tuples[0][0], cluster_src_dst_tuples[0][1]
+                paths_graph = nx.read_gml(cluster_move_waypoints_gml_path, destringizer=float)
+                path = nx.shortest_path(paths_graph, source=start_label, target=finish_label)
+                return list(map(lambda nid: (paths_graph.nodes[nid]['lat'], paths_graph.nodes[nid]['lon']), path))
 
     def check_graph(self):
         """

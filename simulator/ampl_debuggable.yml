@@ -5,9 +5,9 @@ infrastructure:
   name: "infra"                                       # name of the graph object
   label: "id"                                         # GML node attribute to be used as graph node id
   time_interval_count: 12                             # the number of time frames for the optimization t \in (t0, t1)
-  cluster_move_waypoints: "TODO_path_to_csv"          # ordered list of waypoints in GPS coordinates, where the cluster moves.
-  coverage_blocking_areas: "TODO_path_to_csv"         # list of rectangular areas expressing the coordinate regions of areas which block
-                                                      # coverage for LoS calculations.
+  cluster_move_waypoints: "../graphs/trajectories/paths.gml"            # GML file representing the locations of start, finish, path points
+  coverage_blocking_areas: "../graphs/trajectories/containers.gml"      # GML file storing the coverage blocking areas
+  cluster_src_dst_tuples: [["r1c1", "r9c5"]]          # start and finish labels of cluster moves
   unloaded_battery_alive_prob: 0.99                   # Probability having a not completly depleted battery by the end of the optimization
                                                       # time interval if no capacity is used on the mobile node. Same value is set for all mobile nodes
   full_loaded_battery_alive_prob: 0.2                 # Like above, but with fully loaded mobile node.
