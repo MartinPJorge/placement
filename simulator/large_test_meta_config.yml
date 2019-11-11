@@ -11,6 +11,6 @@ meta_config_values:                                                         # un
   service:
     seed: [0, 1, 2, 3, 4, 5, 6, 7]
   optimization:
-    improvement_score_limit: [0, 1, 2, 3, 4]
+    improvement_score_limit: [3, 2, 1, 4]
   simulator:
-    run_ampl: [True, False, False, False, False]
+    run_ampl: [True, False, False, False]
