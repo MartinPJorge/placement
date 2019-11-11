@@ -306,7 +306,7 @@ def run_from_meta_config(meta_config : dict):
                     pass
                 try:
                     # wait until there is any result, but at most some time, becuase if some error occured, we might never get result.
-                    finished_simulation_id, heur_mapping, ampl_mapping, algorithm_errors = result_queue.get(True, timeout=10)
+                    finished_simulation_id, heur_mapping, ampl_mapping, algorithm_errors = result_queue.get(True)
                     sim_id_to_process_dict[finished_simulation_id].join()
                     current_active_processes -= 1
                     logger.info("Joined process of simulation id {}".format(finished_simulation_id))
