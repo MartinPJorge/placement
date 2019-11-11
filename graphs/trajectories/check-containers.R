@@ -18,8 +18,6 @@ corners_labels <- vertex_attr(containers_graph, name='label',
 column_rows <- c(10, 14, 14, 14, 15, 15)
 for (col in 1:length(column_rows)) {
   for (row in 1:column_rows[col]) {
-# for (col in 6:6) {
-#   for (row in 13:13) {
     label_tl <- paste('r', row, 'c', col, 'tl', sep='')
     label_tr <- paste('r', row, 'c', col, 'tr', sep='')
     label_bl <- paste('r', row, 'c', col, 'bl', sep='')
