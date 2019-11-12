@@ -1,4 +1,4 @@
-Creator "igraph version 1.2.4 Tue Nov 12 11:35:43 2019"
+Creator "igraph version 1.2.4 Tue Nov 12 15:13:15 2019"
 Version 1
 graph
 [
@@ -728,8 +728,8 @@ graph
     id 48
     name "m2_1"
     type "m2"
-    lon -0.340562805293363
-    lat 39.4444853864319
+    lon -0.340251187526623
+    lat 39.4448597714168
     cost 0
     cpu 0
     mem 0
@@ -743,8 +743,8 @@ graph
     id 49
     name "m2_2"
     type "m2"
-    lon -0.340345281397926
-    lat 39.4453900793106
+    lon -0.339870541733925
+    lat 39.4451712001527
     cost 0
     cpu 0
     mem 0
@@ -758,8 +758,8 @@ graph
     id 50
     name "m2_3"
     type "m2"
-    lon -0.340335396878424
-    lat 39.4458552429599
+    lon -0.339761798595547
+    lat 39.4454280845113
     cost 0
     cpu 0
     mem 0
@@ -773,8 +773,8 @@ graph
     id 51
     name "m2_4"
     type "m2"
-    lon -0.33980975240283
-    lat 39.4466213789554
+    lon -0.339658516610742
+    lat 39.4463768458627
     cost 0
     cpu 0
     mem 0
@@ -788,8 +788,8 @@ graph
     id 52
     name "m2_5"
     type "m2"
-    lon -0.338873120620849
-    lat 39.4467958477524
+    lon -0.338942831831521
+    lat 39.4471275565319
     cost 0
     cpu 0
     mem 0
@@ -803,8 +803,8 @@ graph
     id 53
     name "m3_0"
     type "m3"
-    lon -0.33982404727991
-    lat 39.4459580782118
+    lon -0.339907003156028
+    lat 39.4454943441059
     cost 0
     cpu 0
     mem 0
@@ -818,8 +818,8 @@ graph
     id 54
     name "m3_rep_0"
     type "m3"
-    lon -0.33982404727991
-    lat 39.4459580782118
+    lon -0.339907003156028
+    lat 39.4454943441059
     cost 0
     cpu 0
     mem 0
@@ -923,8 +923,8 @@ graph
     id 61
     name "cloud_server_server_0"
     type "server"
-    lon -0.33982404727991
-    lat 39.4459580782118
+    lon -0.339907003156028
+    lat 39.4454943441059
     cost 2.48
     cpu 200
     mem 200
@@ -938,12 +938,222 @@ graph
     id 62
     name "cloud_server_server_1"
     type "server"
-    lon -0.33982404727991
-    lat 39.4459580782118
+    lon -0.339907003156028
+    lat 39.4454943441059
     cost 2.48
     cpu 200
     mem 200
     disk 1000
+    size ""
+    coverageRadius 0
+    delay 0
+  ]
+  node
+  [
+    id 63
+    name "robot_sq1_fogNode_1"
+    type "fogNode"
+    lon -0.320105680126951
+    lat 39.4274985281826
+    cost 15.27
+    cpu 2
+    mem 1
+    disk 10
+    size ""
+    coverageRadius 0
+    delay 0
+  ]
+  node
+  [
+    id 64
+    name "robot_sq1_fogNode_2"
+    type "fogNode"
+    lon -0.322963107115091
+    lat 39.4294991686812
+    cost 15.27
+    cpu 2
+    mem 1
+    disk 10
+    size ""
+    coverageRadius 0
+    delay 0
+  ]
+  node
+  [
+    id 65
+    name "robot_sq1_fogNode_3"
+    type "fogNode"
+    lon -0.321740894019616
+    lat 39.4293970319716
+    cost 15.27
+    cpu 2
+    mem 1
+    disk 10
+    size ""
+    coverageRadius 0
+    delay 0
+  ]
+  node
+  [
+    id 66
+    name "robot_sq1_fogNode_4"
+    type "fogNode"
+    lon -0.321879384386756
+    lat 39.4277497331828
+    cost 15.27
+    cpu 2
+    mem 1
+    disk 10
+    size ""
+    coverageRadius 0
+    delay 0
+  ]
+  node
+  [
+    id 67
+    name "robot_sq1_fogNode_5"
+    type "fogNode"
+    lon -0.318742459296774
+    lat 39.4278351559463
+    cost 15.27
+    cpu 2
+    mem 1
+    disk 10
+    size ""
+    coverageRadius 0
+    delay 0
+  ]
+  node
+  [
+    id 68
+    name "robot_sq1_fogNode_6"
+    type "fogNode"
+    lon -0.320849893907631
+    lat 39.4277989808797
+    cost 15.27
+    cpu 2
+    mem 1
+    disk 10
+    size ""
+    coverageRadius 0
+    delay 0
+  ]
+  node
+  [
+    id 69
+    name "robot_sq1_fogNode_7"
+    type "fogNode"
+    lon -0.316626321169999
+    lat 39.4285019581747
+    cost 15.27
+    cpu 2
+    mem 1
+    disk 10
+    size ""
+    coverageRadius 0
+    delay 0
+  ]
+  node
+  [
+    id 70
+    name "robot_sq1_fogNode_8"
+    type "fogNode"
+    lon -0.324183663240871
+    lat 39.4297167899487
+    cost 15.27
+    cpu 2
+    mem 1
+    disk 10
+    size ""
+    coverageRadius 0
+    delay 0
+  ]
+  node
+  [
+    id 71
+    name "robot_sq1_fogNode_9"
+    type "fogNode"
+    lon -0.31762444904831
+    lat 39.4276452415314
+    cost 15.27
+    cpu 2
+    mem 1
+    disk 10
+    size ""
+    coverageRadius 0
+    delay 0
+  ]
+  node
+  [
+    id 72
+    name "robot_sq1_fogNode_10"
+    type "fogNode"
+    lon -0.317351083133963
+    lat 39.4279805248128
+    cost 15.27
+    cpu 2
+    mem 1
+    disk 10
+    size ""
+    coverageRadius 0
+    delay 0
+  ]
+  node
+  [
+    id 73
+    name "endpoint_sq1"
+    type "endpoint"
+    lon -0.317351083133963
+    lat 39.4279805248128
+    cost 15.27
+    cpu 0
+    mem 0
+    disk 0
+    size ""
+    coverageRadius 0
+    delay 0
+  ]
+  node
+  [
+    id 74
+    name "endpoint_m1_sq1"
+    type "endpoint"
+    lon -0.317351083133963
+    lat 39.4279805248128
+    cost 15.27
+    cpu 0
+    mem 0
+    disk 0
+    size ""
+    coverageRadius 0
+    delay 0
+  ]
+  node
+  [
+    id 75
+    name "endpoint_m2_sq1"
+    type "endpoint"
+    lon -0.317351083133963
+    lat 39.4279805248128
+    cost 15.27
+    cpu 0
+    mem 0
+    disk 0
+    size ""
+    coverageRadius 0
+    delay 0
+  ]
+  node
+  [
+    id 76
+    name "endpoint_m3_sq1"
+    type "endpoint"
+    lon -0.317351083133963
+    lat 39.4279805248128
+    cost 15.27
+    cpu 0
+    mem 0
+    disk 0
     size ""
     coverageRadius 0
     delay 0
@@ -956,7 +1166,7 @@ graph
     bandwidthUnits "Gb/s"
     distance 366.57
     distanceUnits "meters"
-    delay 2.05433773918788
+    delay 3.70474469101582
   ]
   edge
   [
@@ -966,7 +1176,7 @@ graph
     bandwidthUnits "Gb/s"
     distance 120.04
     distanceUnits "meters"
-    delay 1.78910891718708
+    delay 1.20837096546071
   ]
   edge
   [
@@ -976,7 +1186,7 @@ graph
     bandwidthUnits "Gb/s"
     distance 185.98
     distanceUnits "meters"
-    delay 1.11823149353899
+    delay 1.30169963300123
   ]
   edge
   [
@@ -986,7 +1196,7 @@ graph
     bandwidthUnits "Gb/s"
     distance 181.56
     distanceUnits "meters"
-    delay 8.1549090808648
+    delay 1.68298284901951
   ]
   edge
   [
@@ -996,7 +1206,7 @@ graph
     bandwidthUnits "Gb/s"
     distance 183.55
     distanceUnits "meters"
-    delay 1.79128757167644
+    delay 2.08477010954163
   ]
   edge
   [
@@ -1006,7 +1216,7 @@ graph
     bandwidthUnits "Gb/s"
     distance 190.98
     distanceUnits "meters"
-    delay 1.37192001926641
+    delay 1.58325448218523
   ]
   edge
   [
@@ -1016,7 +1226,7 @@ graph
     bandwidthUnits "Gb/s"
     distance 100.74
     distanceUnits "meters"
-    delay 1.21135897790908
+    delay 1.20837096546071
   ]
   edge
   [
@@ -1026,7 +1236,7 @@ graph
     bandwidthUnits "Gb/s"
     distance 73.88
     distanceUnits "meters"
-    delay 1.11393235124274
+    delay 2.37285555610775
   ]
   edge
   [
@@ -1036,7 +1246,7 @@ graph
     bandwidthUnits "Gb/s"
     distance 41.76
     distanceUnits "meters"
-    delay 2.37718000073054
+    delay 1.71650684818903
   ]
   edge
   [
@@ -1046,7 +1256,7 @@ graph
     bandwidthUnits "Gb/s"
     distance 5.19
     distanceUnits "meters"
-    delay 2.38334443693588
+    delay 2.50478688770195
   ]
   edge
   [
@@ -1056,7 +1266,7 @@ graph
     bandwidthUnits "Gb/s"
     distance 21.6
     distanceUnits "meters"
-    delay 1.20837096546071
+    delay 1.28193324109199
   ]
   edge
   [
@@ -1066,7 +1276,7 @@ graph
     bandwidthUnits "Gb/s"
     distance 44.87
     distanceUnits "meters"
-    delay 1.36313352804285
+    delay 1.0963421287802
   ]
   edge
   [
@@ -1076,7 +1286,7 @@ graph
     bandwidthUnits "Gb/s"
     distance 112.43
     distanceUnits "meters"
-    delay 2.02790623716534
+    delay 2.50478688770195
   ]
   edge
   [
@@ -1086,7 +1296,7 @@ graph
     bandwidthUnits "Gb/s"
     distance 125.88
     distanceUnits "meters"
-    delay 2.90119368020669
+    delay 1.00206554719244
   ]
   edge
   [
@@ -1096,7 +1306,7 @@ graph
     bandwidthUnits "Gb/s"
     distance 152.52
     distanceUnits "meters"
-    delay 2.03403761090507
+    delay 1.01756944755906
   ]
   edge
   [
@@ -1106,7 +1316,7 @@ graph
     bandwidthUnits "Gb/s"
     distance 188.96
     distanceUnits "meters"
-    delay 1.72997359270109
+    delay 1.68298284901951
   ]
   edge
   [
@@ -1116,7 +1326,7 @@ graph
     bandwidthUnits "Gb/s"
     distance 228.95
     distanceUnits "meters"
-    delay 3.89673013493085
+    delay 1.68298284901951
   ]
   edge
   [
@@ -1126,7 +1336,7 @@ graph
     bandwidthUnits "Gb/s"
     distance 325.7
     distanceUnits "meters"
-    delay 7.48505115735882
+    delay 1.19036490762139
   ]
   edge
   [
@@ -1136,7 +1346,7 @@ graph
     bandwidthUnits "Gb/s"
     distance 51.29
     distanceUnits "meters"
-    delay 1.21135897790908
+    delay 1.37192001926641
   ]
   edge
   [
@@ -1146,7 +1356,7 @@ graph
     bandwidthUnits "Gb/s"
     distance 4.91
     distanceUnits "meters"
-    delay 1.38892013577722
+    delay 1.11393235124274
   ]
   edge
   [
@@ -1156,7 +1366,7 @@ graph
     bandwidthUnits "Gb/s"
     distance 22.18
     distanceUnits "meters"
-    delay 1.20837096546071
+    delay 3.70474469101582
   ]
   edge
   [
@@ -1166,7 +1376,7 @@ graph
     bandwidthUnits "Gb/s"
     distance 50.27
     distanceUnits "meters"
-    delay 2.29363199871112
+    delay 2.75338119423903
   ]
   edge
   [
@@ -1176,7 +1386,7 @@ graph
     bandwidthUnits "Gb/s"
     distance 78.68
     distanceUnits "meters"
-    delay 1.19036490762139
+    delay 1.01756944755906
   ]
   edge
   [
@@ -1186,7 +1396,7 @@ graph
     bandwidthUnits "Gb/s"
     distance 107.82
     distanceUnits "meters"
-    delay 2.05433773918788
+    delay 1.36313352804285
   ]
   edge
   [
@@ -1196,7 +1406,7 @@ graph
     bandwidthUnits "Gb/s"
     distance 91.17
     distanceUnits "meters"
-    delay 3.05240481664492
+    delay 2.16248642175496
   ]
   edge
   [
@@ -1206,7 +1416,7 @@ graph
     bandwidthUnits "Gb/s"
     distance 61.54
     distanceUnits "meters"
-    delay 1.84794142211079
+    delay 1.13848915791015
   ]
   edge
   [
@@ -1226,7 +1436,7 @@ graph
     bandwidthUnits "Gb/s"
     distance 6.62
     distanceUnits "meters"
-    delay 3.96098785577718
+    delay 1.46429744826886
   ]
   edge
   [
@@ -1236,7 +1446,7 @@ graph
     bandwidthUnits "Gb/s"
     distance 26.07
     distanceUnits "meters"
-    delay 1.53713426785444
+    delay 1.13014110568038
   ]
   edge
   [
@@ -1246,7 +1456,7 @@ graph
     bandwidthUnits "Gb/s"
     distance 46.54
     distanceUnits "meters"
-    delay 9.65514191653675
+    delay 2.37285555610775
   ]
   edge
   [
@@ -1256,7 +1466,7 @@ graph
     bandwidthUnits "Gb/s"
     distance 465.29
     distanceUnits "meters"
-    delay 1.79128757167644
+    delay 1.41559607724144
   ]
   edge
   [
@@ -1266,7 +1476,7 @@ graph
     bandwidthUnits "Gb/s"
     distance 489.47
     distanceUnits "meters"
-    delay 2.19101722556823
+    delay 1.41559607724144
   ]
   edge
   [
@@ -1276,7 +1486,7 @@ graph
     bandwidthUnits "Gb/s"
     distance 507.35
     distanceUnits "meters"
-    delay 1.72997359270109
+    delay 6.16591190968392
   ]
   edge
   [
@@ -1286,7 +1496,7 @@ graph
     bandwidthUnits "Gb/s"
     distance 527.55
     distanceUnits "meters"
-    delay 1.20211606053961
+    delay 3.70474469101582
   ]
   edge
   [
@@ -1296,7 +1506,7 @@ graph
     bandwidthUnits "Gb/s"
     distance 125.84
     distanceUnits "meters"
-    delay 1.649233488788
+    delay 1.78910891718708
   ]
   edge
   [
@@ -1306,7 +1516,7 @@ graph
     bandwidthUnits "Gb/s"
     distance 303.98
     distanceUnits "meters"
-    delay 1.87417256943622
+    delay 9.65514191653675
   ]
   edge
   [
@@ -1316,7 +1526,7 @@ graph
     bandwidthUnits "Gb/s"
     distance 0
     distanceUnits "meters"
-    delay 1.40437070954915
+    delay 1.11393235124274
   ]
   edge
   [
@@ -1326,7 +1536,7 @@ graph
     bandwidthUnits "Gb/s"
     distance 3679.63
     distanceUnits "meters"
-    delay 1.87417256943622
+    delay 7.48505115735882
   ]
   edge
   [
@@ -1336,7 +1546,7 @@ graph
     bandwidthUnits "Gb/s"
     distance 3679.64
     distanceUnits "meters"
-    delay 1.58325448218523
+    delay 6.16591190968392
   ]
   edge
   [
@@ -1346,7 +1556,7 @@ graph
     bandwidthUnits "Gb/s"
     distance 269.73
     distanceUnits "meters"
-    delay 8.1549090808648
+    delay 9.65514191653675
   ]
   edge
   [
@@ -1356,7 +1566,7 @@ graph
     bandwidthUnits "Gb/s"
     distance 101.01
     distanceUnits "meters"
-    delay 5.26179467635226
+    delay 1.53713426785444
   ]
   edge
   [
@@ -1366,7 +1576,7 @@ graph
     bandwidthUnits "Gb/s"
     distance 535.14
     distanceUnits "meters"
-    delay 1.43984141830044
+    delay 1.1444869082427
   ]
   edge
   [
@@ -1376,7 +1586,7 @@ graph
     bandwidthUnits "Gb/s"
     distance 233.95
     distanceUnits "meters"
-    delay 1.48738745798692
+    delay 1.20211606053961
   ]
   edge
   [
@@ -1386,7 +1596,7 @@ graph
     bandwidthUnits "Gb/s"
     distance 423.27
     distanceUnits "meters"
-    delay 1.71650684818903
+    delay 1.13848915791015
   ]
   edge
   [
@@ -1396,7 +1606,7 @@ graph
     bandwidthUnits "Gb/s"
     distance 646.05
     distanceUnits "meters"
-    delay 4.79416787026456
+    delay 2.030053599998
   ]
   edge
   [
@@ -1416,7 +1626,7 @@ graph
     bandwidthUnits "Gb/s"
     distance 11882.44
     distanceUnits "meters"
-    delay 4.05378483175645
+    delay 7.22332902500871
   ]
   edge
   [
@@ -1426,7 +1636,7 @@ graph
     bandwidthUnits "Gb/s"
     distance 5941.54
     distanceUnits "meters"
-    delay 1.41559607724144
+    delay 1.72997359270109
   ]
   edge
   [
@@ -1444,9 +1654,9 @@ graph
     target 47
     bandwidth 6
     bandwidthUnits "Tb/s"
-    distance 63.45
+    distance 112.91
     distanceUnits "meters"
-    delay 1.71650684818903
+    delay 1.19036490762139
   ]
   edge
   [
@@ -1454,9 +1664,9 @@ graph
     target 48
     bandwidth 6
     bandwidthUnits "Tb/s"
-    distance 102.17
+    distance 47.64
     distanceUnits "meters"
-    delay 1.21598096379613
+    delay 1.1444869082427
   ]
   edge
   [
@@ -1464,9 +1674,9 @@ graph
     target 49
     bandwidth 6
     bandwidthUnits "Tb/s"
-    distance 51.65
+    distance 30.02
     distanceUnits "meters"
-    delay 7.48505115735882
+    delay 1.02294575760163
   ]
   edge
   [
@@ -1474,9 +1684,9 @@ graph
     target 50
     bandwidth 6
     bandwidthUnits "Tb/s"
-    distance 96.35
+    distance 105.71
     distanceUnits "meters"
-    delay 2.87115144140872
+    delay 3.89673013493085
   ]
   edge
   [
@@ -1484,9 +1694,9 @@ graph
     target 51
     bandwidth 6
     bandwidthUnits "Tb/s"
-    distance 82.92
+    distance 103.64
     distanceUnits "meters"
-    delay 1.67632414302131
+    delay 1.48065788752759
   ]
   edge
   [
@@ -1494,9 +1704,9 @@ graph
     target 52
     bandwidth 6
     bandwidthUnits "Tb/s"
-    distance 123.9
+    distance 199.42
     distanceUnits "meters"
-    delay 0.000413
+    delay 0.000664733333333333
   ]
   edge
   [
@@ -1504,9 +1714,9 @@ graph
     target 53
     bandwidth 6
     bandwidthUnits "Tb/s"
-    distance 123.9
+    distance 199.42
     distanceUnits "meters"
-    delay 3.65565614507367
+    delay 2.37718000073054
   ]
   edge
   [
@@ -1514,9 +1724,9 @@ graph
     target 47
     bandwidth 6
     bandwidthUnits "Tb/s"
-    distance 238.01
+    distance 188.68
     distanceUnits "meters"
-    delay 0.000793366666666667
+    delay 0.000628933333333333
   ]
   edge
   [
@@ -1597,5 +1807,495 @@ graph
     distance 0
     distanceUnits "meter"
     delay 0
+  ]
+  edge
+  [
+    source 64
+    target 63
+    bandwidth 12
+    bandwidthUnits "Mbps"
+    distance 331.46
+    distanceUnits "meter"
+    delay 0.2
+  ]
+  edge
+  [
+    source 65
+    target 63
+    bandwidth 12
+    bandwidthUnits "Mbps"
+    distance 253.48
+    distanceUnits "meter"
+    delay 0.2
+  ]
+  edge
+  [
+    source 66
+    target 63
+    bandwidth 12
+    bandwidthUnits "Mbps"
+    distance 155.25
+    distanceUnits "meter"
+    delay 0.2
+  ]
+  edge
+  [
+    source 67
+    target 63
+    bandwidth 12
+    bandwidthUnits "Mbps"
+    distance 123.18
+    distanceUnits "meter"
+    delay 0.2
+  ]
+  edge
+  [
+    source 68
+    target 63
+    bandwidth 12
+    bandwidthUnits "Mbps"
+    distance 72.24
+    distanceUnits "meter"
+    delay 0.2
+  ]
+  edge
+  [
+    source 69
+    target 63
+    bandwidth 12
+    bandwidthUnits "Mbps"
+    distance 319.62
+    distanceUnits "meter"
+    delay 0.2
+  ]
+  edge
+  [
+    source 70
+    target 63
+    bandwidth 12
+    bandwidthUnits "Mbps"
+    distance 428.88
+    distanceUnits "meter"
+    delay 0.2
+  ]
+  edge
+  [
+    source 71
+    target 63
+    bandwidth 12
+    bandwidthUnits "Mbps"
+    distance 214.26
+    distanceUnits "meter"
+    delay 0.2
+  ]
+  edge
+  [
+    source 72
+    target 63
+    bandwidth 12
+    bandwidthUnits "Mbps"
+    distance 243.14
+    distanceUnits "meter"
+    delay 0.2
+  ]
+  edge
+  [
+    source 65
+    target 64
+    bandwidth 12
+    bandwidthUnits "Mbps"
+    distance 105.84
+    distanceUnits "meter"
+    delay 0.2
+  ]
+  edge
+  [
+    source 66
+    target 64
+    bandwidth 12
+    bandwidthUnits "Mbps"
+    distance 215.48
+    distanceUnits "meter"
+    delay 0.2
+  ]
+  edge
+  [
+    source 67
+    target 64
+    bandwidth 12
+    bandwidthUnits "Mbps"
+    distance 407.67
+    distanceUnits "meter"
+    delay 0.2
+  ]
+  edge
+  [
+    source 68
+    target 64
+    bandwidth 12
+    bandwidthUnits "Mbps"
+    distance 262.18
+    distanceUnits "meter"
+    delay 0.2
+  ]
+  edge
+  [
+    source 69
+    target 64
+    bandwidth 12
+    bandwidthUnits "Mbps"
+    distance 556.72
+    distanceUnits "meter"
+    delay 0.2
+  ]
+  edge
+  [
+    source 70
+    target 64
+    bandwidth 12
+    bandwidthUnits "Mbps"
+    distance 107.83
+    distanceUnits "meter"
+    delay 0.2
+  ]
+  edge
+  [
+    source 71
+    target 64
+    bandwidth 12
+    bandwidthUnits "Mbps"
+    distance 503.65
+    distanceUnits "meter"
+    delay 0.2
+  ]
+  edge
+  [
+    source 72
+    target 64
+    bandwidth 12
+    bandwidthUnits "Mbps"
+    distance 511.77
+    distanceUnits "meter"
+    delay 0.2
+  ]
+  edge
+  [
+    source 66
+    target 65
+    bandwidth 12
+    bandwidthUnits "Mbps"
+    distance 183.28
+    distanceUnits "meter"
+    delay 0.2
+  ]
+  edge
+  [
+    source 67
+    target 65
+    bandwidth 12
+    bandwidthUnits "Mbps"
+    distance 311
+    distanceUnits "meter"
+    delay 0.2
+  ]
+  edge
+  [
+    source 68
+    target 65
+    bandwidth 12
+    bandwidthUnits "Mbps"
+    distance 193.3
+    distanceUnits "meter"
+    delay 0.2
+  ]
+  edge
+  [
+    source 69
+    target 65
+    bandwidth 12
+    bandwidthUnits "Mbps"
+    distance 451.44
+    distanceUnits "meter"
+    delay 0.2
+  ]
+  edge
+  [
+    source 70
+    target 65
+    bandwidth 12
+    bandwidthUnits "Mbps"
+    distance 213.3
+    distanceUnits "meter"
+    delay 0.2
+  ]
+  edge
+  [
+    source 71
+    target 65
+    bandwidth 12
+    bandwidthUnits "Mbps"
+    distance 404.29
+    distanceUnits "meter"
+    delay 0.2
+  ]
+  edge
+  [
+    source 72
+    target 65
+    bandwidth 12
+    bandwidthUnits "Mbps"
+    distance 409.38
+    distanceUnits "meter"
+    delay 0.2
+  ]
+  edge
+  [
+    source 67
+    target 66
+    bandwidth 12
+    bandwidthUnits "Mbps"
+    distance 270.26
+    distanceUnits "meter"
+    delay 0.2
+  ]
+  edge
+  [
+    source 68
+    target 66
+    bandwidth 12
+    bandwidthUnits "Mbps"
+    distance 88.81
+    distanceUnits "meter"
+    delay 0.2
+  ]
+  edge
+  [
+    source 69
+    target 66
+    bandwidth 12
+    bandwidthUnits "Mbps"
+    distance 459.94
+    distanceUnits "meter"
+    delay 0.2
+  ]
+  edge
+  [
+    source 70
+    target 66
+    bandwidth 12
+    bandwidthUnits "Mbps"
+    distance 295.05
+    distanceUnits "meter"
+    delay 0.2
+  ]
+  edge
+  [
+    source 71
+    target 66
+    bandwidth 12
+    bandwidthUnits "Mbps"
+    distance 366.54
+    distanceUnits "meter"
+    delay 0.2
+  ]
+  edge
+  [
+    source 72
+    target 66
+    bandwidth 12
+    bandwidthUnits "Mbps"
+    distance 390.74
+    distanceUnits "meter"
+    delay 0.2
+  ]
+  edge
+  [
+    source 68
+    target 67
+    bandwidth 12
+    bandwidthUnits "Mbps"
+    distance 181.5
+    distanceUnits "meter"
+    delay 0.2
+  ]
+  edge
+  [
+    source 69
+    target 67
+    bandwidth 12
+    bandwidthUnits "Mbps"
+    distance 196.67
+    distanceUnits "meter"
+    delay 0.2
+  ]
+  edge
+  [
+    source 70
+    target 67
+    bandwidth 12
+    bandwidthUnits "Mbps"
+    distance 512.96
+    distanceUnits "meter"
+    delay 0.2
+  ]
+  edge
+  [
+    source 71
+    target 67
+    bandwidth 12
+    bandwidthUnits "Mbps"
+    distance 98.55
+    distanceUnits "meter"
+    delay 0.2
+  ]
+  edge
+  [
+    source 72
+    target 67
+    bandwidth 12
+    bandwidthUnits "Mbps"
+    distance 120.88
+    distanceUnits "meter"
+    delay 0.2
+  ]
+  edge
+  [
+    source 69
+    target 68
+    bandwidth 12
+    bandwidthUnits "Mbps"
+    distance 371.94
+    distanceUnits "meter"
+    delay 0.2
+  ]
+  edge
+  [
+    source 70
+    target 68
+    bandwidth 12
+    bandwidthUnits "Mbps"
+    distance 357.39
+    distanceUnits "meter"
+    delay 0.2
+  ]
+  edge
+  [
+    source 71
+    target 68
+    bandwidth 12
+    bandwidthUnits "Mbps"
+    distance 278.24
+    distanceUnits "meter"
+    delay 0.2
+  ]
+  edge
+  [
+    source 72
+    target 68
+    bandwidth 12
+    bandwidthUnits "Mbps"
+    distance 301.93
+    distanceUnits "meter"
+    delay 0.2
+  ]
+  edge
+  [
+    source 70
+    target 69
+    bandwidth 12
+    bandwidthUnits "Mbps"
+    distance 664.52
+    distanceUnits "meter"
+    delay 0.2
+  ]
+  edge
+  [
+    source 71
+    target 69
+    bandwidth 12
+    bandwidthUnits "Mbps"
+    distance 128.19
+    distanceUnits "meter"
+    delay 0.2
+  ]
+  edge
+  [
+    source 72
+    target 69
+    bandwidth 12
+    bandwidthUnits "Mbps"
+    distance 85.12
+    distanceUnits "meter"
+    delay 0.2
+  ]
+  edge
+  [
+    source 71
+    target 70
+    bandwidth 12
+    bandwidthUnits "Mbps"
+    distance 609.79
+    distanceUnits "meter"
+    delay 0.2
+  ]
+  edge
+  [
+    source 72
+    target 70
+    bandwidth 12
+    bandwidthUnits "Mbps"
+    distance 619.07
+    distanceUnits "meter"
+    delay 0.2
+  ]
+  edge
+  [
+    source 72
+    target 71
+    bandwidth 12
+    bandwidthUnits "Mbps"
+    distance 44.04
+    distanceUnits "meter"
+    delay 0.2
+  ]
+  edge
+  [
+    source 73
+    target 72
+    bandwidth 12
+    bandwidthUnits "Mbps"
+    distance 44.04
+    distanceUnits "meter"
+    delay 0
+  ]
+  edge
+  [
+    source 74
+    target 39
+    bandwidth 12
+    bandwidthUnits "Mbps"
+    distance 44.04
+    distanceUnits "meter"
+    delay 1.30169963300123
+  ]
+  edge
+  [
+    source 75
+    target 47
+    bandwidth 12
+    bandwidthUnits "Mbps"
+    distance 44.04
+    distanceUnits "meter"
+    delay 1.02294575760163
+  ]
+  edge
+  [
+    source 76
+    target 53
+    bandwidth 12
+    bandwidthUnits "Mbps"
+    distance 44.04
+    distanceUnits "meter"
+    delay 1.58325448218523
   ]
 ]
