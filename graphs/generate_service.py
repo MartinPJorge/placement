@@ -128,14 +128,36 @@ class InfrastructureGMLGraph(GMLGraph):
                 raise Exception("Coverage blocking areas must be given if cluster move waypoints are given.")
             else:
                 # list of 4-tuples of 2-tuples of floats, in order topleft, topright, bottomright, bottomleft
-                self.coverage_blocking_areas_coords = [((40.271401, -3.752911), (40.271360, -3.751570), (40.270705, -3.752082), (40.270615, -3.752761))]
-            # TODO: open and process the waypoints
+                self.coverage_blocking_areas_coords = self.read_coverage_blocking_areas(coverage_blocking_areas)
             self.generate_mobility_pattern_from_waypoints(self.waypoints_from_gml(cluster_src_dst_tuples, cluster_move_waypoints))
         # Calculate on all unconnected components (i.e between the nodes of each clusters and the fixed part)
         self.shortest_paths_fixed_part = dict(nx.all_pairs_dijkstra_path_length(self, weight=self.link_delay_str))
 
     def read_coverage_blocking_areas(self, coverage_blocking_areas_gml_path):
-        pass
+        """
+        Reads the GML file from the representing the LoS blocking areas.
+
+        :param coverage_blocking_areas_gml_path:
+        :return:
+        """
+        containers = nx.read_gml(coverage_blocking_areas_gml_path, destringizer=float)
+        block_dict = {}
+        for n_label, data in containers.nodes(data=True):
+            # last two characters are br, tl, tr, bl. WE NEED in order tl, tr, br, bl
+            container_name = n_label[:-2]
+            pos = n_label[-2:]
+            pos_coord_tuple = (data['lat'], data['lon'])
+            if container_name in block_dict:
+                # each position must be present exactly once
+                if pos in block_dict[container_name]:
+                    raise Exception("Positions '{}' of blocking area {} is present twice!!".format(pos, container_name))
+                block_dict[container_name][pos] = pos_coord_tuple
+            else:
+                block_dict[container_name] = {pos: pos_coord_tuple}
+        coverage_blocking_areas_coords = []
+        for k, pos_dict in block_dict.items():
+            coverage_blocking_areas_coords.append((pos_dict['tl'], pos_dict['tr'], pos_dict['br'], pos_dict['bl']))
+        return coverage_blocking_areas_coords
 
     def waypoints_from_gml(self, cluster_src_dst_tuples, cluster_move_waypoints_gml_path):
         """
@@ -579,7 +601,7 @@ class InfrastructureGMLGraph(GMLGraph):
 class ServiceGMLGraph(GMLGraph):
 
     def __init__(self, infra: InfrastructureGMLGraph, connected_component_sizes, sfc_delays, seed, series_parallel_ratio,
-                 mobile_nfs_per_sfc=0, incoming_graph_data=None, **attr):
+                 mobile_nfs_per_sfc=0, incoming_graph_data=None, nf_demand_units=0.5, min_nf_demand=0, max_nf_demand=10, **attr):
         """
         Generates a service using series parallel graph structures with SFC-s on its paths on top of infra with parameters given.
 
@@ -604,6 +626,9 @@ class ServiceGMLGraph(GMLGraph):
         self.infra = infra
         self.random = random.Random(seed)
         self.current_node_id = 0
+        self.nf_demand_units = nf_demand_units
+        self.min_nf_demand = int(min_nf_demand)
+        self.max_nf_demand = int(max_nf_demand)
         self.series_parallel_ratio = series_parallel_ratio
         self.sfc_delays_list = []             # list of (delay, edge path) tuples containing chain delays.
         self.mobile_nfs_per_sfc = mobile_nfs_per_sfc
@@ -643,11 +668,12 @@ class ServiceGMLGraph(GMLGraph):
                 # add parallel edge
                 G.add_edge(u, v)
         for u in G.nodes:
-            # TODO: add parameters
-            self.add_node(u, weight=self.random.uniform(0.05, 0.105), name=self.get_node_name(u))
+            self.add_node(u,
+                          weight=self.random.uniform(self.min_nf_demand, self.max_nf_demand) * self.nf_demand_units,
+                          name=self.get_node_name(u))
         for u,v,k in G.edges:
             if u != v and not self.has_edge(u, v):
-                # TODO: add parameters
+                # Edges do not have parameters for now
                 self.add_edge(u, v)
 
     def check_graph(self):
@@ -708,12 +734,13 @@ class ServiceGMLGraph(GMLGraph):
                 endpoint_vnf_id = loop[0][0]
                 # first endpoint_infra_ids are from the clusters, so we start adding SFC-s from their endpoints
                 endpoint_infra_id = infra_endpoints[loop_sfc_count]
+                sfc_delay = self.sfc_delays[loop_sfc_count]
                 loop_sfc_count += 1
                 self.nodes[endpoint_vnf_id][self.location_constr_str] = [endpoint_infra_id]
                 # endpoints do not have resources
                 self.nodes[endpoint_vnf_id][self.nf_demand_str] = 0
-                sfc_delay = self.random.choice(self.sfc_delays)
-                self._set_location_constraints(loop, endpoint_infra_id)
+                if endpoint_infra_id in self.infra.cluster_endpoint_ids:
+                    self._set_location_constraints(loop, endpoint_infra_id)
                 # Save SFC-s as tuples of delay and their vnf id path
                 self.sfc_delays_list.append((sfc_delay, loop))
                 self.log.debug("Adding SFC from VNF {} to endpoint {} with delay {} on path {}".
