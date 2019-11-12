@@ -138,6 +138,13 @@ class InfrastructureGMLGraph(GMLGraph):
         pass
 
     def waypoints_from_gml(self, cluster_src_dst_tuples, cluster_move_waypoints_gml_path):
+        """
+        Extracts the waypoint coordinates from a GML graph on the given path, between its two given nodes in cluster_src_dst_tuples
+
+        :param cluster_src_dst_tuples:
+        :param cluster_move_waypoints_gml_path:
+        :return:
+        """
         if cluster_src_dst_tuples is None:
             raise Exception("Start finish must be given!")
         else:
@@ -146,7 +153,7 @@ class InfrastructureGMLGraph(GMLGraph):
             else:
                 start_label, finish_label = cluster_src_dst_tuples[0][0], cluster_src_dst_tuples[0][1]
                 paths_graph = nx.read_gml(cluster_move_waypoints_gml_path, destringizer=float)
-                path = nx.shortest_path(paths_graph, source=start_label, target=finish_label)
+                path = nx.shortest_path(paths_graph, source=start_label, target=finish_label, weight='distance')
                 return list(map(lambda nid: (paths_graph.nodes[nid]['lat'], paths_graph.nodes[nid]['lon']), path))
 
     def check_graph(self):
@@ -463,8 +470,12 @@ class InfrastructureGMLGraph(GMLGraph):
                         distance_travelled += wayp_dist
                         move_required -= wayp_dist
                         current_p = wayp2
-                # the last waypoint needs to be handled separately, subintervalindex is must be the last one
-                self.add_all_coverage_probs(master_mobile, subinterval_index, cluster_waypoints[-1], check_LoS=True)
+                # in some cases the last waypoint is added already with the previous process (depends on floating point operation accuracy.)
+                if subinterval_index == self.time_interval_count:
+                    # the last waypoint needs to be handled separately, subintervalindex is must be the last one
+                    self.add_all_coverage_probs(master_mobile, subinterval_index, cluster_waypoints[-1], check_LoS=True)
+                else:
+                    subinterval_index -= 1
                 if subinterval_index != self.time_interval_count:
                     raise Exception("Mobility pattern generated to incorrect amount of subintervals: {} instead of {}".
                                     format(subinterval_index, self.time_interval_count))

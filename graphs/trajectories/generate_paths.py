@@ -1,3 +1,4 @@
+import math
 import networkx as nx
 
 
@@ -10,6 +11,11 @@ def get_internal_point(container, col, row):
             cumm_axis += container.nodes[label][axis]
         coords[axis] = cumm_axis / 4.0
     return coords
+
+
+def get_distance(G, n1, n2):
+    return math.sqrt((G.nodes[n1]['lon'] - G.nodes[n2]['lon'])**2 +
+                     (G.nodes[n1]['lat'] - G.nodes[n2]['lat'])**2)
 
 
 if __name__ == '__main__':
@@ -28,6 +34,8 @@ if __name__ == '__main__':
     for u, v in nx.grid_graph([5, 9]).edges():
         row1, col1 = u
         row2, col2 = v
-        paths_graph.add_edge("r{}c{}".format(row1+1, col1+1), "r{}c{}".format(row2+1, col2+1))
+        n1 = "r{}c{}".format(row1+1, col1+1)
+        n2 = "r{}c{}".format(row2+1, col2+1)
+        paths_graph.add_edge(n1, n2, distance=get_distance(paths_graph, n1, n2))
     nx.write_gml(paths_graph, "paths.gml")
 
