@@ -1,16 +1,17 @@
-base_config_file: "large_test_base_config.yml"                                     # Path to config file which stores the structure and
+base_config_file: "feasibility_sweep_base_config.yml"                                     # Path to config file which stores the structure and
                                                                             # the default simulation parameters.
 simulation_name: "feasibility_sweep"	                                     # String identifying the experiment (folder created for it)
-threads: 4                                                                  # number of parallel executions of simulations
+threads: 2                                                                  # number of parallel executions of simulations
 non_product_groups:                                                         # list of keys from the config file, where instead of product, zipping should be applied for creating the single configs
   - [optimization.improvement_score_limit, simulator.run_ampl]
 meta_config_values:                                                         # under this a full single config structure can be given, but
   infrastructure:                                                           # each value should be a list of values
-    gml_file: ["../graphs/infras/cobo-calleja/pico-and-micro-cobo-calleja-ref-1.gml", "../graphs/infras/cobo-calleja/pico-and-micro-cobo-calleja-ref-2.gml", "../graphs/infras/cobo-calleja/pico-and-micro-cobo-calleja-ref-3.gml"]
-    cluster_move_distances: [[0.0001], [0.001], [0.0025], [0.005]]
+    gml_file: ["../graphs/infras/valencia-haven/valencia-haven-1.gml", "../graphs/infras/valencia-haven/valencia-haven-2.gml"]
   service:
-    seed: [0, 1, 2, 3, 4, 5, 6, 7]
+    connected_component_sizes: [[10], [10, 10, 10], [20, 20, 20]]
+    sfc_delays: [[5, 5, 5], [10, 10, 10], [15, 15, 15], [1000, 1000, 1000]]
+    seed: [0, 1, 2, 3]
   optimization:
-    improvement_score_limit: [3, 2, 1, 4]
+    improvement_score_limit: [4, 3, 2, 1]
   simulator:
     run_ampl: [True, False, False, False]

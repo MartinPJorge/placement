@@ -166,7 +166,7 @@ if __name__ == "__main__":
     #                                   dependent_section_key="optimization.improvement_score_limit",
     #                                   section_keys_to_aggr=["infrastructure.gml_file"],
     #                                   plot_value_extractor=DataExtractor.get_objective_function_value)
-
+    # TODO: for next testcase create another function which creates all the plots!
     ref_to_path = {
         'ref-1': "../graphs/infras/cobo-calleja/pico-and-micro-cobo-calleja-ref-1.gml",
         'ref-2': "../graphs/infras/cobo-calleja/pico-and-micro-cobo-calleja-ref-2.gml",
