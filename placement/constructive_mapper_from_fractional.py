@@ -460,6 +460,9 @@ class ConstructiveMapperFromFractional(AbstractMapper):
                     anything_left_to_improve, any_violation_left = self.improve_item_to_bin_mappings(best_bins)
                 if not any_violation_left:
                     break
+                if time.time() - start_timestamp > 1200:
+                    self.log.warn("Interrupting heuristic algorithm due to running longer than 1200s...")
+                    break
                 # get new bin : if there is nothing left to improve with the current bins, we can introduce new ones
                 best_bins, can_add_next_bin = self.get_new_best_bins(best_bins, any_violation_left)
         except UnfeasibleVolatileResourcesProblem as ubp:
