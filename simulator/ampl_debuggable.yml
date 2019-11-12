@@ -31,7 +31,7 @@ optimization:
   coverage_threshold: 0.98                             # Least probability the cluster should be covered at all time instances.
   battery_threshold: 0.2                              # Least probability which the mobile clusters are not depleted by the end of the
                                                       # optimization interval with the allocated load.
-  improvement_score_limit: 3
+  improvement_score_limit: 2
 #================= Simulator settings =================#
 simulator:
   log_file: "simulator.log"
