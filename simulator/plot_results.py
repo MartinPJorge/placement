@@ -136,6 +136,8 @@ class MakeBoxPlot(object):
         :param y_axis_label:
         :return:
         """
+        if len(plot_data) == 0:
+            return
         fig, ax = plt.subplots()
         pos = np.array(range(len(plot_data))) + 1
         values_to_plot = []
