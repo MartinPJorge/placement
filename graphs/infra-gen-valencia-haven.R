@@ -1,21 +1,11 @@
 library(mecgen)
 library(SDMTools)
+library(stringr)
 
 # Read the micro cells
 cells <- read.csv(file="valencia-haven-aaus.csv", header=TRUE, sep = ',')
 
 
-# Generate with random uniform the pico cells
-haven_borders <- c(bottom = 39.419224, top = 39.437913,
-                   left = -0.341373, right = -0.304092)
-map <- get_stamenmap(haven_borders, zoom=16, maptype = "toner-lite")
-map_valencia_haven <- ggmap(map)
-repulsion <- 50
-
-vlc.bl <- c(39.419224,-0.341373)
-vlc.br <- c(39.419224,-0.304092)
-vlc.tr <- c(39.437913,-0.304092)
-vlc.tl <- c(39.437913,-0.341373)
 
 
 # Obtain the link and nodes frames
@@ -40,12 +30,16 @@ frames <- graphFrames(m1Assoc, m1Coords, m1AccAssocs, accCentCoords,
 # Specify LTE and NR properties
 nr_nodes <- c()
 lte_nodes <- c()
-cell_nodes <- cells
+cell_nodes <- frames$nodes
 for (i in 1:nrow(cell_nodes)) {
-  if (cell_nodes[i,]$type == 'lte')
-    lte_nodes <- c(lte_nodes, as.character(cell_nodes[i,]$id))
-  else
-    nr_nodes <- c(nr_nodes, as.character(cell_nodes[i,]$id))
+  if (cell_nodes[i,]$type == 'cell') {
+    cell_num <- as.numeric(str_extract(as.character(cell_nodes[i,]$id),
+                                       regex('\\d+')))
+    if (cell_num > 36)
+      lte_nodes <- c(lte_nodes, as.character(cell_nodes[i,]$id))
+    else
+      nr_nodes <- c(nr_nodes, as.character(cell_nodes[i,]$id))
+  }
 }
 newNodes <- addNodeProps(nodes = frames$nodes, id_ = nr_nodes,
                      properties = list(size=rep('nr', length(nr_nodes)),
@@ -58,7 +52,7 @@ newNodes <- addNodeProps(nodes = newNodes, id_ = lte_nodes,
                                        coverageRadius=
                                          rep(8000, length(lte_nodes)),
                                        delay=rep(5, length(lte_nodes)),
-                                       cost=rep(5.5, length(nr_nodes))))
+                                       cost=rep(5.5, length(lte_nodes))))
 frames$nodes <- newNodes
 
 
@@ -76,7 +70,8 @@ attachFrames <- attachServers(nodes = frames$nodes, links = frames$links,
 
 
 # Attach cloud servers
-attachFrames <- attachServers(nodes = frames$nodes, links = frames$links,
+attachFrames <- attachServers(nodes = attachFrames$nodes,
+                              links = attachFrames$links,
                               numServers = 2,
                               bandwidth = 12,
                               bandwidthUnits = "Mbps",
