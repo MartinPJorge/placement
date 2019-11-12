@@ -3,7 +3,7 @@ library(SDMTools)
 library(stringr)
 
 # Read the micro cells
-cells <- read.csv(file="valencia-haven-aaus.csv", header=TRUE, sep = ',')
+cells <- read.csv(file="fixed-cells/valencia-haven/valencia-haven-aaus.csv", header=TRUE, sep = ',')
 
 
 
