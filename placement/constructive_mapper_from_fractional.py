@@ -65,7 +65,7 @@ class ConstructiveMapperFromFractional(AbstractMapper):
     def get_bins_sorted_by_filled_unit_cost(self):
         return sorted(self.bins, key=lambda b: b.filled_unit_cost)
 
-    def get_base_bin_packing_problem(self, infra, ns):
+    def get_base_bin_packing_problem(self, infra : InfrastructureGMLGraph, ns):
         """
         Constructs a base binpacking problem without filtering out any of the possible mappings.
 
@@ -78,13 +78,16 @@ class ConstructiveMapperFromFractional(AbstractMapper):
             self.items.append(Item(n, node_dict[ns.nf_demand_str], node_dict, possible_bins=[]))
         min_weighted_item = min(self.items, key=lambda i: i['weight'])
         for n, node_dict in infra.nodes(data=True):
-            bin = Bin(n, node_dict[infra.infra_node_capacity_str], node_dict[infra.infra_fixed_cost_str],
-                      node_dict[infra.infra_unit_cost_str], node_dict, mapped_here=[])
-            if bin['capacity'] >= min_weighted_item['weight']:
-                self.bins.append(bin)
-            elif bin['capacity'] > self.epsilon:
-                # items and bins with 0 capacity might appear as access points
-                self.log.info("Discarding bin {} because it cannot fit even the smallest item".format(bin))
+            if n not in infra.access_point_ids and n not in infra.ignored_nodes_for_optimization:
+                bin = Bin(n, node_dict[infra.infra_node_capacity_str], node_dict[infra.infra_fixed_cost_str],
+                          node_dict[infra.infra_unit_cost_str], node_dict, mapped_here=[])
+                if bin['capacity'] >= min_weighted_item['weight']:
+                    self.bins.append(bin)
+                elif bin['capacity'] > self.epsilon:
+                    # items and bins with 0 capacity might appear as access points
+                    self.log.info("Discarding bin {} because it cannot fit even the smallest item".format(bin))
+            else:
+                self.log.debug("Discarding infrastructure node {} as it does not affect bin packing: {}".format(n, node_dict))
         if len(self.bins) == 0:
             raise UnfeasibleVolatileResourcesProblem("None of the bins can host the smallest item!")
         # set possible bins for all items (discard ones with insufficient capacity)
@@ -154,10 +157,15 @@ class ConstructiveMapperFromFractional(AbstractMapper):
                               "to initially chosen bins.".format(item))
                 # choose the cheapest bin among the possible ones (natural extension of the algorithm).
                 for bin in self.get_bins_sorted_by_filled_unit_cost():
-                    if bin in item.possible_bins:
+                    if bin in item.possible_bins and bin.does_item_fit(item):
                         item.mapped_to = bin
                         bin.mapped_here.append(item)
                         break
+                else:
+                    # it does not neccesarily mean that it is not feasible!!
+                    # possibly result in an invalid solution!
+                    self.log.warn("Fitting item {} to its cheapest possible bin was not possible by "
+                                  "trying to first fit it by increasing bin cost!".format(item))
             else:
                 raise UnfeasibleVolatileResourcesProblem("Item {} cannot be mapped anywhere".format(item))
         self.hashes_of_visited_mappings.add(self.hash_of_current_mapping())
@@ -230,7 +238,9 @@ class ConstructiveMapperFromFractional(AbstractMapper):
         improvement_score_stats = dict()
         key_gen = lambda checker: checker.__class__.__name__+str(int(id(checker)))
         for checker in self.violation_checkers:
-            violating_items = violating_items.union(checker.get_violating_items())
+            new_violating_items = checker.get_violating_items()
+            violating_items = violating_items.union(new_violating_items)
+            self.log.info("Current violating items of checker {} are {}".format(key_gen(checker), new_violating_items))
             improvement_score_stats[key_gen(checker)] = []
         if len(violating_items) == 0:
             # if the delay violation checker didn't return violating items either, then it must have calculated a complete AP selection!
@@ -453,18 +463,21 @@ class ConstructiveMapperFromFractional(AbstractMapper):
             # NOTE: With another heuristic it might be needed to be run again, after a new bin is introduced.
             self.map_all_items_to_bins(best_bins)
             can_add_next_bin = True
+            algorithm_time_out = False
             while can_add_next_bin:
                 anything_left_to_improve = True
                 while anything_left_to_improve:
                     # get mapping improvement : improve on the item mappings
                     anything_left_to_improve, any_violation_left = self.improve_item_to_bin_mappings(best_bins)
-                if not any_violation_left:
-                    break
-                if time.time() - start_timestamp > 1200:
-                    self.log.warn("Interrupting heuristic algorithm due to running longer than 1200s...")
+                    if time.time() - start_timestamp > 1200:
+                        self.log.warn("Interrupting heuristic algorithm due to running longer than 1200s...")
+                        algorithm_time_out = True
+                        break
+                if not any_violation_left or algorithm_time_out:
                     break
                 # get new bin : if there is nothing left to improve with the current bins, we can introduce new ones
                 best_bins, can_add_next_bin = self.get_new_best_bins(best_bins, any_violation_left)
+                self.log.debug("Current best bins: {}".format(best_bins))
         except UnfeasibleVolatileResourcesProblem as ubp:
             self.log.info(ubp.msg)
             mapping[mapping.RUNNING_TIME] = time.time() - start_timestamp
