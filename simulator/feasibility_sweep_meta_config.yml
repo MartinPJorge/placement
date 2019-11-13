@@ -1,6 +1,6 @@
 base_config_file: "feasibility_sweep_base_config.yml"                                     # Path to config file which stores the structure and
                                                                             # the default simulation parameters.
-simulation_name: "feasibility_sweep"                                        # String identifying the experiment (folder created for it)
+simulation_name: "feasibility_sweep_fixed"                                        # String identifying the experiment (folder created for it)
 threads: 2                                                                  # number of parallel executions of simulations
 non_product_groups:                                                         # list of keys from the config file, where instead of product, zipping should be applied for creating the single configs
   - [optimization.improvement_score_limit, simulator.run_ampl]

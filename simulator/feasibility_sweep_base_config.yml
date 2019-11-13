@@ -10,7 +10,7 @@ infrastructure:
   cluster_src_dst_tuples: [["r1c1", "r9c5"]]          # start and finish labels of cluster moves
   unloaded_battery_alive_prob: 0.99                   # Probability having a not completly depleted battery by the end of the optimization
                                                       # time interval if no capacity is used on the mobile node. Same value is set for all mobile nodes
-  full_loaded_battery_alive_prob: 0.2                 # Like above, but with fully loaded mobile node.
+  full_loaded_battery_alive_prob: 0.5                 # Like above, but with fully loaded mobile node.
   seed: 0                                             # randomization seed
 #================= Service description section =================#
 service:
@@ -24,14 +24,14 @@ service:
   seed: 0                                             # randomization seed (can be different from infra, but they together define the task)
   min_nf_demand: 0                                    # VNF demand is random.randint(min_nf_demand, max_nf_demand) * nf_demand_units
   max_nf_demand: 4                # NOTE this ensures that every VNF should be able to be mapped from capacity point of view
-  nf_demand_units: 0.5
+  nf_demand_units: 0.499
 #================= Optimization description section =================#
 optimization:
   time_interval_count: 24                             # same as infrastructure.time_interval_count
-  coverage_threshold: 0.98                             # Least probability the cluster should be covered at all time instances.
-  battery_threshold: 0.2                              # Least probability which the mobile clusters are not depleted by the end of the
+  coverage_threshold: 0.94                             # Least probability the cluster should be covered at all time instances.
+  battery_threshold: 0.4                               # Least probability which the mobile clusters are not depleted by the end of the
                                                       # optimization interval with the allocated load.
-                                  # NOTE: this value with full_loaded_battery_alive_prob = 0.2 should always work!
+                                  # NOTE: this value with full_loaded_battery_alive_prob = 0.5 should always work!
   improvement_score_limit: 1
 #================= Simulator settings =================#
 simulator:
