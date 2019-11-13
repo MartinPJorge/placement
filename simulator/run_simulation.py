@@ -367,7 +367,14 @@ if __name__ == '__main__':
         if args.single_config is not None:
             with open(args.single_config) as f:
                 single_config = yaml.load(f.read())
-                run_with_config(single_config)
+                heur_mapping_result_dict, ampl_mapping_result_dict, algorithm_errors = run_with_config(single_config)
+                if heur_mapping_result_dict is not None:
+                    print("HEURISTIC SOLUTION: " + json.dumps(heur_mapping_result_dict, indent=4))
+                if ampl_mapping_result_dict is not None:
+                    print("AMPL SOLUTION: " + json.dumps(ampl_mapping_result_dict, indent=4))
+                print("ALGORITHM ERRORS: ")
+                for trace in algorithm_errors:
+                    print(trace)
         elif args.meta_config is not None:
             with open(args.meta_config) as f:
                 meta_config = yaml.load(f.read())

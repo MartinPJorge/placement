@@ -9,6 +9,7 @@ class VolatileResourcesMapping(dict):
     AP_SELECTION = 'AP_selection'
     OBJECTIVE_VALUE = 'Objective_value'
     RUNNING_TIME = 'Running_time'
+    EPSILON = 1e-6
 
     def __init__(self, *args, **kwargs):
         """
@@ -89,7 +90,7 @@ class VolatileResourcesMapping(dict):
                             for nfu, nfv in sfc_path:
                                 host_u, host_v = self.get_hosting_infra_node_id(ns, infra, nfu), self.get_hosting_infra_node_id(ns, infra, nfv)
                                 actual_sfc_delay += infra.delay_distance(host_u, host_v, subinterval, coverage_threshold, ap_id)
-                            if sfc_delay < actual_sfc_delay:
+                            if sfc_delay + self.EPSILON < actual_sfc_delay:
                                 return False
                         # go to next subinterval
                         break
@@ -113,14 +114,14 @@ class VolatileResourcesMapping(dict):
                     if self[data[ns.node_name_str]] == infra_node_name:
                         allocated_load += data[ns.nf_demand_str]
                 # check if load matches
-                if allocated_load > total_capacity:
+                if allocated_load > total_capacity + self.EPSILON:
                     return False
                 # check battery constraints
                 if infra_node_id in infra.mobile_ids:
                     mobile_ids.remove(infra_node_id)
                     linear_coeff = infra.unloaded_battery_alive_prob - infra.full_loaded_battery_alive_prob
                     probability = infra.unloaded_battery_alive_prob - allocated_load / total_capacity * linear_coeff
-                    if probability < battery_threshold:
+                    if probability < battery_threshold - self.EPSILON:
                         return False
             if len(mobile_ids) > 0:
                 raise Exception("Not all mobile nodes have been checked for battery constraints!")
