@@ -87,6 +87,7 @@ class InfrastructureGMLGraph(GMLGraph):
         self.server_strs = ['m{}_server'.format(i) for i in range(1,4)]
         self.server_strs.append('server')
         self.mobile_node_str = 'fogNode'
+        self.EPSILON = 1e-5
 
         super(InfrastructureGMLGraph, self).__init__(incoming_graph_data, gml_file=gml_file, label=label, **attr)
         # NOTE: duplication of information storage should be avoided (do not store information in class attributes, which can de
@@ -224,7 +225,8 @@ class InfrastructureGMLGraph(GMLGraph):
             if through_ap_id is not None:
                 # if a coverage probability is given, only return the delay, if the given AP's coverage meets the specified threshold
                 if coverage_prob is not None:
-                    if coverage_prob > self.ap_coverage_probabilities[affected_master_mobile_id][time_interval_index][through_ap_id]:
+                    if coverage_prob > self.ap_coverage_probabilities[affected_master_mobile_id][time_interval_index][through_ap_id] + \
+                            self.EPSILON:
                         return float('inf')
                 chosen_ap_delay = self.nodes[through_ap_id][self.access_point_delay_str]
                 chosen_ap_id = through_ap_id
@@ -236,9 +238,10 @@ class InfrastructureGMLGraph(GMLGraph):
                     current_ap_delay = self.nodes[ap_id][self.access_point_delay_str]
                     if coverage_prob is not None:
                         # if coverage is given, skip the ones which are lower.
-                        if coverage_prob > self.ap_coverage_probabilities[affected_master_mobile_id][time_interval_index][ap_id]:
+                        if coverage_prob > self.ap_coverage_probabilities[affected_master_mobile_id][time_interval_index][ap_id] + \
+                                self.EPSILON:
                             continue
-                    if chosen_ap_delay > current_ap_delay:
+                    if chosen_ap_delay > current_ap_delay + self.EPSILON:
                         chosen_ap_delay = current_ap_delay
                         chosen_ap_id = ap_id
                 # if no allowed AP ID is found, distance is infinite
