@@ -66,13 +66,15 @@ class AMPLDataConstructor(object):
             for id_ in infra.mobile_ids]
         self.cluster_endpoint_names = [infra.nodes[id_][infra.node_name_str]
             for id_ in infra.cluster_endpoint_ids]
+        self.infra_endpoint_names = [infra.nodes[id_][infra.node_name_str]
+                                     for id_ in infra.endpoint_ids if id_ not in infra.cluster_endpoint_ids]
         self.infra_names = self.endpoint_names + self.access_point_names + self.server_names + \
                            self.mobile_names
 
         # All the infra graph vertices
         ampl.set['vertices'][infra.name] = self.infra_names
         ampl.set['APs'] = self.access_point_names
-        ampl.set['servers'] = self.server_names
+        ampl.set['servers'] = self.server_names + self.infra_endpoint_names
         ampl.set['mobiles'] = self.mobile_names + self.cluster_endpoint_names
 
         # add the mobile cluster's master node
@@ -136,11 +138,12 @@ class AMPLDataConstructor(object):
     def fill_placement_policies(self, ampl : AMPL, service : gs.ServiceGMLGraph, infra : gs.InfrastructureGMLGraph):
         policy_dict = {}
         self.log.info("Reading placement policies from service...")
-        self.log.debug(" "*5 + " ".join(d[infra.node_name_str] for i, d in infra.nodes(data=True) if i not in infra.ignored_nodes_for_optimization))
+        is_policy_node_id = lambda infra_node_id, infra: infra_node_id in infra.server_ids or infra_node_id in infra.mobile_ids or infra_node_id in infra.endpoint_ids or infra_node_id in infra.cluster_endpoint_ids
+        self.log.debug(" "*5 + " ".join(d[infra.node_name_str] for i, d in infra.nodes(data=True) if is_policy_node_id(i, infra)))
         for vnf_id, vnf_data in service.nodes(data=True):
             string_of_a_row = ""
             for infra_node_id, infra_node_data in infra.nodes(data=True):
-                if infra_node_id not in infra.ignored_nodes_for_optimization:
+                if is_policy_node_id(infra_node_id, infra):
                     ampl_df_key = (vnf_data[service.node_name_str], infra_node_data[infra.node_name_str])
                     if service.location_constr_str in vnf_data:
                         if infra_node_id in vnf_data[service.location_constr_str]:
@@ -163,10 +166,11 @@ class AMPLDataConstructor(object):
             for node, props in infra.nodes(data=True) if node in infra.access_point_ids
         })
 
+        fixed_server_endpoint_ids = infra.server_ids + [n for n in infra.endpoint_ids if n not in infra.cluster_endpoint_ids]
         # set delays between APs and servers
         ap_server_delay_dict = {}
         for ap_id in infra.access_point_ids:
-            for infra_id in infra.server_ids:
+            for infra_id in fixed_server_endpoint_ids:
                 ampl_df_key = (infra.nodes[ap_id][infra.node_name_str], infra.nodes[infra_id][infra.node_name_str])
                 # delay between the APs and servers is time-invariant
                 ap_server_delay_dict[ampl_df_key] = infra.delay_distance(ap_id, infra_id, 1)
@@ -176,8 +180,8 @@ class AMPLDataConstructor(object):
 
         # set delays between servers
         server_server_delay_dict = {}
-        for infra_id1 in infra.server_ids:
-            for infra_id2 in infra.server_ids:
+        for infra_id1 in fixed_server_endpoint_ids:
+            for infra_id2 in fixed_server_endpoint_ids:
                 ampl_df_key = (infra.nodes[infra_id1][infra.node_name_str], infra.nodes[infra_id2][infra.node_name_str])
                 # delay between servers are time invariant
                 server_server_delay_dict[ampl_df_key] = infra.delay_distance(infra_id1, infra_id2, 1)
