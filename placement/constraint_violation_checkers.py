@@ -88,6 +88,7 @@ class DelayAndCoverageViolationChecker(BaseConstraintViolationChecker):
         # From this point on, any instance of the class is executed,
         # it must give the same AP selection in all subintervals OR set it back to invalid, if its constraint is violated.
         self.chosen_ap_ids = shared_ap_selection
+        self.EPSILON = 1e-5
 
     def get_cheapest_ap_id(self, subinterval):
         """
@@ -102,9 +103,9 @@ class DelayAndCoverageViolationChecker(BaseConstraintViolationChecker):
         min_ap_cost = float('inf')
         min_cost_ap_id = None
         for ap_id, coverage_prob in self.infra.ap_coverage_probabilities[master_mobile_id][subinterval].items():
-            if coverage_prob > self.coverage_threshold:
+            if coverage_prob > self.coverage_threshold + self.EPSILON:
                 ap_cost = self.infra.nodes[ap_id][self.infra.access_point_usage_cost_str]
-                if ap_cost < min_ap_cost:
+                if ap_cost + self.EPSILON < min_ap_cost:
                     min_ap_cost = ap_cost
                     min_cost_ap_id = ap_id
         return min_cost_ap_id
@@ -134,7 +135,7 @@ class DelayAndCoverageViolationChecker(BaseConstraintViolationChecker):
                 remaining_delay -= self.infra.delay_distance(u_host_id, v_host_id)
         if remaining_delay == -float('inf') or remaining_delay == float('inf'):
             raise Exception("Remaining delay cannot be -inf or inf at this point!")
-        if remaining_delay < 0:
+        if remaining_delay + self.EPSILON < 0:
             # if the delay is already negative in the fixed delay, then it will be negative in all intervals
             negative_rem_delay_subinterval = self.time_interval_count
 
@@ -153,19 +154,22 @@ class DelayAndCoverageViolationChecker(BaseConstraintViolationChecker):
                     # find the best possible delay, which obeys the coverage probabilty through ANY access point.
                     # NOTE: We cannot select the cheapest AP, even if there are multiple access points which obey the delay requirement,
                     # because then multiple SFC delays could result in different AP selections. So we need to select the lowest delay one
-                    # and save it in a static class variable
+                    # and save it in a shared variable
+                    # NOTE: other option to find the lowest delay SFC and for all other SFC choose the cheapest (deterministically)
+                    # which is below the lowest delay. Requires more coordination bentween SFC violation checkers
                     min_wireless_delay_with_cov = float('inf')
                     for ap_id in self.infra.access_point_ids:
                         curr_wireless_delay_with_cov = self.infra.delay_distance(u_host_id, v_host_id, subinterval,
                                                                                  self.coverage_threshold, ap_id)
-                        if curr_wireless_delay_with_cov < min_wireless_delay_with_cov:
+                        if curr_wireless_delay_with_cov + self.EPSILON < min_wireless_delay_with_cov:
                             min_wireless_delay_with_cov = curr_wireless_delay_with_cov
                             min_delay_though_ap_id = ap_id
                     # evaluate the situation for the output numbers
                     if min_wireless_delay_with_cov == float('inf'):
                         inf_count_subinterval += 1
                     # we should not go above the negative remaining delay intervals above the total number of intervals
-                    elif rem_delay_in_subint < min_wireless_delay_with_cov and negative_rem_delay_subinterval < self.time_interval_count:
+                    elif rem_delay_in_subint + self.EPSILON < min_wireless_delay_with_cov and \
+                            negative_rem_delay_subinterval < self.time_interval_count:
                         negative_rem_delay_subinterval += 1
                     else:
                         rem_delay_in_subint -= min_wireless_delay_with_cov
@@ -194,7 +198,8 @@ class DelayAndCoverageViolationChecker(BaseConstraintViolationChecker):
                 for subinterval, ap_id in self.chosen_ap_ids.items():
                     if self.chosen_ap_ids[subinterval] != current_chosen_ap_ids[subinterval]:
                         raise Exception("Some SFC-s do not agree on the selected access points in time interval {} based on "
-                                        "minimal delay, coverage obeying method!".format(subinterval))
+                                        "minimal delay, coverage obeying method! Current selection: {}, Existing selection: {}".
+                                        format(subinterval, current_chosen_ap_ids, self.chosen_ap_ids))
             else:
                 self.chosen_ap_ids.add_ap_selection_dict(current_chosen_ap_ids)
 

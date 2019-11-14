@@ -42,7 +42,7 @@ class ConstructiveMapperFromFractional(AbstractMapper):
             self.log.setLevel(log.getEffectiveLevel())
 
         # these might not be needed if we override the functions with other heuristics.
-        self.epsilon = 1e-3
+        self.EPSILON = 1e-5
         self.min_bin_preference = None
         self.improvement_score_limit = improvement_score_limit
         # compulsory parameters
@@ -83,7 +83,7 @@ class ConstructiveMapperFromFractional(AbstractMapper):
                           node_dict[infra.infra_unit_cost_str], node_dict, mapped_here=[])
                 if bin['capacity'] >= min_weighted_item['weight']:
                     self.bins.append(bin)
-                elif bin['capacity'] > self.epsilon:
+                elif bin['capacity'] > self.EPSILON:
                     # items and bins with 0 capacity might appear as access points
                     self.log.info("Discarding bin {} because it cannot fit even the smallest item".format(bin))
             else:
@@ -287,7 +287,7 @@ class ConstructiveMapperFromFractional(AbstractMapper):
                             # setting must unambiguously identify the AP selection.
                             # see "# NOTE" in DelayAndCoverageViolationChecker.calculate_violations
                             # TODO: work out a way to include improvement on AP selection cost?? (difficult, not fit well to the current design)
-                            if cost_of_improvement < cost_of_cheapest_improvement:
+                            if cost_of_improvement + self.EPSILON < cost_of_cheapest_improvement:
                                 cost_of_cheapest_improvement = cost_of_improvement
                                 target_bin = bin
                                 item_to_be_moved = item
