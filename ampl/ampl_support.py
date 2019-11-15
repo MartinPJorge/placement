@@ -119,6 +119,10 @@ class AMPLSolverSupport(object):
             return mapping
         elif result_str == 'limit':
             self.log.info("Some limit criteria has been reached!")
+            mapping[VolatileResourcesMapping.WORKED] = False
+            mapping[mapping.RUNNING_TIME] = time.time() - self.start_timestamp
+            return mapping
+            # TODO: this logic of trying to extract the solution DOES NOT WORK
             # NOTE: There might be a feasible solution which is worse than the specified MIP gap, and is feasible.
             try:
                 mapping = self.extract_variables(mapping)
