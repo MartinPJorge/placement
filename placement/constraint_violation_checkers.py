@@ -197,19 +197,10 @@ class DelayAndCoverageViolationChecker(BaseConstraintViolationChecker):
 
         # if the delay and coverage values are violated in none of the subintervals, then we have an AP selection
         if inf_count_subinterval == 0 and negative_rem_delay_subinterval == 0:
-            if self.chosen_ap_ids.is_valid:
-                # check if the AP selection matches with the earlier one, all SFC-s need to agree on one!
-                # (which is enforced by the way AP-s are selected, here we execute a check)
-                for subinterval, ap_id in self.chosen_ap_ids.items():
-                    if self.chosen_ap_ids[subinterval] != current_chosen_ap_ids[subinterval]:
-                        self.log.info("AP selection disagreement in subinterval {} with SFC {}: current AP {}, existing AP selection {}".
-                                      format(subinterval, self.sfc_path, current_chosen_ap_ids[subinterval],
-                                             self.chosen_ap_ids[subinterval]))
-                        self.log.warn("Some SFC-s do not agree on the selected access points in time interval {} based on "
-                                        "minimal delay, coverage obeying method! Current selection: {}, Existing selection: {}".
-                                        format(subinterval, current_chosen_ap_ids, self.chosen_ap_ids.ap_selection))
-            else:
-                self.chosen_ap_ids.add_ap_selection_dict(current_chosen_ap_ids)
+            # replaces the selectino only if the current selection was made based on a more strict latency requirement
+            self.log.debug("Setting current AP selection for SFC {} with delay {}: {}".
+                           format(self.sfc_path, self.sfc_delay, current_chosen_ap_ids))
+            self.chosen_ap_ids.add_ap_selection_dict(current_chosen_ap_ids, self.sfc_delay)
 
         return inf_count_subinterval, negative_rem_delay_subinterval
 

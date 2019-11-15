@@ -155,6 +155,7 @@ class InvalidableAPSelectionStruct(object):
         No variables should be accessed when the struct is invalid!
         """
         self.struct_valid = False
+        self.current_setting_sfc_delay = float('inf')
         self.ap_selection = {}
 
     def __getitem__(self, subinterval_index):
@@ -166,12 +167,16 @@ class InvalidableAPSelectionStruct(object):
         for k, v in self.ap_selection.items():
             yield k, v
 
-    def add_ap_selection_dict(self, full_selection : dict):
+    def add_ap_selection_dict(self, full_selection : dict, current_setting_sfc_delay):
         self.struct_valid = True
-        self.ap_selection = dict(full_selection)
+        if current_setting_sfc_delay < self.current_setting_sfc_delay:
+            self.current_setting_sfc_delay = current_setting_sfc_delay
+            self.ap_selection = dict(full_selection)
+        # otherwise we keep the current AP selection because it was set by a stricter SFC
 
     def invalidate(self):
         self.struct_valid = False
+        self.current_setting_sfc_delay = float('inf')
 
     @property
     def is_valid(self):
