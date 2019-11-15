@@ -74,8 +74,24 @@ class AMPLSolverSupport(object):
             self.ampl.exportData(export_ampl_data_path)
         self.log.info("Parsing to AMPL is successful!")
         self.ampl.setOption('solver', 'gurobi')
-        self.ampl.eval('option gurobi_options \'mipgap 0.9 timelim 1 threads 1\';')
+        self.ampl.eval('option gurobi_options \'mipgap 0.9 timelim 1800 threads 1\';')
         self.start_timestamp = None
+
+    def extract_variables(self, mapping : VolatileResourcesMapping):
+        for var_name, var in self.ampl.getVariables():
+            # node mapping decision variables
+            if var_name == 'X':
+                for key, value in var.getValues().toDict().items():
+                    # it is a binary in float, so safe to compare
+                    if value == 1.0:
+                        nf_name, infra_name = key
+                        mapping[nf_name] = infra_name
+            elif var_name == 'AP_x':
+                for key, value in var.getValues().toDict().items():
+                    if value == 1.0:
+                        ap_name, subinterval = key
+                        mapping.add_access_point_selection(subinterval, ap_name)
+        return mapping
 
     def construct_mapping(self, objective : amplpy.objective.Objective):
         """
@@ -94,20 +110,7 @@ class AMPLSolverSupport(object):
             return mapping
         elif result_str == 'solved':
             mapping[VolatileResourcesMapping.WORKED] = True
-            for var_name, var in self.ampl.getVariables():
-                # node mapping decision variables
-                if var_name == 'X':
-                    for key, value in var.getValues().toDict().items():
-                        # it is a binary in float, so safe to compare
-                        if value == 1.0:
-                            nf_name, infra_name = key
-                            mapping[nf_name] = infra_name
-                elif var_name == 'AP_x':
-                    for key, value in var.getValues().toDict().items():
-                        if value == 1.0:
-                            ap_name, subinterval = key
-                            mapping.add_access_point_selection(subinterval, ap_name)
-
+            mapping = self.extract_variables(mapping)
             if not mapping.validate_mapping(self.service_instance, self.substrate_network, **self.optimization_kwargs):
                 raise Exception("Mapping of the AMPL model is invalid!")
             self.log.info("Mapping structure validation is successful!")
@@ -117,8 +120,18 @@ class AMPLSolverSupport(object):
         elif result_str == 'limit':
             self.log.info("Some limit criteria has been reached!")
             # NOTE: There might be a feasible solution which is worse than the specified MIP gap, and is feasible.
+            try:
+                mapping = self.extract_variables(mapping)
+                # if we reach this point we have found a solution
+                if not mapping.validate_mapping(self.service_instance, self.substrate_network, **self.optimization_kwargs):
+                    self.log.warn("Mapping of timeouted AMPL model is invalid!")
+                    mapping[VolatileResourcesMapping.WORKED] = False
+                else:
+                    mapping[VolatileResourcesMapping.WORKED] = True
+                    mapping[mapping.OBJECTIVE_VALUE] = objective.value()
+            except Exception as e:
+                self.log.warn("Exception during extracting mapping from timeouted AMPL model: {}".format(traceback.format_exc()))
             mapping[mapping.RUNNING_TIME] = time.time() - self.start_timestamp
-            mapping[mapping.OBJECTIVE_VALUE] = objective.value()
             return mapping
         elif result_str == 'failure':
             self.log.warn("Failure in AMPL model!")
