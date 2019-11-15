@@ -438,7 +438,7 @@ class ConstructiveMapperFromFractional(AbstractMapper):
                                                                                 ConstructiveMapperFromFractional.move_item_to_bin,
                                                                                 sfc_delay, sfc_path, self.time_interval_count,
                                                                                 self.coverage_threshold,
-                                                                                shared_ap_selection=self.chosen_ap_ids))
+                                                                                shared_ap_selection=self.chosen_ap_ids, log=self.log))
 
     def map(self, infra, ns) -> dict:
         start_timestamp = time.time()

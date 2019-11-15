@@ -3,7 +3,7 @@ from .support_classes import *
 
 class BaseConstraintViolationChecker(metaclass=ABCMeta):
 
-    def __init__(self, items, bins, infra : InfrastructureGMLGraph, ns : ServiceGMLGraph, item_move_function):
+    def __init__(self, items, bins, infra : InfrastructureGMLGraph, ns : ServiceGMLGraph, item_move_function, log=None):
         super(BaseConstraintViolationChecker, self).__init__()
         self.bins = bins
         self.items = items
@@ -13,6 +13,11 @@ class BaseConstraintViolationChecker(metaclass=ABCMeta):
         self.id_item_map = {i['id'] : i for i in self.items}
         # function which executes an item move in the (global) bin mapping structure
         self.item_move_function = item_move_function
+        if log is not None:
+            self.log = log.getChild(self.__class__.__name__)
+            for handler in log.handlers:
+                self.log.addHandler(handler)
+            self.log.setLevel(log.getEffectiveLevel())
 
     @abstractmethod
     def get_violating_items(self) -> list:
@@ -76,8 +81,8 @@ class BinCapacityViolationChecker(BaseConstraintViolationChecker):
 class DelayAndCoverageViolationChecker(BaseConstraintViolationChecker):
 
     def __init__(self, items, bins, infra : InfrastructureGMLGraph, ns : ServiceGMLGraph, item_move_function, sfc_delay, sfc_path,
-                 time_interval_count, coverage_threshold, shared_ap_selection : InvalidableAPSelectionStruct):
-        super(DelayAndCoverageViolationChecker, self).__init__(items, bins, infra, ns, item_move_function)
+                 time_interval_count, coverage_threshold, shared_ap_selection : InvalidableAPSelectionStruct, log):
+        super(DelayAndCoverageViolationChecker, self).__init__(items, bins, infra, ns, item_move_function, log)
         self.sfc_delay = sfc_delay
         self.sfc_path = sfc_path
         self.affected_nfs = [v for u,v in self.sfc_path]
@@ -197,9 +202,12 @@ class DelayAndCoverageViolationChecker(BaseConstraintViolationChecker):
                 # (which is enforced by the way AP-s are selected, here we execute a check)
                 for subinterval, ap_id in self.chosen_ap_ids.items():
                     if self.chosen_ap_ids[subinterval] != current_chosen_ap_ids[subinterval]:
-                        raise Exception("Some SFC-s do not agree on the selected access points in time interval {} based on "
+                        self.log.info("AP selection disagreement in subinterval {} with SFC {}: current AP {}, existing AP selection {}".
+                                      format(subinterval, self.sfc_path, current_chosen_ap_ids[subinterval],
+                                             self.chosen_ap_ids[subinterval]))
+                        self.log.warn("Some SFC-s do not agree on the selected access points in time interval {} based on "
                                         "minimal delay, coverage obeying method! Current selection: {}, Existing selection: {}".
-                                        format(subinterval, current_chosen_ap_ids, self.chosen_ap_ids))
+                                        format(subinterval, current_chosen_ap_ids, self.chosen_ap_ids.ap_selection))
             else:
                 self.chosen_ap_ids.add_ap_selection_dict(current_chosen_ap_ids)
 
