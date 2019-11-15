@@ -73,7 +73,8 @@ class VolatileResourcesMapping(dict):
             # if not all service nodes are mapped
             if not all({d[ns.node_name_str] in self for n, d in ns.nodes(data=True)}):
                 return False
-
+            if len(self[VolatileResourcesMapping.AP_SELECTION]) != infra.time_interval_count:
+                return False
             # check AP selection
             for subinterval in range(1, time_interval_count+1):
                 ap_name = self.get_access_point_selection(subinterval)
