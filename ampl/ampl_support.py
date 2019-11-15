@@ -114,6 +114,11 @@ class AMPLSolverSupport(object):
             mapping[mapping.OBJECTIVE_VALUE] = objective.value()
             mapping[mapping.RUNNING_TIME] = time.time() - self.start_timestamp
             return mapping
+        elif result_str == 'limit':
+            self.log.info("Some limit criteria has been reached!")
+            # NOTE: There might be a feasible solution which is worse than the specified MIP gap, and is feasible.
+            mapping[mapping.RUNNING_TIME] = time.time() - self.start_timestamp
+            return mapping
         elif result_str == 'failure':
             self.log.warn("Failure in AMPL model!")
             return mapping

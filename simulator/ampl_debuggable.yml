@@ -40,4 +40,4 @@ simulator:
   ampl_model_path: '../ampl/system-model.mod'                           # AMPL model location for the volatile resources model
   export_ampl_data_path: "../ampl/system-model-generated.dat"           # if given, the generated data is exported for inspection/outer solution
   run_heuristic: True                                                  # Flags to set which algoritms to run
-  run_ampl: False
+  run_ampl: True
