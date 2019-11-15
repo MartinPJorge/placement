@@ -74,7 +74,7 @@ class AMPLSolverSupport(object):
             self.ampl.exportData(export_ampl_data_path)
         self.log.info("Parsing to AMPL is successful!")
         self.ampl.setOption('solver', 'gurobi')
-        self.ampl.eval('option gurobi_options \'mipgap 0.9 timelim 1800 threads 1\';')
+        self.ampl.eval('option gurobi_options \'mipgap 0.9 timelim 1 threads 1\';')
         self.start_timestamp = None
 
     def construct_mapping(self, objective : amplpy.objective.Objective):
@@ -118,6 +118,7 @@ class AMPLSolverSupport(object):
             self.log.info("Some limit criteria has been reached!")
             # NOTE: There might be a feasible solution which is worse than the specified MIP gap, and is feasible.
             mapping[mapping.RUNNING_TIME] = time.time() - self.start_timestamp
+            mapping[mapping.OBJECTIVE_VALUE] = objective.value()
             return mapping
         elif result_str == 'failure':
             self.log.warn("Failure in AMPL model!")
