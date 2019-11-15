@@ -74,9 +74,7 @@ class AMPLSolverSupport(object):
             self.ampl.exportData(export_ampl_data_path)
         self.log.info("Parsing to AMPL is successful!")
         self.ampl.setOption('solver', 'gurobi')
-        self.ampl.setOption('timelim', 1800)
-        self.ampl.setOption('mipgap', 0.1)
-        self.ampl.setOption('threads', 1)
+        self.ampl.eval('option gurobi_options \'mipgap 0.9 timelim 1800 threads 1\';')
         self.start_timestamp = None
 
     def construct_mapping(self, objective : amplpy.objective.Objective):
