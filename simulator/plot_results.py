@@ -16,6 +16,7 @@ formatter = logging.Formatter('%(asctime)s.%(name)s.%(levelname).3s: %(message)s
 consol_handler.setFormatter(formatter)
 consol_handler.setLevel("DEBUG")
 log.addHandler(consol_handler)
+log.setLevel("DEBUG")
 
 
 config_section_key_to_axis_label_dict = {
@@ -51,6 +52,21 @@ class DataExtractor(object):
         """
         if mapping[mapping.WORKED]:
             plot_data[plot_data_key].append(mapping[mapping.OBJECTIVE_VALUE])
+        return plot_data
+
+    @staticmethod
+    def count_feasible(mapping: VolatileResourcesMapping, plot_data, plot_data_key):
+        """
+
+        :param mapping:
+        :param plot_data:
+        :param plot_data_key:
+        :return:
+        """
+        if mapping[mapping.WORKED]:
+            plot_data[plot_data_key].append(1)
+        else:
+            plot_data[plot_data_key].append(0)
         return plot_data
 
     def extract_plot_data(self, sol_file_name : str, section_key_filters : dict,
@@ -121,7 +137,6 @@ class DataExtractor(object):
         return plot_data
 
 
-
 class MakeBoxPlot(object):
 
     def __init__(self, data_extractor: DataExtractor, output_filetype):
@@ -132,7 +147,8 @@ class MakeBoxPlot(object):
 
     def plot(self, file_name, plot_data, dependent_section_key, y_axis_label):
         """
-
+        Creates boxplot, where the body of the box are the 1st to 3rd quartile of the data, whiskers are a
+        multiplier of the interquartile range Q3-Q1.
 
         :param plot_data:
         :param y_axis_label:
@@ -160,16 +176,37 @@ class MakeBoxPlot(object):
         plt.close(fig)
 
 
+class MakeFeasibilityPlot(MakeBoxPlot):
+
+    def plot(self, file_name, plot_data, dependent_section_key, y_axis_label='Feasibilty [%]'):
+        """
+        Plots data to be 1s and 0s to indicate the feasibilty of the scenarios, plots boxes up to the ratio of feasible scenarios.
+
+        :param file_name:
+        :param plot_data:
+        :param dependent_section_key:
+        :param y_axis_label:
+        :return:
+        """
+        if len(plot_data) == 0:
+            return
+        fig, ax = plt.subplots()
+        pos = np.array(range(len(plot_data))) + 1
+        bar_heights = []
+        for key, values in plot_data.items():
+            bar_heights.append(np.round(sum(values)/len(values) * 100.0, decimals=2))
+        ax.bar(pos, bar_heights)
+
+        ax.set_xticklabels(plot_data.keys())
+        ax.set_xlabel(config_section_key_to_axis_label_dict[dependent_section_key])
+        ax.set_ylabel(y_axis_label)
+
+        plt.savefig(os.path.join(self.plots_path, file_name) + self.output_filetype)
+        plt.close(fig)
+
+
 if __name__ == "__main__":
 
-    # filter_dict = {"simulator.run_heuristic": True,
-    #                "infrastructure.unloaded_battery_alive_prob" : 0.99}
-    # pd = DataExtractor().extract_plot_data("results/tests/", 27, sol_file_name="heuristic_solution.json",
-    #                                   section_key_filters=filter_dict,
-    #                                   dependent_section_key="optimization.improvement_score_limit",
-    #                                   section_keys_to_aggr=["infrastructure.gml_file"],
-    #                                   plot_value_extractor=DataExtractor.get_objective_function_value)
-    # TODO: for next testcase create another function which creates all the plots!
     if len(sys.argv) > 1:
         simulation_name = sys.argv[1]
     else:
@@ -229,5 +266,36 @@ if __name__ == "__main__":
                                                    plot_value_extractor=plot_value_func)
                         boxplotter.plot("heuristic-{}-{}-{}-impr-{}".format(name, fixed_param_name, fix_param_v, improvement_limit),
                                         pd2, "service." + dependent_param_name, name)
+    elif simulation_name == "FEASPLOTS_feasibility_sweep_fixed_improved_timelim":
+        de = DataExtractor("results/feasibility_sweep_fixed_improved_timelim", 384)
+        barplotter = MakeFeasibilityPlot(de, "png")
+        for fixed_param_name, dependent_param_name, values in (('connected_component_sizes', 'sfc_delays', ([10], [10, 10, 10], [20, 20, 20])),):
+            for fix_param_v in values:
+                plot_value_func = DataExtractor.count_feasible
+                name = 'feasibility'
+                for improvement_limit in (4, 3, 2, 1):
+                    log.debug("Params to be plotted: {}, {}".format(fixed_param_name, fix_param_v, name, improvement_limit))
+                    if improvement_limit == 4:
+                        # this was the only non product group element, when the AMPL was run
+                        pd1 = de.extract_plot_data(sol_file_name="ampl_solution.json",
+                                                   section_key_filters={"service." + fixed_param_name: fix_param_v,
+                                                                        "optimization.improvement_score_limit": improvement_limit},
+                                                   dependent_section_key="service." + dependent_param_name,
+                                                   section_keys_to_aggr=["service.seed", "infrastructure.gml_file"],
+                                                   plot_value_extractor=plot_value_func)
+                        barplotter.plot("ampl-{}-{}-{}".format(name, fixed_param_name, fix_param_v), pd1, "service." + dependent_param_name,
+                                        name)
+                    #
+                    pd2 = de.extract_plot_data(sol_file_name="heuristic_solution.json",
+                                               section_key_filters={"service." + fixed_param_name: fix_param_v,
+                                                                    "optimization.improvement_score_limit": improvement_limit},
+                                               dependent_section_key="service." + dependent_param_name,
+                                               section_keys_to_aggr=["service.seed", "infrastructure.gml_file"],
+                                               plot_value_extractor=plot_value_func)
+                    barplotter.plot("heuristic-{}-{}-{}-impr-{}".format(name, fixed_param_name, fix_param_v, improvement_limit),
+                                    pd2, "service." + dependent_param_name, name)
+    elif simulation_name == "mobile_nf_loads":
+        # TODO:
+        pass
     else:
         raise ValueError("Unknown simulation name {}".format(simulation_name))
