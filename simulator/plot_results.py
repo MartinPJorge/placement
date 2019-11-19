@@ -19,7 +19,8 @@ log.addHandler(consol_handler)
 
 
 config_section_key_to_axis_label_dict = {
-    "infrastructure.cluster_move_distances": "Cluster move length [Lat,Lon dist.]"
+    "infrastructure.cluster_move_distances": "Cluster move length [Lat,Lon dist.]",
+    "service.connected_component_sizes" : "Connected component sizes in request"
 }
 
 
@@ -167,31 +168,62 @@ if __name__ == "__main__":
     #                                   section_keys_to_aggr=["infrastructure.gml_file"],
     #                                   plot_value_extractor=DataExtractor.get_objective_function_value)
     # TODO: for next testcase create another function which creates all the plots!
-    ref_to_path = {
-        'ref-1': "../graphs/infras/cobo-calleja/pico-and-micro-cobo-calleja-ref-1.gml",
-        'ref-2': "../graphs/infras/cobo-calleja/pico-and-micro-cobo-calleja-ref-2.gml",
-        'ref-3': "../graphs/infras/cobo-calleja/pico-and-micro-cobo-calleja-ref-3.gml"
-    }
-    de = DataExtractor("results/large_tests_many_nfs", 196)
-    boxplotter = MakeBoxPlot(de, "png")
-    for plot_value_func, name in ((DataExtractor.get_objective_function_value, "cost"), (DataExtractor.get_running_time, "runtime")):
-        for ref in ('ref-1', 'ref-2', 'ref-3'):
-            for improvement_limit in (3, 2, 1, 4):
-                filter_dict = {"optimization.improvement_score_limit": improvement_limit,
-                               "infrastructure.gml_file" : ref_to_path[ref]}
-                if improvement_limit == 3:
-                    # this was the only non product group element, when the AMPL was run
-                    pd1 = de.extract_plot_data(sol_file_name="ampl_solution.json",
+    if len(sys.argv) > 1:
+        simulation_name = sys.argv[1]
+    else:
+        simulation_name = ""
+    if simulation_name == "large_tests_many_nfs":
+        ref_to_path = {
+            'ref-1': "../graphs/infras/cobo-calleja/pico-and-micro-cobo-calleja-ref-1.gml",
+            'ref-2': "../graphs/infras/cobo-calleja/pico-and-micro-cobo-calleja-ref-2.gml",
+            'ref-3': "../graphs/infras/cobo-calleja/pico-and-micro-cobo-calleja-ref-3.gml"
+        }
+        de = DataExtractor("results/large_tests_many_nfs", 196)
+        boxplotter = MakeBoxPlot(de, "png")
+        for plot_value_func, name in ((DataExtractor.get_objective_function_value, "cost"), (DataExtractor.get_running_time, "runtime")):
+            for ref in ('ref-1', 'ref-2', 'ref-3'):
+                for improvement_limit in (3, 2, 1, 4):
+                    filter_dict = {"optimization.improvement_score_limit": improvement_limit,
+                                   "infrastructure.gml_file" : ref_to_path[ref]}
+                    if improvement_limit == 3:
+                        # this was the only non product group element, when the AMPL was run
+                        pd1 = de.extract_plot_data(sol_file_name="ampl_solution.json",
+                                                   section_key_filters=filter_dict,
+                                                   dependent_section_key="infrastructure.cluster_move_distances",
+                                                   section_keys_to_aggr=["service.seed"],
+                                                   plot_value_extractor=plot_value_func)
+                        boxplotter.plot("ampl-{}-on-{}".format(name, ref), pd1, "infrastructure.cluster_move_distances", name)
+
+                    pd2 = de.extract_plot_data(sol_file_name="heuristic_solution.json",
                                                section_key_filters=filter_dict,
                                                dependent_section_key="infrastructure.cluster_move_distances",
                                                section_keys_to_aggr=["service.seed"],
                                                plot_value_extractor=plot_value_func)
-                    boxplotter.plot("ampl-{}-on-{}".format(name, ref), pd1, "infrastructure.cluster_move_distances", name)
-
-                pd2 = de.extract_plot_data(sol_file_name="heuristic_solution.json",
-                                           section_key_filters=filter_dict,
-                                           dependent_section_key="infrastructure.cluster_move_distances",
-                                           section_keys_to_aggr=["service.seed"],
-                                           plot_value_extractor=plot_value_func)
-                boxplotter.plot("heuristic-{}-on-{}-impr-{}".format(name, ref, improvement_limit), pd2, "infrastructure.cluster_move_distances", name)
-
+                    boxplotter.plot("heuristic-{}-on-{}-impr-{}".format(name, ref, improvement_limit), pd2, "infrastructure.cluster_move_distances", name)
+    elif simulation_name == "feasibility_sweep_fixed_improved_timelim":
+        de = DataExtractor("results/feasibility_sweep_fixed_improved_timelim", 384)
+        boxplotter = MakeBoxPlot(de, "png")
+        for fixed_param_name, dependent_param_name, values in (('connected_component_sizes', 'sfc_delays', ('[10]', '[10, 10, 10]', '[20, 20, 20]')),):
+            for fix_param_v in values:
+                for plot_value_func, name in ((DataExtractor.get_objective_function_value, "cost"), (DataExtractor.get_running_time, "runtime")):
+                    for improvement_limit in (4, 3, 2, 1):
+                        if improvement_limit == 4:
+                            # this was the only non product group element, when the AMPL was run
+                            pd1 = de.extract_plot_data(sol_file_name="ampl_solution.json",
+                                                       section_key_filters={fixed_param_name: fix_param_v,
+                                                                            "optimization.improvement_score_limit": improvement_limit},
+                                                       dependent_section_key="service."+dependent_param_name,
+                                                       section_keys_to_aggr=["service.seed", "infrastructure.gml_file"],
+                                                       plot_value_extractor=plot_value_func)
+                            boxplotter.plot("ampl-{}-{}-{}".format(name, fixed_param_name, fix_param_v), pd1, "service."+dependent_param_name, name)
+                        #
+                        pd2 = de.extract_plot_data(sol_file_name="heuristic_solution.json",
+                                                   section_key_filters={fixed_param_name: fix_param_v,
+                                                                        "optimization.improvement_score_limit": improvement_limit},
+                                                   dependent_section_key="service." + dependent_param_name,
+                                                   section_keys_to_aggr=["service.seed", "infrastructure.gml_file"],
+                                                   plot_value_extractor=plot_value_func)
+                        boxplotter.plot("heuristic-{}-{}-{}-impr-{}".format(name, fixed_param_name, fix_param_v, improvement_limit),
+                                        pd2, "service." + dependent_param_name, name)
+    else:
+        raise ValueError("Unknown simulation name {}".format(simulation_name))
