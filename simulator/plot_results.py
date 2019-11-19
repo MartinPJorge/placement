@@ -20,7 +20,8 @@ log.addHandler(consol_handler)
 
 config_section_key_to_axis_label_dict = {
     "infrastructure.cluster_move_distances": "Cluster move length [Lat,Lon dist.]",
-    "service.connected_component_sizes" : "Connected component sizes in request"
+    "service.connected_component_sizes" : "Connected component sizes in request",
+    "service.sfc_delays": "Delays of SFCs"
 }
 
 
@@ -156,6 +157,7 @@ class MakeBoxPlot(object):
             ax.text(xtick, 1.05, str(len(plot_data[data_label])), transform=ax.get_xaxis_transform())
 
         plt.savefig(os.path.join(self.plots_path, file_name) + self.output_filetype)
+        plt.close(fig)
 
 
 if __name__ == "__main__":
@@ -203,14 +205,16 @@ if __name__ == "__main__":
     elif simulation_name == "feasibility_sweep_fixed_improved_timelim":
         de = DataExtractor("results/feasibility_sweep_fixed_improved_timelim", 384)
         boxplotter = MakeBoxPlot(de, "png")
-        for fixed_param_name, dependent_param_name, values in (('connected_component_sizes', 'sfc_delays', ('[10]', '[10, 10, 10]', '[20, 20, 20]')),):
+        for fixed_param_name, dependent_param_name, values in (('connected_component_sizes', 'sfc_delays', ([10], [10, 10, 10], [20, 20, 20])),
+                                                               ('sfc_delays', 'connected_component_sizes', ([5, 5, 5], [10, 10, 10], [15, 15, 15], [1000, 1000, 1000]))):
             for fix_param_v in values:
                 for plot_value_func, name in ((DataExtractor.get_objective_function_value, "cost"), (DataExtractor.get_running_time, "runtime")):
                     for improvement_limit in (4, 3, 2, 1):
+                        log.debug("Params to be plotted: {}, {}".format(fixed_param_name, fix_param_v, name, improvement_limit))
                         if improvement_limit == 4:
                             # this was the only non product group element, when the AMPL was run
                             pd1 = de.extract_plot_data(sol_file_name="ampl_solution.json",
-                                                       section_key_filters={fixed_param_name: fix_param_v,
+                                                       section_key_filters={"service."+fixed_param_name: fix_param_v,
                                                                             "optimization.improvement_score_limit": improvement_limit},
                                                        dependent_section_key="service."+dependent_param_name,
                                                        section_keys_to_aggr=["service.seed", "infrastructure.gml_file"],
@@ -218,7 +222,7 @@ if __name__ == "__main__":
                             boxplotter.plot("ampl-{}-{}-{}".format(name, fixed_param_name, fix_param_v), pd1, "service."+dependent_param_name, name)
                         #
                         pd2 = de.extract_plot_data(sol_file_name="heuristic_solution.json",
-                                                   section_key_filters={fixed_param_name: fix_param_v,
+                                                   section_key_filters={"service."+fixed_param_name: fix_param_v,
                                                                         "optimization.improvement_score_limit": improvement_limit},
                                                    dependent_section_key="service." + dependent_param_name,
                                                    section_keys_to_aggr=["service.seed", "infrastructure.gml_file"],
