@@ -1,0 +1,14 @@
+base_config_file: "mobile_nf_loads_targeted_base_config.yml"                                     # Path to config file which stores the structure and
+                                                                            # the default simulation parameters.
+simulation_name: "mobile_nf_loads_targeted"                                        # String identifying the experiment (folder created for it)
+threads: 2                                                                  # number of parallel executions of simulations
+non_product_groups:                                                         # list of keys from the config file, where instead of product, zipping should be applied for creating the single configs
+  - [optimization.improvement_score_limit, simulator.run_ampl]
+meta_config_values:                                                         # under this a full single config structure can be given, but
+  service:
+    mobile_nfs_per_sfc: [0, 8, 16, 18, 20, 22, 24, 26]
+    seed: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
+  optimization:
+    improvement_score_limit: [2, 1]
+  simulator:
+    run_ampl: [True, False]
