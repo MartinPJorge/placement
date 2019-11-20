@@ -191,13 +191,13 @@ class MakeFeasibilityPlot(MakeBoxPlot):
         if len(plot_data) == 0:
             return
         fig, ax = plt.subplots()
-        pos = np.array(range(len(plot_data))) + 1
         bar_heights = []
+        x_labels = []
         for key, values in plot_data.items():
             bar_heights.append(np.round(sum(values)/len(values) * 100.0, decimals=2))
-        ax.bar(pos, bar_heights)
+            x_labels.append(key)
+        ax.bar(x_labels, bar_heights)
 
-        ax.set_xticklabels(plot_data.keys())
         ax.set_xlabel(config_section_key_to_axis_label_dict[dependent_section_key])
         ax.set_ylabel(y_axis_label)
 
@@ -283,8 +283,7 @@ if __name__ == "__main__":
                                                    dependent_section_key="service." + dependent_param_name,
                                                    section_keys_to_aggr=["service.seed", "infrastructure.gml_file"],
                                                    plot_value_extractor=plot_value_func)
-                        barplotter.plot("ampl-{}-{}-{}".format(name, fixed_param_name, fix_param_v), pd1, "service." + dependent_param_name,
-                                        name)
+                        barplotter.plot("ampl-{}-{}-{}".format(name, fixed_param_name, fix_param_v), pd1, "service." + dependent_param_name)
                     #
                     pd2 = de.extract_plot_data(sol_file_name="heuristic_solution.json",
                                                section_key_filters={"service." + fixed_param_name: fix_param_v,
@@ -293,9 +292,34 @@ if __name__ == "__main__":
                                                section_keys_to_aggr=["service.seed", "infrastructure.gml_file"],
                                                plot_value_extractor=plot_value_func)
                     barplotter.plot("heuristic-{}-{}-{}-impr-{}".format(name, fixed_param_name, fix_param_v, improvement_limit),
-                                    pd2, "service." + dependent_param_name, name)
+                                    pd2, "service." + dependent_param_name)
     elif simulation_name == "mobile_nf_loads":
-        # TODO:
-        pass
+        de = DataExtractor("results/mobile_nf_loads", 450)
+        # running time might not be interesting at all in this test
+        for plotter, plot_value_func, name, y_axis_label in ((MakeFeasibilityPlot(de, "png"), DataExtractor.count_feasible, 'feas', 'Feasibilty [%]'),
+                                                             (MakeBoxPlot(de, "png"), DataExtractor.get_objective_function_value, 'cost', 'Cost of embedding')):
+            for fixed_param_name, dependent_param_name, values in (("service.mobile_nfs_per_sfc", "optimization.battery_threshold", [0.4, 0.5623, 0.6248, 0.8123, 0.9373]),
+                                                                   ("optimization.battery_threshold", "service.mobile_nfs_per_sfc", [0, 4, 8, 12, 16, 18])):
+                for fix_param_v in values:
+                    for improvement_limit in (3, 2, 1):
+                        log.debug("Params to be plotted: {}, {}".format(fixed_param_name, fix_param_v, name, improvement_limit))
+                        if improvement_limit == 3:
+                            pd1 = de.extract_plot_data(sol_file_name="ampl_solution.json",
+                                                       section_key_filters={fixed_param_name: fix_param_v,
+                                                                            "optimization.improvement_score_limit": improvement_limit},
+                                                       dependent_section_key=dependent_param_name,
+                                                       section_keys_to_aggr=["service.seed"],
+                                                       plot_value_extractor=plot_value_func)
+                            plotter.plot("ampl-{}-{}-{}".format(name, fixed_param_name, fix_param_v), pd1, dependent_param_name, y_axis_label)
+                        # for each improvement score limit
+                        pd2 = de.extract_plot_data(sol_file_name="heuristic_solution.json",
+                                                   section_key_filters={fixed_param_name: fix_param_v,
+                                                                        "optimization.improvement_score_limit": improvement_limit},
+                                                   dependent_section_key=dependent_param_name,
+                                                   section_keys_to_aggr=["service.seed"],
+                                                   plot_value_extractor=plot_value_func)
+                        plotter.plot("heuristic-{}-{}-{}-impr-{}".format(name, fixed_param_name, fix_param_v, improvement_limit), pd2, dependent_param_name, y_axis_label)
+
+
     else:
         raise ValueError("Unknown simulation name {}".format(simulation_name))
