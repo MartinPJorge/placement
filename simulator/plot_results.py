@@ -148,10 +148,15 @@ class DataExtractor(object):
 
 class MakeBoxPlot(object):
 
-    def __init__(self, data_extractor: DataExtractor, output_filetype):
-        self.data_extractor = data_extractor
-        self.plots_path = os.path.join(data_extractor.experiment_path, "plots")
-        os.system("mkdir {}".format(self.plots_path))
+    def __init__(self, data_extractor : DataExtractor = None, output_filetype='png', plots_path=None):
+        if data_extractor is not None:
+            self.data_extractor = data_extractor
+            self.plots_path = os.path.join(data_extractor.experiment_path, "plots")
+            os.system("mkdir {}".format(self.plots_path))
+        elif plots_path is not None:
+            self.plots_path = plots_path
+        else:
+            raise ValueError("Data extractor object or plots path must be specified!")
         self.output_filetype = "." + output_filetype
 
     def make_and_save_plot(self, file_name, plot_data, dependent_section_key, y_axis_label):
@@ -181,7 +186,9 @@ class MakeBoxPlot(object):
         for xtick, data_label in zip(pos, plot_data.keys()):
             ax.text(xtick, 1.05, str(len(plot_data[data_label])), transform=ax.get_xaxis_transform())
 
-        plt.savefig(os.path.join(self.plots_path, file_name) + self.output_filetype)
+        full_file_name = os.path.join(self.plots_path, file_name) + self.output_filetype
+        log.info("Saving plot {}...".format(full_file_name))
+        plt.savefig(full_file_name)
         plt.close(fig)
 
 
@@ -204,13 +211,15 @@ class MakeFeasibilityPlot(MakeBoxPlot):
         x_labels = []
         for key, values in plot_data.items():
             bar_heights.append(np.round(sum(values)/len(values) * 100.0, decimals=2))
-            x_labels.append(key)
+            x_labels.append(str(key))
         ax.bar(x_labels, bar_heights)
 
         ax.set_xlabel(config_section_key_to_axis_label_dict[dependent_section_key])
         ax.set_ylabel(y_axis_label)
 
-        plt.savefig(os.path.join(self.plots_path, file_name) + self.output_filetype)
+        full_file_name = os.path.join(self.plots_path, file_name) + self.output_filetype
+        log.info("Saving plot {}...".format(full_file_name))
+        plt.savefig(full_file_name)
         plt.close(fig)
 
 
@@ -220,7 +229,16 @@ if __name__ == "__main__":
         simulation_name = sys.argv[1]
     else:
         simulation_name = ""
-    if simulation_name == "large_tests_many_nfs":
+    if ".json" in simulation_name:
+        # replot from file, the chosen data
+        replot_file = simulation_name
+        dependent_section_key = sys.argv[2]
+        replot_file_path = os.path.join('local_replot_data', replot_file)
+        with open(replot_file_path, "r") as f:
+            replot_data = json.load(f)
+            plotter = MakeFeasibilityPlot(output_filetype='png', plots_path='local_replot_data')
+            plotter.make_and_save_plot(replot_file.rstrip(".json"), replot_data, dependent_section_key)
+    elif simulation_name == "large_tests_many_nfs":
         ref_to_path = {
             'ref-1': "../graphs/infras/cobo-calleja/pico-and-micro-cobo-calleja-ref-1.gml",
             'ref-2': "../graphs/infras/cobo-calleja/pico-and-micro-cobo-calleja-ref-2.gml",
