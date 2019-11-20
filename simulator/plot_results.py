@@ -306,8 +306,8 @@ if __name__ == "__main__":
         # running time might not be interesting at all in this test
         for plotter, plot_value_func, name, y_axis_label in ((MakeFeasibilityPlot(de, "png"), DataExtractor.count_feasible, 'feas', 'Feasibilty [%]'),
                                                              (MakeBoxPlot(de, "png"), DataExtractor.get_objective_function_value, 'cost', 'Cost of embedding')):
-            for fixed_param_name, dependent_param_name, values in (("service.mobile_nfs_per_sfc", "optimization.battery_threshold", [0.4, 0.5623, 0.6248, 0.8123, 0.9373]),
-                                                                   ("optimization.battery_threshold", "service.mobile_nfs_per_sfc", [0, 4, 8, 12, 16, 18])):
+            for fixed_param_name, dependent_param_name, values in (("service.mobile_nfs_per_sfc", "optimization.battery_threshold", [0, 4, 8, 12, 16, 18]),
+                                                                   ("optimization.battery_threshold", "service.mobile_nfs_per_sfc", [0.4, 0.5623, 0.6248, 0.8123, 0.9373])):
                 for fix_param_v in values:
                     for improvement_limit in (3, 2, 1):
                         log.debug("Params to be plotted: {}, {}".format(fixed_param_name, fix_param_v, name, improvement_limit))
