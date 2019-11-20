@@ -15,14 +15,20 @@ consol_handler = RainbowLoggingHandler(sys.stderr, color_funcName=('black', 'yel
 formatter = logging.Formatter('%(asctime)s.%(name)s.%(levelname).3s: %(message)s')
 consol_handler.setFormatter(formatter)
 consol_handler.setLevel("DEBUG")
+file_handler = logging.FileHandler("results/plotting.log", 'w')
+file_handler.setFormatter(formatter)
+file_handler.setLevel("DEBUG")
 log.addHandler(consol_handler)
+log.addHandler(file_handler)
 log.setLevel("DEBUG")
 
 
 config_section_key_to_axis_label_dict = {
     "infrastructure.cluster_move_distances": "Cluster move length [Lat,Lon dist.]",
     "service.connected_component_sizes" : "Connected component sizes in request",
-    "service.sfc_delays": "Delays of SFCs"
+    "service.sfc_delays": "Delays of SFCs [ms]",
+    "optimization.battery_threshold": "Battery alive probabilty",
+    "service.mobile_nfs_per_sfc": "NF count bound to mobile nodes"
 }
 
 
@@ -82,7 +88,7 @@ class DataExtractor(object):
         :param plot_value_extractor: Function to calculate the value to be plotted based on the mapping object
         :return:
         """
-        log.info("Extracting plot data based on params: \ndependent_section_key: {}\nsection_keys_to_aggr: {}\nsection_key_filters: {}".
+        log.info("Extracting make_and_save_plot data based on params: \ndependent_section_key: {}\nsection_keys_to_aggr: {}\nsection_key_filters: {}".
                  format(dependent_section_key, section_keys_to_aggr, section_key_filters))
         plot_data = {}
         aggr_value_tuples = {}
@@ -100,7 +106,7 @@ class DataExtractor(object):
                 if skip_sim_id:
                     continue
 
-                # maintain error checking and plot data structures
+                # maintain error checking and make_and_save_plot data structures
                 dep_sec, dep_key = dependent_section_key.split(self.sep)
                 dependent_value = config[dep_sec][dep_key]
                 if type(dependent_value) is list:
@@ -131,7 +137,7 @@ class DataExtractor(object):
                         # extend the plotdata with the given method
                         plot_data = plot_value_extractor(mapping, plot_data, dependent_value)
                 except FileNotFoundError as e:
-                    log.error("File not found {} Skipping plot creation".format(sol_path))
+                    log.error("File not found {} Skipping make_and_save_plot creation".format(sol_path))
         log.debug("Aggregation value tuples: \n{}".format(json.dumps(aggr_value_tuples, indent=2)))
         log.info("Data to be plotted: \n{}".format(json.dumps(plot_data, indent=2)))
         return plot_data
@@ -145,7 +151,7 @@ class MakeBoxPlot(object):
         os.system("mkdir {}".format(self.plots_path))
         self.output_filetype = "." + output_filetype
 
-    def plot(self, file_name, plot_data, dependent_section_key, y_axis_label):
+    def make_and_save_plot(self, file_name, plot_data, dependent_section_key, y_axis_label):
         """
         Creates boxplot, where the body of the box are the 1st to 3rd quartile of the data, whiskers are a
         multiplier of the interquartile range Q3-Q1.
@@ -178,7 +184,7 @@ class MakeBoxPlot(object):
 
 class MakeFeasibilityPlot(MakeBoxPlot):
 
-    def plot(self, file_name, plot_data, dependent_section_key, y_axis_label='Feasibilty [%]'):
+    def make_and_save_plot(self, file_name, plot_data, dependent_section_key, y_axis_label='Feasibilty [%]'):
         """
         Plots data to be 1s and 0s to indicate the feasibilty of the scenarios, plots boxes up to the ratio of feasible scenarios.
 
@@ -231,14 +237,14 @@ if __name__ == "__main__":
                                                    dependent_section_key="infrastructure.cluster_move_distances",
                                                    section_keys_to_aggr=["service.seed"],
                                                    plot_value_extractor=plot_value_func)
-                        boxplotter.plot("ampl-{}-on-{}".format(name, ref), pd1, "infrastructure.cluster_move_distances", name)
+                        boxplotter.make_and_save_plot("ampl-{}-on-{}".format(name, ref), pd1, "infrastructure.cluster_move_distances", name)
 
                     pd2 = de.extract_plot_data(sol_file_name="heuristic_solution.json",
                                                section_key_filters=filter_dict,
                                                dependent_section_key="infrastructure.cluster_move_distances",
                                                section_keys_to_aggr=["service.seed"],
                                                plot_value_extractor=plot_value_func)
-                    boxplotter.plot("heuristic-{}-on-{}-impr-{}".format(name, ref, improvement_limit), pd2, "infrastructure.cluster_move_distances", name)
+                    boxplotter.make_and_save_plot("heuristic-{}-on-{}-impr-{}".format(name, ref, improvement_limit), pd2, "infrastructure.cluster_move_distances", name)
     elif simulation_name == "feasibility_sweep_fixed_improved_timelim":
         de = DataExtractor("results/feasibility_sweep_fixed_improved_timelim", 384)
         boxplotter = MakeBoxPlot(de, "png")
@@ -256,7 +262,7 @@ if __name__ == "__main__":
                                                        dependent_section_key="service."+dependent_param_name,
                                                        section_keys_to_aggr=["service.seed", "infrastructure.gml_file"],
                                                        plot_value_extractor=plot_value_func)
-                            boxplotter.plot("ampl-{}-{}-{}".format(name, fixed_param_name, fix_param_v), pd1, "service."+dependent_param_name, name)
+                            boxplotter.make_and_save_plot("ampl-{}-{}-{}".format(name, fixed_param_name, fix_param_v), pd1, "service." + dependent_param_name, name)
                         #
                         pd2 = de.extract_plot_data(sol_file_name="heuristic_solution.json",
                                                    section_key_filters={"service."+fixed_param_name: fix_param_v,
@@ -264,8 +270,8 @@ if __name__ == "__main__":
                                                    dependent_section_key="service." + dependent_param_name,
                                                    section_keys_to_aggr=["service.seed", "infrastructure.gml_file"],
                                                    plot_value_extractor=plot_value_func)
-                        boxplotter.plot("heuristic-{}-{}-{}-impr-{}".format(name, fixed_param_name, fix_param_v, improvement_limit),
-                                        pd2, "service." + dependent_param_name, name)
+                        boxplotter.make_and_save_plot("heuristic-{}-{}-{}-impr-{}".format(name, fixed_param_name, fix_param_v, improvement_limit),
+                                                      pd2, "service." + dependent_param_name, name)
     elif simulation_name == "FEASPLOTS_feasibility_sweep_fixed_improved_timelim":
         de = DataExtractor("results/feasibility_sweep_fixed_improved_timelim", 384)
         barplotter = MakeFeasibilityPlot(de, "png")
@@ -283,7 +289,7 @@ if __name__ == "__main__":
                                                    dependent_section_key="service." + dependent_param_name,
                                                    section_keys_to_aggr=["service.seed", "infrastructure.gml_file"],
                                                    plot_value_extractor=plot_value_func)
-                        barplotter.plot("ampl-{}-{}-{}".format(name, fixed_param_name, fix_param_v), pd1, "service." + dependent_param_name)
+                        barplotter.make_and_save_plot("ampl-{}-{}-{}".format(name, fixed_param_name, fix_param_v), pd1, "service." + dependent_param_name)
                     #
                     pd2 = de.extract_plot_data(sol_file_name="heuristic_solution.json",
                                                section_key_filters={"service." + fixed_param_name: fix_param_v,
@@ -291,8 +297,8 @@ if __name__ == "__main__":
                                                dependent_section_key="service." + dependent_param_name,
                                                section_keys_to_aggr=["service.seed", "infrastructure.gml_file"],
                                                plot_value_extractor=plot_value_func)
-                    barplotter.plot("heuristic-{}-{}-{}-impr-{}".format(name, fixed_param_name, fix_param_v, improvement_limit),
-                                    pd2, "service." + dependent_param_name)
+                    barplotter.make_and_save_plot("heuristic-{}-{}-{}-impr-{}".format(name, fixed_param_name, fix_param_v, improvement_limit),
+                                                  pd2, "service." + dependent_param_name)
     elif simulation_name == "mobile_nf_loads":
         de = DataExtractor("results/mobile_nf_loads", 450)
         # running time might not be interesting at all in this test
@@ -310,7 +316,7 @@ if __name__ == "__main__":
                                                        dependent_section_key=dependent_param_name,
                                                        section_keys_to_aggr=["service.seed"],
                                                        plot_value_extractor=plot_value_func)
-                            plotter.plot("ampl-{}-{}-{}".format(name, fixed_param_name, fix_param_v), pd1, dependent_param_name, y_axis_label)
+                            plotter.make_and_save_plot("ampl-{}-{}-{}".format(name, fixed_param_name, fix_param_v), pd1, dependent_param_name, y_axis_label)
                         # for each improvement score limit
                         pd2 = de.extract_plot_data(sol_file_name="heuristic_solution.json",
                                                    section_key_filters={fixed_param_name: fix_param_v,
@@ -318,8 +324,6 @@ if __name__ == "__main__":
                                                    dependent_section_key=dependent_param_name,
                                                    section_keys_to_aggr=["service.seed"],
                                                    plot_value_extractor=plot_value_func)
-                        plotter.plot("heuristic-{}-{}-{}-impr-{}".format(name, fixed_param_name, fix_param_v, improvement_limit), pd2, dependent_param_name, y_axis_label)
-
-
+                        plotter.make_and_save_plot("heuristic-{}-{}-{}-impr-{}".format(name, fixed_param_name, fix_param_v, improvement_limit), pd2, dependent_param_name, y_axis_label)
     else:
         raise ValueError("Unknown simulation name {}".format(simulation_name))
