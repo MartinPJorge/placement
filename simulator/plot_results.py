@@ -102,8 +102,6 @@ class DataExtractor(object):
                     section, key = k.split(self.sep)
                     if config[section][key] != value:
                         skip_sim_id = True
-                        log.debug("Skipping simulation id {} due to {} != {} for section: {} key: {}".
-                                  format(sim_id, config[section][key], value, section, key))
                         break
                 if skip_sim_id:
                     continue
@@ -140,6 +138,9 @@ class DataExtractor(object):
                         plot_data = plot_value_extractor(mapping, plot_data, dependent_value)
                 except FileNotFoundError as e:
                     log.error("File not found {} Skipping plot creation".format(sol_path))
+        if len(aggr_value_tuples) == 0 or len(plot_data) == 0:
+            log.warn("Skipped simulation id {} due to {} != {} for section: {} key: {}".
+                      format(sim_id, config[section][key], value, section, key))
         log.debug("Aggregation value tuples: \n{}".format(json.dumps(aggr_value_tuples, indent=2)))
         log.info("Data to be plotted: \n{}".format(json.dumps(plot_data, indent=2)))
         return plot_data
