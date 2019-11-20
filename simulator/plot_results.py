@@ -88,7 +88,7 @@ class DataExtractor(object):
         :param plot_value_extractor: Function to calculate the value to be plotted based on the mapping object
         :return:
         """
-        log.info("Extracting make_and_save_plot data based on params: \ndependent_section_key: {}\nsection_keys_to_aggr: {}\nsection_key_filters: {}".
+        log.info("Extracting plot data based on params: \ndependent_section_key: {}\nsection_keys_to_aggr: {}\nsection_key_filters: {}".
                  format(dependent_section_key, section_keys_to_aggr, section_key_filters))
         plot_data = {}
         aggr_value_tuples = {}
@@ -102,11 +102,13 @@ class DataExtractor(object):
                     section, key = k.split(self.sep)
                     if config[section][key] != value:
                         skip_sim_id = True
+                        log.debug("Skipping simulation id {} due to {} != {} for section: {} key: {}".
+                                  format(sim_id, config[section][key], value, section, key))
                         break
                 if skip_sim_id:
                     continue
 
-                # maintain error checking and make_and_save_plot data structures
+                # maintain error checking and plot data structures
                 dep_sec, dep_key = dependent_section_key.split(self.sep)
                 dependent_value = config[dep_sec][dep_key]
                 if type(dependent_value) is list:
@@ -137,7 +139,7 @@ class DataExtractor(object):
                         # extend the plotdata with the given method
                         plot_data = plot_value_extractor(mapping, plot_data, dependent_value)
                 except FileNotFoundError as e:
-                    log.error("File not found {} Skipping make_and_save_plot creation".format(sol_path))
+                    log.error("File not found {} Skipping plot creation".format(sol_path))
         log.debug("Aggregation value tuples: \n{}".format(json.dumps(aggr_value_tuples, indent=2)))
         log.info("Data to be plotted: \n{}".format(json.dumps(plot_data, indent=2)))
         return plot_data
