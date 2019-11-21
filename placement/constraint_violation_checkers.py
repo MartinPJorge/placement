@@ -198,9 +198,11 @@ class DelayAndCoverageViolationChecker(BaseConstraintViolationChecker):
         # if the delay and coverage values are violated in none of the subintervals, then we have an AP selection
         if inf_count_subinterval == 0 and negative_rem_delay_subinterval == 0:
             # replaces the selectino only if the current selection was made based on a more strict latency requirement
-            self.log.debug("Setting current AP selection for SFC {} with delay {}: {}".
-                           format(self.sfc_path, self.sfc_delay, current_chosen_ap_ids))
+            tmp_sfc_delay_of_chosen_aps = self.chosen_ap_ids.current_setting_sfc_delay
             self.chosen_ap_ids.add_ap_selection_dict(current_chosen_ap_ids, self.sfc_delay)
+            if tmp_sfc_delay_of_chosen_aps != self.chosen_ap_ids.current_setting_sfc_delay:
+                self.log.debug("Setting current AP selection for SFC {} with delay {}: {}".
+                               format(self.sfc_path, self.sfc_delay, current_chosen_ap_ids))
 
         return inf_count_subinterval, negative_rem_delay_subinterval
 
