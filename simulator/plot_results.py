@@ -25,7 +25,7 @@ log.setLevel("DEBUG")
 
 config_section_key_to_axis_label_dict = {
     "infrastructure.cluster_move_distances": "Cluster move length [Lat,Lon dist.]",
-    "service.connected_component_sizes" : "Connected component sizes in request",
+    "service.connected_component_sizes" : "Number of NFs",
     "service.sfc_delays": "Delays of SFCs [ms]",
     "optimization.battery_threshold": "Battery alive probabilty",
     "service.mobile_nfs_per_sfc": "NF count bound to mobile nodes"
@@ -223,6 +223,23 @@ class MakeFeasibilityPlot(MakeBoxPlot):
         plt.close(fig)
 
 
+def plot_both_if_needed(de : DataExtractor, plotter : MakeBoxPlot, plot_value_func, dependent_section_key,
+                        name, improvement_limit, ampl_improvement_limit=2):
+    if improvement_limit == ampl_improvement_limit:
+        pd1 = de.extract_plot_data(sol_file_name="ampl_solution.json",
+                                   section_key_filters={"optimization.improvement_score_limit": improvement_limit},
+                                   dependent_section_key=dependent_section_key,
+                                   section_keys_to_aggr=["service.seed"],
+                                   plot_value_extractor=plot_value_func)
+        plotter.make_and_save_plot("ampl-{}".format(name), pd1, dependent_section_key, name)
+    pd1 = de.extract_plot_data(sol_file_name="heuristic_solution.json",
+                               section_key_filters={"optimization.improvement_score_limit": improvement_limit},
+                               dependent_section_key=dependent_section_key,
+                               section_keys_to_aggr=["service.seed"],
+                               plot_value_extractor=plot_value_func)
+    plotter.make_and_save_plot("heuristic-{}-impr-{}".format(name, improvement_limit), pd1, dependent_section_key, name)
+
+
 if __name__ == "__main__":
 
     if len(sys.argv) > 1:
@@ -346,5 +363,19 @@ if __name__ == "__main__":
                                                    section_keys_to_aggr=["service.seed"],
                                                    plot_value_extractor=plot_value_func)
                         plotter.make_and_save_plot("heuristic-{}-{}-{}-impr-{}".format(name, fixed_param_name, fix_param_v, improvement_limit), pd2, dependent_param_name, y_axis_label)
+    elif simulation_name == "mobile_nf_loads_targeted":
+        de = DataExtractor("results/mobile_nf_loads_targeted", 224)
+        for plotter, plot_value_func, name in ((MakeBoxPlot(de, "png"), DataExtractor.get_objective_function_value, 'cost'),
+                                               (MakeBoxPlot(de, "png"), DataExtractor.get_running_time, "runtime")):
+            for improvement_limit in (2, 1):
+                log.debug("Plotting: {}, with improvement limit {}".format(name, improvement_limit))
+                plot_both_if_needed(de, plotter, plot_value_func, "service.mobile_nfs_per_sfc", name, improvement_limit)
+    elif simulation_name == "scalability_test":
+        de = DataExtractor("results/scalability_test", 336)
+        for plotter, plot_value_func, name in ((MakeBoxPlot(de, "png"), DataExtractor.get_objective_function_value, 'cost'),
+                                               (MakeBoxPlot(de, "png"), DataExtractor.get_running_time, "runtime")):
+            for improvement_limit in (2, 1):
+                log.debug("Plotting: {}, with improvement limit {}".format(name, improvement_limit))
+                plot_both_if_needed(de, plotter, plot_value_func, "service.connected_component_sizes", name, improvement_limit)
     else:
         raise ValueError("Unknown simulation name {}".format(simulation_name))
