@@ -224,16 +224,19 @@ class MakeFeasibilityPlot(MakeBoxPlot):
 
 
 def plot_both_if_needed(de : DataExtractor, plotter : MakeBoxPlot, plot_value_func, dependent_section_key,
-                        name, improvement_limit, ampl_improvement_limit=2):
+                        name, improvement_limit, ampl_improvement_limit=2, additional_filters=None):
+    section_key_filters = {"optimization.improvement_score_limit": improvement_limit}
+    if additional_filters is not None:
+        section_key_filters.update(additional_filters)
     if improvement_limit == ampl_improvement_limit:
         pd1 = de.extract_plot_data(sol_file_name="ampl_solution.json",
-                                   section_key_filters={"optimization.improvement_score_limit": improvement_limit},
+                                   section_key_filters=section_key_filters,
                                    dependent_section_key=dependent_section_key,
                                    section_keys_to_aggr=["service.seed"],
                                    plot_value_extractor=plot_value_func)
         plotter.make_and_save_plot("ampl-{}".format(name), pd1, dependent_section_key, name)
     pd1 = de.extract_plot_data(sol_file_name="heuristic_solution.json",
-                               section_key_filters={"optimization.improvement_score_limit": improvement_limit},
+                               section_key_filters=section_key_filters,
                                dependent_section_key=dependent_section_key,
                                section_keys_to_aggr=["service.seed"],
                                plot_value_extractor=plot_value_func)
@@ -377,5 +380,16 @@ if __name__ == "__main__":
             for improvement_limit in (2, 1):
                 log.debug("Plotting: {}, with improvement limit {}".format(name, improvement_limit))
                 plot_both_if_needed(de, plotter, plot_value_func, "service.connected_component_sizes", name, improvement_limit)
+    elif simulation_name == "mobile_nf_loads_small_sweep":
+        de = DataExtractor("results/mobile_nf_loads_small_sweep", 1344)
+        for plotter, plot_value_func, name in ((MakeBoxPlot(de, "png"), DataExtractor.get_objective_function_value, 'cost'),
+                                               (MakeBoxPlot(de, "png"), DataExtractor.get_running_time, "runtime"),
+                                               (MakeFeasibilityPlot(de, "png"), DataExtractor.count_feasible, 'feas')):
+            for battery_threshold in [0.656, 0.6872, 0.7184, 0.7496, 0.7808, 0.812]:
+                additional_filters = {"optimization.battery_threshold": battery_threshold}
+                for improvement_limit in (2, 1):
+                    log.debug("Plotting: {}, with improvement limit {}, battery threashold {}".format(name, improvement_limit, battery_threshold))
+                    plot_both_if_needed(de, plotter, plot_value_func, "service.mobile_nfs_per_sfc", name + "-battery_th-{}".format(battery_threshold),
+                                        improvement_limit, additional_filters=additional_filters)
     else:
         raise ValueError("Unknown simulation name {}".format(simulation_name))
