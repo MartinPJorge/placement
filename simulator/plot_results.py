@@ -389,7 +389,10 @@ if __name__ == "__main__":
                 additional_filters = {"optimization.battery_threshold": battery_threshold}
                 for improvement_limit in (2, 1):
                     log.debug("Plotting: {}, with improvement limit {}, battery threashold {}".format(name, improvement_limit, battery_threshold))
-                    plot_both_if_needed(de, plotter, plot_value_func, "service.mobile_nfs_per_sfc", name + "-battery_th-{}".format(battery_threshold),
-                                        improvement_limit, additional_filters=additional_filters)
+                    try:
+                        plot_both_if_needed(de, plotter, plot_value_func, "service.mobile_nfs_per_sfc", name + "-battery_th-{}".format(battery_threshold),
+                                            improvement_limit, additional_filters=additional_filters)
+                    except Exception as e:
+                        log.exception("Error during plotting, skipping plot...")
     else:
         raise ValueError("Unknown simulation name {}".format(simulation_name))
