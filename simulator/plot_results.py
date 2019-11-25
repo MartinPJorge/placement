@@ -240,6 +240,66 @@ class MakeFeasibilityPlot(MakeBoxPlot):
         plt.close(fig)
 
 
+class MakeCompareBoxPlot(MakeBoxPlot):
+
+    def __init__(self, data_extractor : DataExtractor = None, output_filetype='png', plots_path=None,
+                 show_feasibility_percentage=False, max_sample_size=1):
+        super(MakeCompareBoxPlot, self).__init__(data_extractor, output_filetype, plots_path)
+        self.show_feasibility_percentage = show_feasibility_percentage
+        self.max_sample_size = max_sample_size
+
+    def make_and_save_plot(self, file_name, dict_of_plot_data, dependent_section_key, y_axis_label):
+        """
+
+
+        :param file_name:
+        :param dict_of_plot_data: keys are legend items, values are dict of plot_data in the same struct as in baseclass
+        :param dependent_section_key:
+        :param y_axis_label:
+        :return:
+        """
+        if len(dict_of_plot_data) == 0:
+            return
+        fig, ax = plt.subplots()
+        legend_from_keys = []
+        dependent_data_lables = None
+        for k, k_plot_data in dict_of_plot_data.items():
+            legend_from_keys.append(k)
+            if dependent_data_lables is None:
+                dependent_data_lables = list(k_plot_data.keys())
+            elif dependent_data_lables != list(k_plot_data.keys()):
+                raise Exception("Data labels of each plot_data must be the same, in same order! but {} and {} is wrong".
+                                format(dependent_data_lables, list(k_plot_data.keys())))
+        # take one data from each dataset, which corresponds to the same value
+        values_to_plot = []
+        for x_label in dependent_data_lables:
+            for k in dict_of_plot_data:
+                values_to_plot.append(dict_of_plot_data[k][x_label])
+        total_boxspace = (len(legend_from_keys) + 1) * len(dependent_data_lables)
+        # skip the box spaces which we added to separate the values
+        pos = [i for i in range(1, total_boxspace) if i%(len(legend_from_keys)+1) != 0]
+        # TODO: add different colors -- set them to different groups??
+        ax.boxplot(values_to_plot, positions=pos, whis=1.5,
+                   boxprops={'linewidth': 2}, medianprops={'linewidth': 3}, whiskerprops={'linewidth': 1.8})
+        xtick_offset = len(legend_from_keys)/2+0.5 if len(legend_from_keys)%2==0 else len(legend_from_keys)//2+1
+        plt.xticks([xtick_offset + (len(legend_from_keys)+1)*i for i in range(0, len(dependent_data_lables))],
+                  dependent_data_lables)
+        ax.set_xlabel(config_section_key_to_axis_label_dict[dependent_section_key])
+        ax.set_ylabel(y_axis_label)
+
+        # TODO: show_feasibility_percentage on top of each group
+        # ax.text(0.0, 1.05, "sample size", transform=ax.get_xaxis_transform())
+        # for xtick, data_label in zip(pos, plot_data.keys()):
+        #     ax.text(xtick, 1.05, str(len(plot_data[data_label])), transform=ax.get_xaxis_transform())
+
+        # TODO: show legend!
+        full_file_name = os.path.join(self.plots_path, file_name) + self.output_filetype
+        log.info("Saving plot {}...".format(full_file_name))
+        plt.savefig(full_file_name)
+        plt.close(fig)
+
+
+
 def plot_both_if_needed(de : DataExtractor, plotter : MakeBoxPlot, plot_value_func, dependent_section_key,
                         name, improvement_limit, ampl_improvement_limit=2, additional_filters=None, additional_aggr=None):
     section_key_filters = {"optimization.improvement_score_limit": improvement_limit}
@@ -276,8 +336,10 @@ if __name__ == "__main__":
         replot_file_path = os.path.join('local_replot_data', replot_file)
         with open(replot_file_path, "r") as f:
             replot_data = json.load(f)
-            plotter = MakeFeasibilityPlot(output_filetype='png', plots_path='local_replot_data')
-            plotter.make_and_save_plot(replot_file.rstrip(".json"), replot_data, dependent_section_key)
+            # in this case we would use non comparing plots... could be refactored to make nicer...
+            # plotter = MakeFeasibilityPlot(output_filetype='png', plots_path='local_replot_data')
+            plotter = MakeCompareBoxPlot(output_filetype='png', plots_path='local_replot_data')
+            plotter.make_and_save_plot(replot_file.rstrip(".json"), replot_data, dependent_section_key, "Cost of deployment")
     elif simulation_name == "large_tests_many_nfs":
         ref_to_path = {
             'ref-1': "../graphs/infras/cobo-calleja/pico-and-micro-cobo-calleja-ref-1.gml",
@@ -425,7 +487,7 @@ if __name__ == "__main__":
                     plot_both_if_needed(de, plotter, plot_value_func, "optimization.coverage_threshold", name, improvement_limit,
                                         additional_aggr=["infrastructure.gml_file"])
                     for haven_id in (1, 2, 3, 4):
-                        plot_both_if_needed(de, plotter, plot_value_func, "optimization.coverage_threshold", name+"haven-{}".format(haven_id),
+                        plot_both_if_needed(de, plotter, plot_value_func, "optimization.coverage_threshold", name+"-haven-{}".format(haven_id),
                                             improvement_limit,
                                             additional_filters={"infrastructure.gml_file": "../graphs/infras/valencia-haven/valencia-haven-{}.gml".format(haven_id)})
                 except Exception as e:
