@@ -28,7 +28,8 @@ config_section_key_to_axis_label_dict = {
     "service.connected_component_sizes" : "Number of NFs",
     "service.sfc_delays": "Delays of SFCs [ms]",
     "optimization.battery_threshold": "Battery alive probabilty",
-    "service.mobile_nfs_per_sfc": "NF count bound to mobile nodes"
+    "service.mobile_nfs_per_sfc": "NF count bound to mobile nodes",
+    "optimization.coverage_threshold": "Coverage probability"
 }
 
 
@@ -73,6 +74,22 @@ class DataExtractor(object):
             plot_data[plot_data_key].append(1)
         else:
             plot_data[plot_data_key].append(0)
+        return plot_data
+
+    @staticmethod
+    def count_handovers(mapping: VolatileResourcesMapping, plot_data, plot_data_key):
+        if mapping[mapping.WORKED]:
+            previous_ap_name = None
+            # the first difference is not a handover
+            handover_count = -1
+            # must be sorted based on subinterval (not guaranteed in dicts)
+            sorted_ap_sel = list(mapping[mapping.AP_SELECTION].items())
+            sorted_ap_sel = sorted(sorted_ap_sel, key=lambda t: int(t[0]))
+            for subinterval, ap_name in sorted_ap_sel:
+                if ap_name != previous_ap_name:
+                    handover_count += 1
+                    previous_ap_name = ap_name
+            plot_data[plot_data_key].append(handover_count)
         return plot_data
 
     def extract_plot_data(self, sol_file_name : str, section_key_filters : dict,
@@ -224,21 +241,24 @@ class MakeFeasibilityPlot(MakeBoxPlot):
 
 
 def plot_both_if_needed(de : DataExtractor, plotter : MakeBoxPlot, plot_value_func, dependent_section_key,
-                        name, improvement_limit, ampl_improvement_limit=2, additional_filters=None):
+                        name, improvement_limit, ampl_improvement_limit=2, additional_filters=None, additional_aggr=None):
     section_key_filters = {"optimization.improvement_score_limit": improvement_limit}
+    aggregation_keys = ["service.seed"]
     if additional_filters is not None:
         section_key_filters.update(additional_filters)
+    if additional_aggr is not None:
+        aggregation_keys.extend(additional_aggr)
     if improvement_limit == ampl_improvement_limit:
         pd1 = de.extract_plot_data(sol_file_name="ampl_solution.json",
                                    section_key_filters=section_key_filters,
                                    dependent_section_key=dependent_section_key,
-                                   section_keys_to_aggr=["service.seed"],
+                                   section_keys_to_aggr=aggregation_keys,
                                    plot_value_extractor=plot_value_func)
         plotter.make_and_save_plot("ampl-{}".format(name), pd1, dependent_section_key, name)
     pd1 = de.extract_plot_data(sol_file_name="heuristic_solution.json",
                                section_key_filters=section_key_filters,
                                dependent_section_key=dependent_section_key,
-                               section_keys_to_aggr=["service.seed"],
+                               section_keys_to_aggr=aggregation_keys,
                                plot_value_extractor=plot_value_func)
     plotter.make_and_save_plot("heuristic-{}-impr-{}".format(name, improvement_limit), pd1, dependent_section_key, name)
 
@@ -394,5 +414,21 @@ if __name__ == "__main__":
                                             improvement_limit, additional_filters=additional_filters)
                     except Exception as e:
                         log.exception("Error during plotting, skipping plot...")
+    elif simulation_name == "coverage_threshold_variation":
+        de = DataExtractor("results/coverage_threshold_variation", 576)
+        for plotter, plot_value_func, name in ((MakeBoxPlot(de, "png"), DataExtractor.get_objective_function_value, 'cost'),
+                                               (MakeBoxPlot(de, "png"), DataExtractor.get_running_time, "runtime"),
+                                               (MakeFeasibilityPlot(de, "png"), DataExtractor.count_feasible, 'feas'),
+                                               (MakeBoxPlot(de, "png"), DataExtractor.count_handovers, "handovers")):
+            for improvement_limit in (2, 1, 0):
+                try:
+                    plot_both_if_needed(de, plotter, plot_value_func, "optimization.coverage_threshold", name, improvement_limit,
+                                        additional_aggr=["infrastructure.gml_file"])
+                    for haven_id in (1, 2, 3, 4):
+                        plot_both_if_needed(de, plotter, plot_value_func, "optimization.coverage_threshold", name+"haven-{}".format(haven_id),
+                                            improvement_limit,
+                                            additional_filters={"infrastructure.gml_file": "../graphs/infras/valencia-haven/valencia-haven-{}.gml".format(haven_id)})
+                except Exception as e:
+                    log.exception("Error during plotting, skipping plot...")
     else:
         raise ValueError("Unknown simulation name {}".format(simulation_name))
