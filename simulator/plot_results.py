@@ -6,6 +6,7 @@ import logging
 import numpy as np
 from rainbow_logging_handler import RainbowLoggingHandler
 import matplotlib.pyplot as plt
+import matplotlib.lines as lines
 sys.path.append(os.path.abspath(".."))
 from graphs.mapping_structure import VolatileResourcesMapping
 
@@ -247,6 +248,12 @@ class MakeCompareBoxPlot(MakeBoxPlot):
         super(MakeCompareBoxPlot, self).__init__(data_extractor, output_filetype, plots_path)
         self.show_feasibility_percentage = show_feasibility_percentage
         self.max_sample_size = max_sample_size
+        self.linestyle_list = [
+            {'linewidth': 1, 'color': 'black', 'linestyle': '-'},
+            {'linewidth': 1, 'color': 'red', 'linestyle': '--'},
+            {'linewidth': 1, 'color': 'green', 'linestyle': '-.'},
+            {'linewidth': 1, 'color': 'blue', 'linestyle': ':'}
+        ]
 
     def make_and_save_plot(self, file_name, dict_of_plot_data, dependent_section_key, y_axis_label):
         """
@@ -270,29 +277,44 @@ class MakeCompareBoxPlot(MakeBoxPlot):
             elif dependent_data_lables != list(k_plot_data.keys()):
                 raise Exception("Data labels of each plot_data must be the same, in same order! but {} and {} is wrong".
                                 format(dependent_data_lables, list(k_plot_data.keys())))
-        # take one data from each dataset, which corresponds to the same value
-        values_to_plot = []
-        for x_label in dependent_data_lables:
-            for k in dict_of_plot_data:
-                values_to_plot.append(dict_of_plot_data[k][x_label])
-        total_boxspace = (len(legend_from_keys) + 1) * len(dependent_data_lables)
         # skip the box spaces which we added to separate the values
-        pos = [i for i in range(1, total_boxspace) if i%(len(legend_from_keys)+1) != 0]
-        # TODO: add different colors -- set them to different groups??
-        ax.boxplot(values_to_plot, positions=pos, whis=1.5,
-                   boxprops={'linewidth': 2}, medianprops={'linewidth': 3}, whiskerprops={'linewidth': 1.8})
+        pos_offset = 1
+        boxes_artists = []
+        for legend_name in legend_from_keys:
+            # take one data from each dataset, which corresponds to the same value
+            values_to_plot = []
+            for x_label in dependent_data_lables:
+                values_to_plot.append(dict_of_plot_data[legend_name][x_label])
+            pos = [i * (len(legend_from_keys)+1) + pos_offset for i in range(0, len(dependent_data_lables))]
+            boxplot_res = ax.boxplot(values_to_plot, positions=pos, whis=1.5,
+                       boxprops=self.linestyle_list[pos_offset-1], medianprops=self.linestyle_list[pos_offset-1],
+                       whiskerprops=self.linestyle_list[pos_offset-1], flierprops=self.linestyle_list[pos_offset-1],
+                       capprops=self.linestyle_list[pos_offset-1])
+            pos_offset += 1
+            boxes_artists.append(boxplot_res["boxes"][0])
         xtick_offset = len(legend_from_keys)/2+0.5 if len(legend_from_keys)%2==0 else len(legend_from_keys)//2+1
-        plt.xticks([xtick_offset + (len(legend_from_keys)+1)*i for i in range(0, len(dependent_data_lables))],
-                  dependent_data_lables)
+        xtick_positions = [xtick_offset + (len(legend_from_keys)+1)*i for i in range(0, len(dependent_data_lables))]
+        plt.xticks(xtick_positions, dependent_data_lables)
+        ax.legend(boxes_artists, legend_from_keys, loc='lower right')
+
         ax.set_xlabel(config_section_key_to_axis_label_dict[dependent_section_key])
         ax.set_ylabel(y_axis_label)
 
-        # TODO: show_feasibility_percentage on top of each group
-        # ax.text(0.0, 1.05, "sample size", transform=ax.get_xaxis_transform())
-        # for xtick, data_label in zip(pos, plot_data.keys()):
-        #     ax.text(xtick, 1.05, str(len(plot_data[data_label])), transform=ax.get_xaxis_transform())
+        # show_feasibility_percentage on top of each group
+        if self.show_feasibility_percentage:
+            # ax.text(-0.6, 1.05, "Scenario\nfeasibility", transform=ax.get_xaxis_transform(), fontsize=10)
+            legend_idx = 0
+            for legend_name in legend_from_keys:
+                y_coord = 1.01+0.04*legend_idx
+                legendline = lines.Line2D([-0.4, 0.7], [y_coord+0.02, y_coord+0.02],
+                                          **self.linestyle_list[legend_idx], transform=ax.get_xaxis_transform(), figure=fig)
+                fig.lines.extend([legendline])
+                for xtick, data_label in zip(xtick_positions, dependent_data_lables):
+                    feasibility = len(dict_of_plot_data[legend_name][data_label]) / self.max_sample_size
+                    ax.text(xtick, y_coord, str(int(np.round(feasibility * 100)))+'%', transform=ax.get_xaxis_transform(),
+                            horizontalalignment='center')
+                legend_idx += 1
 
-        # TODO: show legend!
         full_file_name = os.path.join(self.plots_path, file_name) + self.output_filetype
         log.info("Saving plot {}...".format(full_file_name))
         plt.savefig(full_file_name)
@@ -323,22 +345,36 @@ def plot_both_if_needed(de : DataExtractor, plotter : MakeBoxPlot, plot_value_fu
     plotter.make_and_save_plot("heuristic-{}-impr-{}".format(name, improvement_limit), pd1, dependent_section_key, name)
 
 
+help_text = "Positional arguments are either \n" \
+            "(1) a simulation name (name of folder) without any other,\n" \
+            "(2) (a) .json file in local_replot_data folder, \n" \
+            "\t (b) dependent_section_key (e.g. optimization.coverage_threshold)\n" \
+            "\t (c) max_sample_size giving the divisor in the feasibility ratio, calculated from the sample size (if 1 then skip plotting feasibilty)."
+
 if __name__ == "__main__":
 
     if len(sys.argv) > 1:
         simulation_name = sys.argv[1]
     else:
         simulation_name = ""
-    if ".json" in simulation_name:
+    if "-h" in sys.argv or "--help" in sys.argv:
+        print(help_text)
+    elif ".json" in simulation_name:
         # replot from file, the chosen data
         replot_file = simulation_name
-        dependent_section_key = sys.argv[2]
+        try:
+            dependent_section_key = sys.argv[2]
+            max_sample_size = int(sys.argv[3])
+        except:
+            print(help_text)
+            raise ValueError("Missing input parameters!")
         replot_file_path = os.path.join('local_replot_data', replot_file)
         with open(replot_file_path, "r") as f:
             replot_data = json.load(f)
             # in this case we would use non comparing plots... could be refactored to make nicer...
             # plotter = MakeFeasibilityPlot(output_filetype='png', plots_path='local_replot_data')
-            plotter = MakeCompareBoxPlot(output_filetype='png', plots_path='local_replot_data')
+            plotter = MakeCompareBoxPlot(output_filetype='png', plots_path='local_replot_data',
+                                         max_sample_size=max_sample_size, show_feasibility_percentage=max_sample_size != 1)
             plotter.make_and_save_plot(replot_file.rstrip(".json"), replot_data, dependent_section_key, "Cost of deployment")
     elif simulation_name == "large_tests_many_nfs":
         ref_to_path = {
