@@ -254,6 +254,12 @@ class MakeCompareBoxPlot(MakeBoxPlot):
             {'linewidth': 1, 'color': 'green', 'linestyle': '-.'},
             {'linewidth': 1, 'color': 'blue', 'linestyle': ':'}
         ]
+        self.flierstyle_list = [
+            {'markeredgecolor': 'black'},
+            {'markeredgecolor': 'red'},
+            {'markeredgecolor': 'green'},
+            {'markeredgecolor': 'blue'},
+        ]
 
     def make_and_save_plot(self, file_name, dict_of_plot_data, dependent_section_key, y_axis_label):
         """
@@ -288,14 +294,15 @@ class MakeCompareBoxPlot(MakeBoxPlot):
             pos = [i * (len(legend_from_keys)+1) + pos_offset for i in range(0, len(dependent_data_lables))]
             boxplot_res = ax.boxplot(values_to_plot, positions=pos, whis=1.5,
                        boxprops=self.linestyle_list[pos_offset-1], medianprops=self.linestyle_list[pos_offset-1],
-                       whiskerprops=self.linestyle_list[pos_offset-1], flierprops=self.linestyle_list[pos_offset-1],
+                       whiskerprops=self.linestyle_list[pos_offset-1], flierprops=self.flierstyle_list[pos_offset-1],
                        capprops=self.linestyle_list[pos_offset-1])
             pos_offset += 1
             boxes_artists.append(boxplot_res["boxes"][0])
         xtick_offset = len(legend_from_keys)/2+0.5 if len(legend_from_keys)%2==0 else len(legend_from_keys)//2+1
         xtick_positions = [xtick_offset + (len(legend_from_keys)+1)*i for i in range(0, len(dependent_data_lables))]
         plt.xticks(xtick_positions, dependent_data_lables)
-        ax.legend(boxes_artists, legend_from_keys, loc='lower right')
+        # reverse both so they would match the order of the feasibilty numbers
+        ax.legend(reversed(boxes_artists), reversed(legend_from_keys), loc='upper right')
 
         ax.set_xlabel(config_section_key_to_axis_label_dict[dependent_section_key])
         ax.set_ylabel(y_axis_label)
@@ -349,7 +356,8 @@ help_text = "Positional arguments are either \n" \
             "(1) a simulation name (name of folder) without any other,\n" \
             "(2) (a) .json file in local_replot_data folder, \n" \
             "\t (b) dependent_section_key (e.g. optimization.coverage_threshold)\n" \
-            "\t (c) max_sample_size giving the divisor in the feasibility ratio, calculated from the sample size (if 1 then skip plotting feasibilty)."
+            "\t (c) max_sample_size giving the divisor in the feasibility ratio, calculated from the sample size (if 1 then skip plotting feasibilty)" \
+            "\t (d) y_axis_label is the label to be shown on y axes"
 
 if __name__ == "__main__":
 
@@ -365,6 +373,7 @@ if __name__ == "__main__":
         try:
             dependent_section_key = sys.argv[2]
             max_sample_size = int(sys.argv[3])
+            y_axis_label = sys.argv[4]
         except:
             print(help_text)
             raise ValueError("Missing input parameters!")
@@ -373,9 +382,10 @@ if __name__ == "__main__":
             replot_data = json.load(f)
             # in this case we would use non comparing plots... could be refactored to make nicer...
             # plotter = MakeFeasibilityPlot(output_filetype='png', plots_path='local_replot_data')
+            # TODO: rerun the plots with correctly setting the y axes name!
             plotter = MakeCompareBoxPlot(output_filetype='png', plots_path='local_replot_data',
                                          max_sample_size=max_sample_size, show_feasibility_percentage=max_sample_size != 1)
-            plotter.make_and_save_plot(replot_file.rstrip(".json"), replot_data, dependent_section_key, "Cost of deployment")
+            plotter.make_and_save_plot(replot_file.rstrip(".json"), replot_data, dependent_section_key, y_axis_label)
     elif simulation_name == "large_tests_many_nfs":
         ref_to_path = {
             'ref-1': "../graphs/infras/cobo-calleja/pico-and-micro-cobo-calleja-ref-1.gml",
