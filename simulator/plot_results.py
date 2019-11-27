@@ -538,5 +538,19 @@ if __name__ == "__main__":
                                             additional_filters={"infrastructure.gml_file": "../graphs/infras/valencia-haven/valencia-haven-{}.gml".format(haven_id)})
                 except Exception as e:
                     log.exception("Error during plotting, skipping plot...")
+    elif simulation_name == "e2e_delay_effect":
+        de = DataExtractor("results/e2e_delay_effect", 1200)
+        for plotter, plot_value_func, name in ((MakeBoxPlot(de, "png"), DataExtractor.get_objective_function_value, 'cost'),
+                                               (MakeBoxPlot(de, "png"), DataExtractor.get_running_time, "runtime"),
+                                               (MakeBoxPlot(de, "png"), DataExtractor.count_handovers, "handovers")):
+            for sfcs in [[10], [10, 10], [10, 10, 10]]:
+                for improvement_limit in (3, 2, 1, 0):
+                    try:
+                        plot_both_if_needed(de, plotter, plot_value_func, "service.sfc_delays", name + "-sfcs-{}".format(len(sfcs)), improvement_limit,
+                                            additional_aggr=["infrastructure.gml_file"],
+                                            additional_filters={"service.connected_component_sizes": sfcs},
+                                            ampl_improvement_limit=3)
+                    except Exception as e:
+                        log.exception("Error during plotting, skipping plot...")
     else:
         raise ValueError("Unknown simulation name {}".format(simulation_name))
