@@ -244,7 +244,7 @@ class MakeFeasibilityPlot(MakeBoxPlot):
 class MakeCompareBoxPlot(MakeBoxPlot):
 
     def __init__(self, data_extractor : DataExtractor = None, output_filetype='png', plots_path=None,
-                 show_feasibility_percentage=False, max_sample_size=1):
+                 show_feasibility_percentage=False, max_sample_size=1, y_scale='linear'):
         super(MakeCompareBoxPlot, self).__init__(data_extractor, output_filetype, plots_path)
         self.show_feasibility_percentage = show_feasibility_percentage
         self.max_sample_size = max_sample_size
@@ -260,6 +260,7 @@ class MakeCompareBoxPlot(MakeBoxPlot):
             {'markeredgecolor': 'green'},
             {'markeredgecolor': 'blue'},
         ]
+        self.y_scale = y_scale
 
     def make_and_save_plot(self, file_name, dict_of_plot_data, dependent_section_key, y_axis_label):
         """
@@ -304,10 +305,12 @@ class MakeCompareBoxPlot(MakeBoxPlot):
         dependent_data_lables_removed_brackets = map(lambda l: l.rstrip("]").lstrip("["), dependent_data_lables)
         plt.xticks(xtick_positions, dependent_data_lables_removed_brackets)
         # reverse both so they would match the order of the feasibilty numbers
-        ax.legend(reversed(boxes_artists), reversed(legend_from_keys), loc='upper left')
+        ax.legend(reversed(boxes_artists), reversed(legend_from_keys), loc='upper left', prop={'size': 15})
 
-        ax.set_xlabel(config_section_key_to_axis_label_dict[dependent_section_key])
-        ax.set_ylabel(y_axis_label)
+        ax.set_xlabel(config_section_key_to_axis_label_dict[dependent_section_key], fontdict={'fontsize': 15})
+        ax.set_ylabel(y_axis_label, fontdict={'fontsize': 15})
+        ax.tick_params(labelsize=13)
+        plt.yscale(self.y_scale)
 
         # show_feasibility_percentage on top of each group
         if self.show_feasibility_percentage:
@@ -361,7 +364,8 @@ help_text = "Positional arguments are either \n" \
             "(2) (a) .json file in local_replot_data folder, \n" \
             "\t (b) dependent_section_key (e.g. optimization.coverage_threshold)\n" \
             "\t (c) max_sample_size giving the divisor in the feasibility ratio, calculated from the sample size (if 1 then skip plotting feasibilty)" \
-            "\t (d) y_axis_label is the label to be shown on y axes"
+            "\t (d) y_axis_label is the label to be shown on y axes\n" \
+            "\t (e) y_scale is one of linear, log, symlog, logit, ... (taken from matplotlib)"
 
 if __name__ == "__main__":
 
@@ -378,6 +382,7 @@ if __name__ == "__main__":
             dependent_section_key = sys.argv[2]
             max_sample_size = int(sys.argv[3])
             y_axis_label = sys.argv[4]
+            y_scale = sys.argv[5]
         except:
             print(help_text)
             raise ValueError("Missing input parameters!")
@@ -386,8 +391,9 @@ if __name__ == "__main__":
             replot_data = json.load(f)
             # in this case we would use non comparing plots... could be refactored to make nicer...
             # plotter = MakeFeasibilityPlot(output_filetype='png', plots_path='local_replot_data')
-            plotter = MakeCompareBoxPlot(output_filetype='png', plots_path='local_replot_data',
-                                         max_sample_size=max_sample_size, show_feasibility_percentage=max_sample_size != 1)
+            plotter = MakeCompareBoxPlot(output_filetype='pdf', plots_path='local_replot_data',
+                                         max_sample_size=max_sample_size, show_feasibility_percentage=max_sample_size != 1,
+                                         y_scale=y_scale)
             plotter.make_and_save_plot(replot_file.rstrip(".json"), replot_data, dependent_section_key, y_axis_label)
     elif simulation_name == "large_tests_many_nfs":
         ref_to_path = {
