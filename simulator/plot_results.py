@@ -26,7 +26,7 @@ log.setLevel("DEBUG")
 
 config_section_key_to_axis_label_dict = {
     "infrastructure.cluster_move_distances": "Cluster move length [Lat,Lon dist.]",
-    "service.connected_component_sizes" : "Number of NFs",
+    "service.connected_component_sizes" : "Number of VNFs",
     "service.sfc_delays": "Delays of SFCs [ms]",
     "optimization.battery_threshold": "Battery alive probabilty",
     "service.mobile_nfs_per_sfc": "NF count bound to mobile nodes",
@@ -244,7 +244,7 @@ class MakeFeasibilityPlot(MakeBoxPlot):
 class MakeCompareBoxPlot(MakeBoxPlot):
 
     def __init__(self, data_extractor : DataExtractor = None, output_filetype='png', plots_path=None,
-                 show_feasibility_percentage=False, max_sample_size=1, y_scale='linear'):
+                 show_feasibility_percentage=False, max_sample_size=1, y_scale='linear', show_every_2nd_feas=False):
         super(MakeCompareBoxPlot, self).__init__(data_extractor, output_filetype, plots_path)
         self.show_feasibility_percentage = show_feasibility_percentage
         self.max_sample_size = max_sample_size
@@ -261,6 +261,7 @@ class MakeCompareBoxPlot(MakeBoxPlot):
             {'markeredgecolor': 'blue'},
         ]
         self.y_scale = y_scale
+        self.show_every_2nd_feas = show_every_2nd_feas
 
     def make_and_save_plot(self, file_name, dict_of_plot_data, dependent_section_key, y_axis_label):
         """
@@ -305,7 +306,7 @@ class MakeCompareBoxPlot(MakeBoxPlot):
         dependent_data_lables_removed_brackets = map(lambda l: l.rstrip("]").lstrip("["), dependent_data_lables)
         plt.xticks(xtick_positions, dependent_data_lables_removed_brackets)
         # reverse both so they would match the order of the feasibilty numbers
-        ax.legend(reversed(boxes_artists), reversed(legend_from_keys), loc='upper left', prop={'size': 15})
+        ax.legend(reversed(boxes_artists), reversed(legend_from_keys), loc='lower right', prop={'size': 15})
 
         ax.set_xlabel(config_section_key_to_axis_label_dict[dependent_section_key], fontdict={'fontsize': 15})
         ax.set_ylabel(y_axis_label, fontdict={'fontsize': 15})
@@ -316,17 +317,28 @@ class MakeCompareBoxPlot(MakeBoxPlot):
         if self.show_feasibility_percentage:
             # ax.text(-0.6, 1.05, "Scenario\nfeasibility", transform=ax.get_xaxis_transform(), fontsize=10)
             legend_idx = 0
-            ax.text(-1.9, 1.01+0.04*(len(legend_from_keys)-1)/2.0, "Feasib.", transform=ax.get_xaxis_transform(),
-                    horizontalalignment='center', fontsize=10)
+            if self.show_every_2nd_feas:
+                ax.text(-2.1, 1.01+0.04*(len(legend_from_keys))/2.0, "Feasib.", transform=ax.get_xaxis_transform(),
+                        horizontalalignment='center', fontsize=14)
+            else:
+                ax.text(-1.9, 1.01 + 0.04 * (len(legend_from_keys)-1) / 2.0, "Feasib.", transform=ax.get_xaxis_transform(),
+                        horizontalalignment='center', fontsize=10)
             for legend_name in legend_from_keys:
                 y_coord = 1.01+0.04*legend_idx
-                legendline = lines.Line2D([-0.4, 0.7], [y_coord+0.02, y_coord+0.02],
-                                          **self.linestyle_list[legend_idx], transform=ax.get_xaxis_transform(), figure=fig)
+                if self.show_every_2nd_feas:
+                    legendline = lines.Line2D([0.3, 2.0], [y_coord+0.02, y_coord+0.02],
+                                              **self.linestyle_list[legend_idx], transform=ax.get_xaxis_transform(), figure=fig)
+                else:
+                    legendline = lines.Line2D([-0.4, 0.7], [y_coord + 0.02, y_coord + 0.02],
+                                              **self.linestyle_list[legend_idx], transform=ax.get_xaxis_transform(), figure=fig)
                 fig.lines.extend([legendline])
+                i = 0
                 for xtick, data_label in zip(xtick_positions, dependent_data_lables):
-                    feasibility = len(dict_of_plot_data[legend_name][data_label]) / self.max_sample_size
-                    ax.text(xtick, y_coord, str(int(np.round(feasibility * 100)))+'%', transform=ax.get_xaxis_transform(),
-                            horizontalalignment='center')
+                    if i%2 == 1 and self.show_every_2nd_feas:
+                        feasibility = len(dict_of_plot_data[legend_name][data_label]) / self.max_sample_size
+                        ax.text(xtick, y_coord, str(int(np.round(feasibility * 100)))+'%', transform=ax.get_xaxis_transform(),
+                                horizontalalignment='center', fontsize=12)
+                    i+=1
                 legend_idx += 1
 
         full_file_name = os.path.join(self.plots_path, file_name) + self.output_filetype
