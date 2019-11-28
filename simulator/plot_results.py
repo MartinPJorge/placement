@@ -300,9 +300,11 @@ class MakeCompareBoxPlot(MakeBoxPlot):
             boxes_artists.append(boxplot_res["boxes"][0])
         xtick_offset = len(legend_from_keys)/2+0.5 if len(legend_from_keys)%2==0 else len(legend_from_keys)//2+1
         xtick_positions = [xtick_offset + (len(legend_from_keys)+1)*i for i in range(0, len(dependent_data_lables))]
-        plt.xticks(xtick_positions, dependent_data_lables)
+        # in some cases these are lists, should show them without brackets
+        dependent_data_lables_removed_brackets = map(lambda l: l.rstrip("]").lstrip("["), dependent_data_lables)
+        plt.xticks(xtick_positions, dependent_data_lables_removed_brackets)
         # reverse both so they would match the order of the feasibilty numbers
-        ax.legend(reversed(boxes_artists), reversed(legend_from_keys), loc='upper right')
+        ax.legend(reversed(boxes_artists), reversed(legend_from_keys), loc='upper left')
 
         ax.set_xlabel(config_section_key_to_axis_label_dict[dependent_section_key])
         ax.set_ylabel(y_axis_label)
@@ -311,6 +313,8 @@ class MakeCompareBoxPlot(MakeBoxPlot):
         if self.show_feasibility_percentage:
             # ax.text(-0.6, 1.05, "Scenario\nfeasibility", transform=ax.get_xaxis_transform(), fontsize=10)
             legend_idx = 0
+            ax.text(-1.9, 1.01+0.04*(len(legend_from_keys)-1)/2.0, "Feasib.", transform=ax.get_xaxis_transform(),
+                    horizontalalignment='center', fontsize=10)
             for legend_name in legend_from_keys:
                 y_coord = 1.01+0.04*legend_idx
                 legendline = lines.Line2D([-0.4, 0.7], [y_coord+0.02, y_coord+0.02],
@@ -382,7 +386,6 @@ if __name__ == "__main__":
             replot_data = json.load(f)
             # in this case we would use non comparing plots... could be refactored to make nicer...
             # plotter = MakeFeasibilityPlot(output_filetype='png', plots_path='local_replot_data')
-            # TODO: rerun the plots with correctly setting the y axes name!
             plotter = MakeCompareBoxPlot(output_filetype='png', plots_path='local_replot_data',
                                          max_sample_size=max_sample_size, show_feasibility_percentage=max_sample_size != 1)
             plotter.make_and_save_plot(replot_file.rstrip(".json"), replot_data, dependent_section_key, y_axis_label)
