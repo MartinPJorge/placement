@@ -334,7 +334,7 @@ class MakeCompareBoxPlot(MakeBoxPlot):
                 fig.lines.extend([legendline])
                 i = 0
                 for xtick, data_label in zip(xtick_positions, dependent_data_lables):
-                    if i%2 == 1 and self.show_every_2nd_feas:
+                    if i%2 == 1 or not self.show_every_2nd_feas:
                         feasibility = len(dict_of_plot_data[legend_name][data_label]) / self.max_sample_size
                         ax.text(xtick, y_coord, str(int(np.round(feasibility * 100)))+'%', transform=ax.get_xaxis_transform(),
                                 horizontalalignment='center', fontsize=12)
