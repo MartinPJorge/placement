@@ -3,9 +3,11 @@ from haversine import haversine
 import copy
 import networkx as nx
 import sys
+import os
 import re
 import logging
 from itertools import islice
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from checker import AbstractChecker, CheckFogDigraphs
 from functools import reduce
 from utils import k_shortest_paths, k_reasonable_paths
