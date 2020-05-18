@@ -609,6 +609,7 @@ class FPTASMapper(AbstractMapper):
                                 infra.nodes[n]['cpu'] > 0) or\
                                 ('endpoint' in infra.nodes[n] and\
                                 infra.nodes[n]['endpoint'])])
+        print(f'comp_nodes={comp_nodes}')
 
         if src not in comp_nodes:
             comp_nodes.union(src)
@@ -620,12 +621,27 @@ class FPTASMapper(AbstractMapper):
             src_paths[from_] = {}
             #for to_ in [c for c in comp_nodes if c != from_]:
             for to_ in comp_nodes:
-                if not nx.has_path(infra, from_, to_):
+                # Create the self-link
+                if from_ == to_:
+                    src_paths[from_][to_] = {
+                        'paths': [from_, to_],
+                        'delays': [0],
+                        'reliability': [1],
+                        'bw': [sys.maxsize],
+                        'cost': [0]
+                    }
                     continue
+
+                if not nx.has_path(infra, from_, to_):
+                    print('no path')
+                    continue
+                else:
+                    print('there is a path')
                 #for path in k_shortest_paths(infra, from_, to_,
                 #                             k=k, weight='delay'):
                 for path in k_reasonable_paths(infra, from_, to_,
                         k, 'delay'):
+                    print(f'\t{path}')
                     if to_ not in src_paths[from_]:
                         src_paths[from_][to_] = {
                             'paths': [],
@@ -651,6 +667,9 @@ class FPTASMapper(AbstractMapper):
                     src_paths[from_][to_]['bw'] += [bw]
                     src_paths[from_][to_]['cost'] += [cost]
 
+        print(f'these are the paths')
+        import json
+        print(json.dumps(src_paths, indent=2))
 
         # for dst in src_paths[src]:
         #     if 'Azure' in dst:
@@ -680,7 +699,17 @@ class FPTASMapper(AbstractMapper):
         self.__log.info('connect nodes (c,A)--(c2,B) of auxiliary nodes')
         for (c1,A) in self.__aux_g.nodes():
             for (c2,B) in self.__aux_g.nodes():
+
+                # self-loop
+                if c1 == c2: 
+                    self.__aux_g.add_edge((c1,A), (c2,B), w1=0,
+                                delay=0, path=[c1,c2],
+                                bw=sys.maxsize, cost=0)
+                    continue
+
+                print(f'\ttrying to connect {(c1,A)}--{(c2,B)}')
                 if not nx.has_path(infra, c1, c2):
+                    print(f'\t\tno path')
                     continue
 
                 # GET PATH WITH LOWEST DELAY SATISFYING A+W1<=B
@@ -903,8 +932,13 @@ class FPTASMapper(AbstractMapper):
         :returns: dict: mapping decissions dictionary
 
         """
+        if not self.__checker.check_infra(infra=infra) or\
+                not self.__checker.check_ns(ns=ns, check_vcore_Mb=True):
+            return { 'worked': False }
+
         endpoint = list(filter(lambda vnf: ns.in_degree(vnf) == 0,
                                ns.nodes()))[0]
+        print(f'required reliab {ns.nodes[endpoint]["reliability"]}')
         self.__build_aux(infra=infra, src=endpoint, k=k, tau=tau,
                          ereliab=ns.nodes[endpoint]['reliability'])
         self.__log.info('setting auxiliary variables')
@@ -945,6 +979,7 @@ class FPTASMapper(AbstractMapper):
             self.__log.info('mapping virtual link (' + str(v1) + ',' +\
                             str(v2) + ')')
 
+            print(f'auxiliary edges: {self.__aux_g.edges}')
             to_visit = self.__aux_g.edges(data=True) if not first_vl else\
                        filter(lambda e: e[0][0] == endpoint and e[0][1] == 0,
                               self.__aux_g.edges(data=True))
@@ -962,7 +997,7 @@ class FPTASMapper(AbstractMapper):
             #     to_visit)))))
             print('and the bw for {} is {} Mbps'.format((v1,v2),
                 vl_d['bw']))
-            # print('to visit: {}\n'.format(list(to_visit)))
+            self.__log.info('to visit: {}\n'.format(list(to_visit)))
             for ((c1,A),(c2,B),l_d) in filter(lambda e:\
                                             e[2]['bw'] >= vl_d['bw'], to_visit):
                 # if any(map(lambda h: infra.nodes[h]['type'] == 'pico_cell',
@@ -977,9 +1012,11 @@ class FPTASMapper(AbstractMapper):
                 #                    (hop_delay[hop] - l_d['delay'])) if\
                 #              l_d['delay'] < hop_delay[hop] else float('inf')
 
+                self.__log.info(f'{(c1,A)}-{(c2,B)}')
+                self.__log.info(f"\thop_delay[hop] - l_d['delay'] = {hop_delay[hop] - l_d['delay']}")
                 # use the PS approach
                 need_cpu = (1 / (hop_delay[hop] - l_d['delay']) +\
-                        ns[v1][v2]['bw']*1e-3) / 20\
+                        ns[v1][v2]['bw']*1e-3) * ns.nodes[v2]['vcore_per_Mb']\
                         if l_d['delay'] < hop_delay[hop] else float('inf')
                 #print('\t\twe\'ll need {} cpus'.format(need_cpu))
                 print('\t\thost {} requires {} CPUs\n'.format(c2,need_cpu))

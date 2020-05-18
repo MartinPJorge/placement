@@ -120,8 +120,9 @@ class CheckBasicDigraphs(AbstractChecker):
                 print("'bw' key not in physical link, or is not int",
                         file=sys.stderr)
                 return False
-            if 'delay' not in edge_dict or type(edge_dict['delay']) != int:
-                print("'delay' key not in physical link, or is not int",
+            if 'delay' not in edge_dict or\
+                    not isinstance(edge_dict['delay'], (int,float)):
+                print("'delay' key not in physical link, or is not int|float",
                         file=sys.stderr)
                 return False
             if 'cost' not in edge_dict or (type(edge_dict['cost']) != int\
@@ -172,9 +173,14 @@ class CheckBasicDigraphs(AbstractChecker):
                     return False
                 if 'center' not in node_dict['location'] or\
                         type(node_dict['location']['center']) != tuple or\
-                        type(node_dict['location']['center'][0]) != float or\
-                        type(node_dict['location']['center'][1]) != float:
-                    print("'location' does not have a 'center', or it is bot"+\
+                        not isinstance(node_dict['location']['center'][0],
+                                        (int, float)) or\
+                        not isinstance(node_dict['location']['center'][1],
+                                        (int, float)):
+                    print(node_dict['location'])
+                    print(f'node={node}')
+                    print(f'{type(node_dict["location"]["center"])}')
+                    print("'location' does not have a 'center', or it is not"+\
                             " a tuple of floats", file=sys.stderr)
                     return False
 
@@ -233,13 +239,28 @@ class CheckFogDigraphs(AbstractChecker):
         return True
 
 
-    def check_ns(self, ns: nx.classes.digraph.DiGraph) -> bool:
+    def check_ns(self, ns: nx.classes.digraph.DiGraph,
+                 check_vcore_Mb: bool=False) -> bool:
         """Checks if the network service graph has the correct format
 
         :ns: nx.classes.digraph.DiGraph: network service graph
+        :check_vcore_Mb: bool: specify if vcore/Mb is mandatory on each VNF
         :returns: bool: telling if it satisfies it or not
 
         """
         basic_checker = CheckBasicDigraphs()
+
+        # If mandatory, check if all VNFs specify 'vcore_per_Mb'
+        missing_vcore_per_mb = False
+        vcore_per_mbs = map(lambda v: ('vcore_per_Mb' in ns.nodes[v], v),
+                            ns.nodes)
+        for has_vcore_per_mb, v in list(vcore_per_mbs):
+            if not has_vcore_per_mb:
+                missing_vcore_per_mb = True
+                msg_type = 'WARNING' if not check_vcore_Mb else 'ERROR'
+                print(f'{msg_type}: vnf {v} does not specify vcore_per_Mb')
+        if check_vcore_Mb and missing_vcore_per_mb:
+            return False
+
         return basic_checker.check_ns(ns)
 

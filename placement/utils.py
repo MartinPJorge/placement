@@ -10,8 +10,11 @@ def k_reasonable_paths(G, source, target, k, weight=None):
     paths = []
 
     for src_neigh in src_neighs:
-        for k_path in k_shortest_paths(G,src_neigh,target,k,weight):
-            paths.append([source] + k_path)
+        try:
+            for k_path in k_shortest_paths(G,src_neigh,target,k,weight):
+                paths.append([source] + k_path)
+        except nx.NetworkXNoPath:
+            continue
         
     return paths
 
