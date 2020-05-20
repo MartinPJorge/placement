@@ -609,7 +609,7 @@ class FPTASMapper(AbstractMapper):
                                 infra.nodes[n]['cpu'] > 0) or\
                                 ('endpoint' in infra.nodes[n] and\
                                 infra.nodes[n]['endpoint'])])
-        print(f'comp_nodes={comp_nodes}')
+        self.__log.info(f'comp_nodes={comp_nodes}')
 
         if src not in comp_nodes:
             comp_nodes.union(src)
@@ -938,7 +938,8 @@ class FPTASMapper(AbstractMapper):
 
         endpoint = list(filter(lambda vnf: ns.in_degree(vnf) == 0,
                                ns.nodes()))[0]
-        print(f'required reliab {ns.nodes[endpoint]["reliability"]}')
+        self.__log.info(f'endpoint={endpoint}')
+        self.__log.info(f'required reliab {ns.nodes[endpoint]["reliability"]}')
         self.__build_aux(infra=infra, src=endpoint, k=k, tau=tau,
                          ereliab=ns.nodes[endpoint]['reliability'])
         self.__log.info('setting auxiliary variables')
@@ -979,11 +980,13 @@ class FPTASMapper(AbstractMapper):
             self.__log.info('mapping virtual link (' + str(v1) + ',' +\
                             str(v2) + ')')
 
-            print(f'auxiliary edges: {self.__aux_g.edges}')
+            for a in self.__aux_g.edges(data=True):
+                self.__log.info(a)
             to_visit = self.__aux_g.edges(data=True) if not first_vl else\
                        filter(lambda e: e[0][0] == endpoint and e[0][1] == 0,
                               self.__aux_g.edges(data=True))
             to_visit = list(to_visit)
+            self.__log.info(f'to_visit={to_visit}')
 
             # for ((c1,A),(c2,B),l_d) in to_visit:
             #     if 'ower' in c2 or 'enter' in c2:
@@ -995,9 +998,6 @@ class FPTASMapper(AbstractMapper):
             # print('imposing hop delay={}'.format(hop_delay[hop]))
             # print('there are {} candidates'.format(list(set(map(lambda v: v[1][0],
             #     to_visit)))))
-            print('and the bw for {} is {} Mbps'.format((v1,v2),
-                vl_d['bw']))
-            self.__log.info('to visit: {}\n'.format(list(to_visit)))
             for ((c1,A),(c2,B),l_d) in filter(lambda e:\
                                             e[2]['bw'] >= vl_d['bw'], to_visit):
                 # if any(map(lambda h: infra.nodes[h]['type'] == 'pico_cell',
@@ -1013,16 +1013,14 @@ class FPTASMapper(AbstractMapper):
                 #              l_d['delay'] < hop_delay[hop] else float('inf')
 
                 self.__log.info(f'{(c1,A)}-{(c2,B)}')
-                self.__log.info(f"\thop_delay[hop] - l_d['delay'] = {hop_delay[hop] - l_d['delay']}")
                 # use the PS approach
                 need_cpu = (1 / (hop_delay[hop] - l_d['delay']) +\
                         ns[v1][v2]['bw']*1e-3) * ns.nodes[v2]['vcore_per_Mb']\
                         if l_d['delay'] < hop_delay[hop] else float('inf')
                 #print('\t\twe\'ll need {} cpus'.format(need_cpu))
-                print('\t\thost {} requires {} CPUs\n'.format(c2,need_cpu))
-                print('\t\t  hop delay={}, LL_delay = {}'.format(
+                self.__log.info(f'\t{(c1,A)}--{(c2,B)} requires {need_cpu} CPUs')
+                self.__log.info('\thop delay={}, LL_delay = {}'.format(
                     hop_delay[hop], l_d['delay']))
-                print('\t\t  for allowed delay={}'.format(hop_delay[hop] - l_d['delay']))
 
                 incur_cost = infra.nodes[c2]['cost']['cpu'] * need_cpu +\
                              self.__aux_g[(c1,A)][(c2,B)]['cost'] *vl_d['bw']+\
@@ -1111,8 +1109,10 @@ class FPTASMapper(AbstractMapper):
                       if cost[(c,A,vls[-1][0],vls[-1][1])] != float('inf')]
         min_cost, c_f, A_f = float('inf'), None, None
         for c,A in candidates:
+            self.__log.info(f'candidagte {(c,A)} has cost {cost[(c,A,vls[-1][0],vls[-1][1])]}')
             if cost[(c,A,vls[-1][0],vls[-1][1])] < min_cost:
                 c_f, A_f = c, A
+                min_cost = cost[(c,A,vls[-1][0],vls[-1][1])]
 
         return self.__get_mapping(c_f, A_f, prev, needed_cpu, vls)
 
