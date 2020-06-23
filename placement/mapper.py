@@ -646,7 +646,7 @@ class FPTASMapper(AbstractMapper):
                                 infra.nodes[n]['cpu'] > 0) or\
                                 ('endpoint' in infra.nodes[n] and\
                                 infra.nodes[n]['endpoint'])])
-        self.__log.info(f'comp_nodes={comp_nodes}')
+        self.__log.info('comp_nodes=%s' % comp_nodes)
 
         if src not in comp_nodes:
             comp_nodes.union(src)
@@ -678,7 +678,7 @@ class FPTASMapper(AbstractMapper):
                 #                             k=k, weight='delay'):
                 for path in k_reasonable_paths(infra, from_, to_,
                         k, 'delay'):
-                    print(f'\t{path}')
+                    print('\t' % path)
                     if to_ not in src_paths[from_]:
                         src_paths[from_][to_] = {
                             'paths': [],
@@ -704,7 +704,7 @@ class FPTASMapper(AbstractMapper):
                     src_paths[from_][to_]['bw'] += [bw]
                     src_paths[from_][to_]['cost'] += [cost]
 
-        print(f'these are the paths')
+        print('these are the paths')
         import json
         print(json.dumps(src_paths, indent=2))
 
@@ -744,9 +744,10 @@ class FPTASMapper(AbstractMapper):
                                 bw=sys.maxsize, cost=0)
                     continue
 
-                print(f'\ttrying to connect {(c1,A)}--{(c2,B)}')
+                print('\ttrying to connect %s--%s' %\
+                        ((c1,A), (c2,B)) )
                 if not nx.has_path(infra, c1, c2):
-                    print(f'\t\tno path')
+                    print('\t\tno path')
                     continue
 
                 # GET PATH WITH LOWEST DELAY SATISFYING A+W1<=B
@@ -859,8 +860,8 @@ class FPTASMapper(AbstractMapper):
                         if self.__metric == 'euclidean' else\
                         haversine(vnf_coords, host_coords)
                 if distance > ns.nodes[vnf]['location']['radius']:
-                    self.__log.info(f'\tdistance to {host}: {distance}')
-                    self.__log.info(f"\trequired one: {ns.nodes[vnf]['location']['radius']}")
+                    self.__log.info('\tdistance to %s: %f' % (host, distance))
+                    self.__log.info("\trequired one: %f" % ns.nodes[vnf]['location']['radius'])
 
                     return False
 
@@ -980,8 +981,8 @@ class FPTASMapper(AbstractMapper):
 
         endpoint = list(filter(lambda vnf: ns.in_degree(vnf) == 0,
                                ns.nodes()))[0]
-        self.__log.info(f'endpoint={endpoint}')
-        self.__log.info(f'required reliab {ns.nodes[endpoint]["reliability"]}')
+        self.__log.info('endpoint=%s' % endpoint)
+        self.__log.info('required reliab %f' % ns.nodes[endpoint]["reliability"])
         self.__build_aux(infra=infra, src=endpoint, k=k, tau=tau,
                          ereliab=ns.nodes[endpoint]['reliability'])
         self.__log.info('setting auxiliary variables')
@@ -1028,7 +1029,7 @@ class FPTASMapper(AbstractMapper):
                        filter(lambda e: e[0][0] == endpoint and e[0][1] == 0,
                               self.__aux_g.edges(data=True))
             to_visit = list(to_visit)
-            self.__log.info(f'to_visit={to_visit}')
+            self.__log.info('to_visit=%s' % to_visit)
 
             # for ((c1,A),(c2,B),l_d) in to_visit:
             #     if 'ower' in c2 or 'enter' in c2:
@@ -1054,13 +1055,14 @@ class FPTASMapper(AbstractMapper):
                 #                    (hop_delay[hop] - l_d['delay'])) if\
                 #              l_d['delay'] < hop_delay[hop] else float('inf')
 
-                self.__log.info(f'{(c1,A)}-{(c2,B)}')
+                self.__log.info('%s-%s' % ((c1,A),(c2,B)) )
                 # use the PS approach
                 need_cpu = (1 / (hop_delay[hop] - l_d['delay']) +\
                         ns[v1][v2]['bw']*1e-3) * ns.nodes[v2]['vcore_per_Mb']\
                         if l_d['delay'] < hop_delay[hop] else float('inf')
                 #print('\t\twe\'ll need {} cpus'.format(need_cpu))
-                self.__log.info(f'\t{(c1,A)}--{(c2,B)} requires {need_cpu} CPUs')
+                self.__log.info('\t%s--%s requires %f CPUs' %\
+                        ((c1,A),(c2,B), need_cpu) )
                 self.__log.info('\thop delay={}, LL_delay = {}'.format(
                     hop_delay[hop], l_d['delay']))
 
@@ -1085,7 +1087,7 @@ class FPTASMapper(AbstractMapper):
                 #                 c1,A,c2,B,v0,v1))
                 #     print('cost[(c1,A,v0,v1)]={}'.format(cost[(c1,A,v0,v1)]))
 
-                self.__log.info(f'\t__loc_rat_capable={self.__loc_rat_capable(infra, ns,v2, c2)}')
+                self.__log.info('\t__loc_rat_capable=%s' % self.__loc_rat_capable(infra, ns,v2, c2))
 
                 if remaining_cpu >= need_cpu and\
                         incur_cost < cost[(c2,B,v1,v2)] and\
@@ -1153,7 +1155,8 @@ class FPTASMapper(AbstractMapper):
                       if cost[(c,A,vls[-1][0],vls[-1][1])] != float('inf')]
         min_cost, c_f, A_f = float('inf'), None, None
         for c,A in candidates:
-            self.__log.info(f'candidagte {(c,A)} has cost {cost[(c,A,vls[-1][0],vls[-1][1])]}')
+            self.__log.info('candidate %s has cost %f' %\
+                            ((c,A), cost[(c,A,vls[-1][0],vls[-1][1])]) )
             if cost[(c,A,vls[-1][0],vls[-1][1])] < min_cost:
                 c_f, A_f = c, A
                 min_cost = cost[(c,A,vls[-1][0],vls[-1][1])]
