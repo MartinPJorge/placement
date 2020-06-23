@@ -178,8 +178,8 @@ class CheckBasicDigraphs(AbstractChecker):
                         not isinstance(node_dict['location']['center'][1],
                                         (int, float)):
                     print(node_dict['location'])
-                    print(f'node={node}')
-                    print(f'{type(node_dict["location"]["center"])}')
+                    print('node=%s' % node)
+                    print(type(node_dict["location"]["center"]))
                     print("'location' does not have a 'center', or it is not"+\
                             " a tuple of floats", file=sys.stderr)
                     return False
@@ -258,7 +258,8 @@ class CheckFogDigraphs(AbstractChecker):
             if not has_vcore_per_mb:
                 missing_vcore_per_mb = True
                 msg_type = 'WARNING' if not check_vcore_Mb else 'ERROR'
-                print(f'{msg_type}: vnf {v} does not specify vcore_per_Mb')
+                print('%s: vnf %s does not specify vcore_per_Mb'\
+                        % (msg_type, v))
         if check_vcore_Mb and missing_vcore_per_mb:
             return False
 
