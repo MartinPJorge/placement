@@ -11,7 +11,22 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from checker import AbstractChecker, CheckFogDigraphs
 from functools import reduce
 from utils import k_shortest_paths, k_reasonable_paths
-from math import log
+from math import log, sqrt
+
+
+
+def eucl_dis(a, b):
+    """Computes the euclidean distance of two points
+
+    :a: tuple|list with (x,y) coordinates
+    :b: tuple|list with (x,y) coordinates
+    :returns: euclidean distance between a and b
+
+    """
+    return sqrt(reduce(lambda d1,d2: d1+d2,[(a_-b_)**2 for a_,b_ in zip(a,b)]))
+
+
+
 
 class AbstractMapper(metaclass=ABCMeta):
 
@@ -86,9 +101,14 @@ class GreedyCostMapper(AbstractMapper):
         if 'location' in ns.nodes[vnf]:
             vloc = ns.nodes[vnf]['location']['center']
             vrad = ns.nodes[vnf]['location']['radius']
-            hosts = filter(lambda h: 'location' in infra.nodes[h]\
-                    and haversine(infra.nodes[h]['location'], vloc) <= vrad,
-                    hosts)
+            if self.__metric == 'euclidean':
+                hosts = filter(lambda h: 'location' in infra.nodes[h]\
+                        and eucl_dis(infra.nodes[h]['location'], vloc) <= vrad,
+                        hosts)
+            else:
+                hosts = filter(lambda h: 'location' in infra.nodes[h]\
+                        and haversine(infra.nodes[h]['location'], vloc) <= vrad,
+                        hosts)
 
         for host in hosts:
             host_cpu = infra.nodes[host]['cpu']
@@ -353,9 +373,14 @@ class GreedyFogCostMapper(AbstractMapper):
         if 'location' in ns.nodes[vnf]:
             vloc = ns.nodes[vnf]['location']['center']
             vrad = ns.nodes[vnf]['location']['radius']
-            hosts = filter(lambda h: 'location' in infra.nodes[h]\
-                    and haversine(infra.nodes[h]['location'], vloc) <= vrad,
-                    hosts)
+            if self.__metric == 'euclidean':
+                hosts = filter(lambda h: 'location' in infra.nodes[h]\
+                        and eucl_dis(infra.nodes[h]['location'], vloc) <= vrad,
+                        hosts)
+            else:
+                hosts = filter(lambda h: 'location' in infra.nodes[h]\
+                        and haversine(infra.nodes[h]['location'], vloc) <= vrad,
+                        hosts)
 
 
         # Find the best fog host
@@ -576,10 +601,12 @@ class FPTASMapper(AbstractMapper):
        IEEE/ACM Transactions on Networking (TON) 15.1 (2007): 201-211."""
 
 
-    def __init__(self, checker: CheckFogDigraphs, log_out: str = 'aux_g.loh'):
+    def __init__(self, checker: CheckFogDigraphs, metric: str = 'wgs84',
+                 log_out: str = 'aux_g.loh'):
         """Inits the mapper with its associated graphs checker
 
         :checker: CheckFogDigraph: instance of a fog graph checker
+        :metric: str: 'wgs84' or 'euclidean' distance
         :log_out: str: file to output the log of the mapper
         :returns: None
 
@@ -588,6 +615,16 @@ class FPTASMapper(AbstractMapper):
         self.__log = logging.getLogger(name=log_out)
         file_handler = logging.FileHandler(log_out, mode='w')
         self.__log.addHandler(file_handler)
+        self.__metric = metric if metric == 'euclidean' else 'wgs84'
+
+
+    def get_metric(self) -> str:
+        """
+
+        :returns: str: the internal metric
+
+        """
+        return self.__metric
 
 
     def __build_aux(self, infra: nx.classes.digraph.DiGraph, src,
@@ -818,8 +855,13 @@ class FPTASMapper(AbstractMapper):
                               ns.nodes[vnf]['location']['center'][1])
                 host_coords = (infra.nodes[host]['location'][0],
                                infra.nodes[host]['location'][1])
-                if haversine(vnf_coords, host_coords) >\
-                        ns.nodes[vnf]['location']['radius']:
+                distance = eucl_dis(vnf_coords, host_coords)\
+                        if self.__metric == 'euclidean' else\
+                        haversine(vnf_coords, host_coords)
+                if distance > ns.nodes[vnf]['location']['radius']:
+                    self.__log.info(f'\tdistance to {host}: {distance}')
+                    self.__log.info(f"\trequired one: {ns.nodes[vnf]['location']['radius']}")
+
                     return False
 
         # Check RAT constraints
@@ -1042,6 +1084,8 @@ class FPTASMapper(AbstractMapper):
                 #     print('(c1,A)=({},{})  (c2,B)=({},{})  (v0,v1)=({},{})'.format(
                 #                 c1,A,c2,B,v0,v1))
                 #     print('cost[(c1,A,v0,v1)]={}'.format(cost[(c1,A,v0,v1)]))
+
+                self.__log.info(f'\t__loc_rat_capable={self.__loc_rat_capable(infra, ns,v2, c2)}')
 
                 if remaining_cpu >= need_cpu and\
                         incur_cost < cost[(c2,B,v1,v2)] and\
