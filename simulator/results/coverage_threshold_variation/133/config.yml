@@ -1,0 +1,27 @@
+infrastructure:
+  cluster_move_waypoints: ../graphs/trajectories/paths.gml
+  cluster_src_dst_tuples:
+  - [r1c1, r2c5]
+  coverage_blocking_areas: ../graphs/trajectories/containers.gml
+  full_loaded_battery_alive_prob: 0.8
+  gml_file: ../graphs/infras/valencia-haven/valencia-haven-3.gml
+  label: id
+  name: infra
+  seed: 0
+  time_interval_count: 24
+  unloaded_battery_alive_prob: 0.99
+optimization: {battery_threshold: 0.7, coverage_threshold: 0.97, improvement_score_limit: 2,
+  time_interval_count: 24}
+service:
+  connected_component_sizes: [10]
+  max_nf_demand: 4
+  min_nf_demand: 0
+  mobile_nfs_per_sfc: 4
+  name: service
+  nf_demand_units: 0.499
+  seed: 4
+  series_parallel_ratio: 0.7
+  sfc_delays: [5]
+simulator: {ampl_model_path: ../ampl/system-model.mod, console_log_level: DEBUG, export_ampl_data_path: ../ampl/system-model-generated.dat,
+  file_log_level: DEBUG, log_file: results/coverage_threshold_variation/133/mapping.log,
+  run_ampl: true, run_heuristic: true}
