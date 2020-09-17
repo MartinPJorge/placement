@@ -6,6 +6,5 @@ venv/
 *.log
 ampl/system-model-generated.dat
 .ipynb_checkpoints*
-simulator/results/*
 simulator/local_replot_data/*
 simulator/manual_test_repetitions/*
