@@ -1,0 +1,392 @@
+set APs :=
+cell1    cell6    cell11   cell16   cell21   cell26   cell31   cell36   cell41
+cell2    cell7    cell12   cell17   cell22   cell27   cell32   cell37   cell42
+cell3    cell8    cell13   cell18   cell23   cell28   cell33   cell38   cell43
+cell4    cell9    cell14   cell19   cell24   cell29   cell34   cell39   cell44
+cell5    cell10   cell15   cell20   cell25   cell30   cell35   cell40   cell45;
+set SFCs := sfc1;
+set graph := infra service;
+set mobiles :=
+robot_sq1_fogNode_1    robot_sq1_fogNode_5    robot_sq1_fogNode_9
+robot_sq1_fogNode_2    robot_sq1_fogNode_6    robot_sq1_fogNode_10
+robot_sq1_fogNode_3    robot_sq1_fogNode_7    endpoint_sq1
+robot_sq1_fogNode_4    robot_sq1_fogNode_8;
+set servers := cloud_server_server_0 cloud_server_server_1;
+set subintervals := 1 2 3 4 5 6 7 8 9 10 11 12;
+set SFC_paths[sfc1] :=
+(nf0,nf6)    (nf2,nf11)   (nf4,nf5)    (nf1,nf0)
+(nf6,nf2)    (nf11,nf4)   (nf5,nf1);
+set edges[service] :=
+(nf0,nf6)     (nf2,nf11)    (nf5,nf14)    (nf10,nf2)    (nf16,nf18)
+(nf0,nf7)     (nf2,nf15)    (nf6,nf2)     (nf11,nf4)    (nf17,nf10)
+(nf0,nf12)    (nf3,nf0)     (nf7,nf9)     (nf12,nf7)    (nf18,nf13)
+(nf1,nf0)     (nf3,nf19)    (nf8,nf3)     (nf13,nf1)    (nf19,nf0)
+(nf1,nf3)     (nf4,nf5)     (nf9,nf2)     (nf14,nf16)
+(nf1,nf8)     (nf5,nf1)     (nf9,nf17)    (nf15,nf4);
+set vertices[service] :=
+nf0    nf2    nf4    nf6    nf8    nf10   nf12   nf14   nf16   nf18
+nf1    nf3    nf5    nf7    nf9    nf11   nf13   nf15   nf17   nf19;
+set vertices[infra] :=
+endpoint_sq1            cell20                  cell40
+cell1                   cell21                  cell41
+cell2                   cell22                  cell42
+cell3                   cell23                  cell43
+cell4                   cell24                  cell44
+cell5                   cell25                  cell45
+cell6                   cell26                  cloud_server_server_0
+cell7                   cell27                  cloud_server_server_1
+cell8                   cell28                  robot_sq1_fogNode_1
+cell9                   cell29                  robot_sq1_fogNode_2
+cell10                  cell30                  robot_sq1_fogNode_3
+cell11                  cell31                  robot_sq1_fogNode_4
+cell12                  cell32                  robot_sq1_fogNode_5
+cell13                  cell33                  robot_sq1_fogNode_6
+cell14                  cell34                  robot_sq1_fogNode_7
+cell15                  cell35                  robot_sq1_fogNode_8
+cell16                  cell36                  robot_sq1_fogNode_9
+cell17                  cell37                  robot_sq1_fogNode_10
+cell18                  cell38
+cell19                  cell39;
+param battery_threshold = 0.2;
+param coverage_threshold = 0.8;
+param infraGraph = infra;
+param interval_length = 12;
+param master = robot_sq1_fogNode_10;
+param serviceGraph = service;
+param AP_mobile_delay [*] :=
+ cell1 5     cell17 2.5   cell24 2.5   cell31 2.5   cell39 2.5    cell5 5
+cell10 2.5   cell18 2.5   cell25 2.5   cell32 2.5    cell4 5      cell6 5
+cell11 2.5   cell19 2.5   cell26 2.5   cell33 2.5   cell40 2.5    cell7 2.5
+cell12 2.5    cell2 5     cell27 2.5   cell34 2.5   cell41 2.5    cell8 2.5
+cell13 2.5   cell20 2.5   cell28 2.5   cell35 2.5   cell42 2.5    cell9 2.5
+cell14 2.5   cell21 2.5   cell29 2.5   cell36 2.5   cell43 2.5
+cell15 2.5   cell22 2.5    cell3 5     cell37 2.5   cell44 2.5
+cell16 2.5   cell23 2.5   cell30 2.5   cell38 2.5   cell45 2.5
+;
+param AP_server_delay [*,*]
+:      cloud_server_server_0 cloud_server_server_1    :=
+cell1          2.44438               1.02879
+cell10         4.79659               3.38099
+cell11         4.58004               3.16444
+cell12         6.28976               4.87416
+cell13         9.26293               7.84733
+cell14         6.32333               4.90774
+cell15         7.79783               6.38223
+cell16         6.50406               5.08846
+cell17         8.9576                7.542
+cell18        11.4679               10.0523
+cell19         7.22713               5.81153
+cell2          2.62649               1.2109
+cell20         5.12999               3.7144
+cell21         4.14992               2.73433
+cell22         8.17309               6.7575
+cell23         3.85008               2.43449
+cell24         4.58004               3.16444
+cell25         6.4751                5.0595
+cell26         5.13889               3.72329
+cell27         5.01745               3.60185
+cell28         4.17124               2.75564
+cell29         6.41587               5.00028
+cell3          2.6341                1.21851
+cell30         6.51835               5.10275
+cell31         6.86612               5.45052
+cell32         6.9316                5.51601
+cell33         6.41551               4.99991
+cell34         4.79659               3.38099
+cell35         4.14992               2.73433
+cell36         3.91604               2.50044
+cell37         3.85051               2.43491
+cell38         3.74782               2.33222
+cell39         4.42321               3.00762
+cell4          5.84217               4.42658
+cell40         9.19867               7.78308
+cell41         3.91604               2.50044
+cell42         7.8959                6.4803
+cell43         4.28334               2.86774
+cell44         6.98492               5.56933
+cell45         4.21736               2.80176
+cell5          2.47904               1.06344
+cell6          2.6341                1.21851
+cell7          5.00696               3.59136
+cell8          3.63617               2.22057
+cell9          4.36408               2.94848
+;
+param SFC_max_delays [*] :=
+sfc1  10
+;
+param cost_unit_demand [*] :=
+                cell1 34.6                   cell36  1.6
+               cell10  1.6                   cell37  1.6
+               cell11  1.6                   cell38  1.6
+               cell12  1.6                   cell39  1.6
+               cell13  1.6                    cell4 34.6
+               cell14  1.6                   cell40  1.6
+               cell15  1.6                   cell41  1.6
+               cell16  1.6                   cell42  1.6
+               cell17  1.6                   cell43  1.6
+               cell18  1.6                   cell44  1.6
+               cell19  1.6                   cell45  1.6
+                cell2 34.6                    cell5 34.6
+               cell20  1.6                    cell6 34.6
+               cell21  1.6                    cell7  1.6
+               cell22  1.6                    cell8  1.6
+               cell23  1.6                    cell9  1.6
+               cell24  1.6    cloud_server_server_0  2.48
+               cell25  1.6    cloud_server_server_1  2.48
+               cell26  1.6             endpoint_sq1 15.27
+               cell27  1.6      robot_sq1_fogNode_1 15.27
+               cell28  1.6     robot_sq1_fogNode_10 15.27
+               cell29  1.6      robot_sq1_fogNode_2 15.27
+                cell3 34.6      robot_sq1_fogNode_3 15.27
+               cell30  1.6      robot_sq1_fogNode_4 15.27
+               cell31  1.6      robot_sq1_fogNode_5 15.27
+               cell32  1.6      robot_sq1_fogNode_6 15.27
+               cell33  1.6      robot_sq1_fogNode_7 15.27
+               cell34  1.6      robot_sq1_fogNode_8 15.27
+               cell35  1.6      robot_sq1_fogNode_9 15.27
+;
+param cost_using_AP [*] :=
+ cell1 34.6   cell18  1.6   cell26  1.6   cell34  1.6   cell42  1.6
+cell10  1.6   cell19  1.6   cell27  1.6   cell35  1.6   cell43  1.6
+cell11  1.6    cell2 34.6   cell28  1.6   cell36  1.6   cell44  1.6
+cell12  1.6   cell20  1.6   cell29  1.6   cell37  1.6   cell45  1.6
+cell13  1.6   cell21  1.6    cell3 34.6   cell38  1.6    cell5 34.6
+cell14  1.6   cell22  1.6   cell30  1.6   cell39  1.6    cell6 34.6
+cell15  1.6   cell23  1.6   cell31  1.6    cell4 34.6    cell7  1.6
+cell16  1.6   cell24  1.6   cell32  1.6   cell40  1.6    cell8  1.6
+cell17  1.6   cell25  1.6   cell33  1.6   cell41  1.6    cell9  1.6
+;
+param demands [*] :=
+ nf1  0.742634
+nf10  0.652613
+nf11  0.82021
+nf12  0.974154
+nf13  0.56718
+nf14  1.01402
+nf15  0.660008
+nf16  0.514122
+nf17  0.696396
+nf18  0.545436
+nf19  1.03046
+ nf2  0.601037
+ nf3  0.739758
+ nf4  0.823823
+ nf5  0.848938
+ nf6  0.609292
+ nf7  0.677944
+ nf8  0.961684
+ nf9  0.889489
+;
+param full_loaded_battery_alive_prob [*] :=
+        endpoint_sq1  0.2
+ robot_sq1_fogNode_1  0.2
+robot_sq1_fogNode_10  0.2
+ robot_sq1_fogNode_2  0.2
+ robot_sq1_fogNode_3  0.2
+ robot_sq1_fogNode_4  0.2
+ robot_sq1_fogNode_5  0.2
+ robot_sq1_fogNode_6  0.2
+ robot_sq1_fogNode_7  0.2
+ robot_sq1_fogNode_8  0.2
+ robot_sq1_fogNode_9  0.2
+;
+param mobile_mobile_delay [*,*]
+# $1 = endpoint_sq1
+# $2 = robot_sq1_fogNode_1
+# $3 = robot_sq1_fogNode_10
+# $4 = robot_sq1_fogNode_2
+# $5 = robot_sq1_fogNode_3
+# $6 = robot_sq1_fogNode_4
+# $7 = robot_sq1_fogNode_5
+# $8 = robot_sq1_fogNode_6
+# $9 = robot_sq1_fogNode_7
+:                      $1    $2    $3    $4    $5    $6    $7    $8    $9    :=
+endpoint_sq1           0     0.2   0     0.2   0.2   0.2   0.2   0.2   0.2
+robot_sq1_fogNode_1    0.2   0     0.2   0.2   0.2   0.2   0.2   0.2   0.2
+robot_sq1_fogNode_10   0     0.2   0     0.2   0.2   0.2   0.2   0.2   0.2
+robot_sq1_fogNode_2    0.2   0.2   0.2   0     0.2   0.2   0.2   0.2   0.2
+robot_sq1_fogNode_3    0.2   0.2   0.2   0.2   0     0.2   0.2   0.2   0.2
+robot_sq1_fogNode_4    0.2   0.2   0.2   0.2   0.2   0     0.2   0.2   0.2
+robot_sq1_fogNode_5    0.2   0.2   0.2   0.2   0.2   0.2   0     0.2   0.2
+robot_sq1_fogNode_6    0.2   0.2   0.2   0.2   0.2   0.2   0.2   0     0.2
+robot_sq1_fogNode_7    0.2   0.2   0.2   0.2   0.2   0.2   0.2   0.2   0
+robot_sq1_fogNode_8    0.2   0.2   0.2   0.2   0.2   0.2   0.2   0.2   0.2
+robot_sq1_fogNode_9    0.2   0.2   0.2   0.2   0.2   0.2   0.2   0.2   0.2
+
+:                    robot_sq1_fogNode_8 robot_sq1_fogNode_9    :=
+endpoint_sq1                  0.2                 0.2
+robot_sq1_fogNode_1           0.2                 0.2
+robot_sq1_fogNode_10          0.2                 0.2
+robot_sq1_fogNode_2           0.2                 0.2
+robot_sq1_fogNode_3           0.2                 0.2
+robot_sq1_fogNode_4           0.2                 0.2
+robot_sq1_fogNode_5           0.2                 0.2
+robot_sq1_fogNode_6           0.2                 0.2
+robot_sq1_fogNode_7           0.2                 0.2
+robot_sq1_fogNode_8           0                   0.2
+robot_sq1_fogNode_9           0.2                 0
+;
+param policy [*,*] (tr)
+# $5 = nf12
+# $6 = nf13
+# $7 = nf14
+# $8 = nf15
+# $9 = nf16
+# $10 = nf17
+# $11 = nf18
+# $12 = nf19
+:                     nf0 nf1 nf10 nf11  $5  $6  $7  $8  $9 $10 $11 $12 nf2 nf3 :=
+cell1                   0   0   1    0    1   1   1   1   1   1   1   1   0   1
+cell10                  0   0   1    0    1   1   1   1   1   1   1   1   0   1
+cell11                  0   0   1    0    1   1   1   1   1   1   1   1   0   1
+cell12                  0   0   1    0    1   1   1   1   1   1   1   1   0   1
+cell13                  0   0   1    0    1   1   1   1   1   1   1   1   0   1
+cell14                  0   0   1    0    1   1   1   1   1   1   1   1   0   1
+cell15                  0   0   1    0    1   1   1   1   1   1   1   1   0   1
+cell16                  0   0   1    0    1   1   1   1   1   1   1   1   0   1
+cell17                  0   0   1    0    1   1   1   1   1   1   1   1   0   1
+cell18                  0   0   1    0    1   1   1   1   1   1   1   1   0   1
+cell19                  0   0   1    0    1   1   1   1   1   1   1   1   0   1
+cell2                   0   0   1    0    1   1   1   1   1   1   1   1   0   1
+cell20                  0   0   1    0    1   1   1   1   1   1   1   1   0   1
+cell21                  0   0   1    0    1   1   1   1   1   1   1   1   0   1
+cell22                  0   0   1    0    1   1   1   1   1   1   1   1   0   1
+cell23                  0   0   1    0    1   1   1   1   1   1   1   1   0   1
+cell24                  0   0   1    0    1   1   1   1   1   1   1   1   0   1
+cell25                  0   0   1    0    1   1   1   1   1   1   1   1   0   1
+cell26                  0   0   1    0    1   1   1   1   1   1   1   1   0   1
+cell27                  0   0   1    0    1   1   1   1   1   1   1   1   0   1
+cell28                  0   0   1    0    1   1   1   1   1   1   1   1   0   1
+cell29                  0   0   1    0    1   1   1   1   1   1   1   1   0   1
+cell3                   0   0   1    0    1   1   1   1   1   1   1   1   0   1
+cell30                  0   0   1    0    1   1   1   1   1   1   1   1   0   1
+cell31                  0   0   1    0    1   1   1   1   1   1   1   1   0   1
+cell32                  0   0   1    0    1   1   1   1   1   1   1   1   0   1
+cell33                  0   0   1    0    1   1   1   1   1   1   1   1   0   1
+cell34                  0   0   1    0    1   1   1   1   1   1   1   1   0   1
+cell35                  0   0   1    0    1   1   1   1   1   1   1   1   0   1
+cell36                  0   0   1    0    1   1   1   1   1   1   1   1   0   1
+cell37                  0   0   1    0    1   1   1   1   1   1   1   1   0   1
+cell38                  0   0   1    0    1   1   1   1   1   1   1   1   0   1
+cell39                  0   0   1    0    1   1   1   1   1   1   1   1   0   1
+cell4                   0   0   1    0    1   1   1   1   1   1   1   1   0   1
+cell40                  0   0   1    0    1   1   1   1   1   1   1   1   0   1
+cell41                  0   0   1    0    1   1   1   1   1   1   1   1   0   1
+cell42                  0   0   1    0    1   1   1   1   1   1   1   1   0   1
+cell43                  0   0   1    0    1   1   1   1   1   1   1   1   0   1
+cell44                  0   0   1    0    1   1   1   1   1   1   1   1   0   1
+cell45                  0   0   1    0    1   1   1   1   1   1   1   1   0   1
+cell5                   0   0   1    0    1   1   1   1   1   1   1   1   0   1
+cell6                   0   0   1    0    1   1   1   1   1   1   1   1   0   1
+cell7                   0   0   1    0    1   1   1   1   1   1   1   1   0   1
+cell8                   0   0   1    0    1   1   1   1   1   1   1   1   0   1
+cell9                   0   0   1    0    1   1   1   1   1   1   1   1   0   1
+cloud_server_server_0   0   0   1    0    1   1   1   1   1   1   1   1   0   1
+cloud_server_server_1   0   0   1    0    1   1   1   1   1   1   1   1   0   1
+endpoint_sq1            1   1   1    1    1   1   1   1   1   1   1   1   1   1
+robot_sq1_fogNode_1     0   1   1    1    1   1   1   1   1   1   1   1   1   1
+robot_sq1_fogNode_10    0   1   1    1    1   1   1   1   1   1   1   1   1   1
+robot_sq1_fogNode_2     0   1   1    1    1   1   1   1   1   1   1   1   1   1
+robot_sq1_fogNode_3     0   1   1    1    1   1   1   1   1   1   1   1   1   1
+robot_sq1_fogNode_4     0   1   1    1    1   1   1   1   1   1   1   1   1   1
+robot_sq1_fogNode_5     0   1   1    1    1   1   1   1   1   1   1   1   1   1
+robot_sq1_fogNode_6     0   1   1    1    1   1   1   1   1   1   1   1   1   1
+robot_sq1_fogNode_7     0   1   1    1    1   1   1   1   1   1   1   1   1   1
+robot_sq1_fogNode_8     0   1   1    1    1   1   1   1   1   1   1   1   1   1
+robot_sq1_fogNode_9     0   1   1    1    1   1   1   1   1   1   1   1   1   1
+
+:                     nf4 nf5 nf6 nf7 nf8 nf9    :=
+cell1                   0   0   0   1   1   1
+cell10                  0   0   0   1   1   1
+cell11                  0   0   0   1   1   1
+cell12                  0   0   0   1   1   1
+cell13                  0   0   0   1   1   1
+cell14                  0   0   0   1   1   1
+cell15                  0   0   0   1   1   1
+cell16                  0   0   0   1   1   1
+cell17                  0   0   0   1   1   1
+cell18                  0   0   0   1   1   1
+cell19                  0   0   0   1   1   1
+cell2                   0   0   0   1   1   1
+cell20                  0   0   0   1   1   1
+cell21                  0   0   0   1   1   1
+cell22                  0   0   0   1   1   1
+cell23                  0   0   0   1   1   1
+cell24                  0   0   0   1   1   1
+cell25                  0   0   0   1   1   1
+cell26                  0   0   0   1   1   1
+cell27                  0   0   0   1   1   1
+cell28                  0   0   0   1   1   1
+cell29                  0   0   0   1   1   1
+cell3                   0   0   0   1   1   1
+cell30                  0   0   0   1   1   1
+cell31                  0   0   0   1   1   1
+cell32                  0   0   0   1   1   1
+cell33                  0   0   0   1   1   1
+cell34                  0   0   0   1   1   1
+cell35                  0   0   0   1   1   1
+cell36                  0   0   0   1   1   1
+cell37                  0   0   0   1   1   1
+cell38                  0   0   0   1   1   1
+cell39                  0   0   0   1   1   1
+cell4                   0   0   0   1   1   1
+cell40                  0   0   0   1   1   1
+cell41                  0   0   0   1   1   1
+cell42                  0   0   0   1   1   1
+cell43                  0   0   0   1   1   1
+cell44                  0   0   0   1   1   1
+cell45                  0   0   0   1   1   1
+cell5                   0   0   0   1   1   1
+cell6                   0   0   0   1   1   1
+cell7                   0   0   0   1   1   1
+cell8                   0   0   0   1   1   1
+cell9                   0   0   0   1   1   1
+cloud_server_server_0   0   0   0   1   1   1
+cloud_server_server_1   0   0   0   1   1   1
+endpoint_sq1            1   1   1   1   1   1
+robot_sq1_fogNode_1     1   1   1   1   1   1
+robot_sq1_fogNode_10    1   1   1   1   1   1
+robot_sq1_fogNode_2     1   1   1   1   1   1
+robot_sq1_fogNode_3     1   1   1   1   1   1
+robot_sq1_fogNode_4     1   1   1   1   1   1
+robot_sq1_fogNode_5     1   1   1   1   1   1
+robot_sq1_fogNode_6     1   1   1   1   1   1
+robot_sq1_fogNode_7     1   1   1   1   1   1
+robot_sq1_fogNode_8     1   1   1   1   1   1
+robot_sq1_fogNode_9     1   1   1   1   1   1
+;
+param prob_AP :=
+cell1 4    0.95003
+cell1 10   0.95003
+;
+param resources [*] :=
+cloud_server_server_0  20
+cloud_server_server_1  20
+  robot_sq1_fogNode_1   1
+ robot_sq1_fogNode_10   1
+  robot_sq1_fogNode_2   1
+  robot_sq1_fogNode_3   1
+  robot_sq1_fogNode_4   1
+  robot_sq1_fogNode_5   1
+  robot_sq1_fogNode_6   1
+  robot_sq1_fogNode_7   1
+  robot_sq1_fogNode_8   1
+  robot_sq1_fogNode_9   1
+;
+param server_server_delay :=
+cloud_server_server_0 cloud_server_server_1   1.4156
+cloud_server_server_1 cloud_server_server_0   1.4156
+;
+param unloaded_battery_alive_prob [*] :=
+        endpoint_sq1  0.99
+ robot_sq1_fogNode_1  0.99
+robot_sq1_fogNode_10  0.99
+ robot_sq1_fogNode_2  0.99
+ robot_sq1_fogNode_3  0.99
+ robot_sq1_fogNode_4  0.99
+ robot_sq1_fogNode_5  0.99
+ robot_sq1_fogNode_6  0.99
+ robot_sq1_fogNode_7  0.99
+ robot_sq1_fogNode_8  0.99
+ robot_sq1_fogNode_9  0.99
+;
