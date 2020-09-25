@@ -28,6 +28,7 @@ def eucl_dis(a, b):
 
 
 
+
 class AbstractMapper(metaclass=ABCMeta):
 
     """Abstract class for Mappers that perform VNF placements"""
