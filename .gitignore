@@ -1,5 +1,15 @@
 __pycache__
 *.pyc
-*.swp
 .idea/
 placement.egg-info/
+*.swp
+.idea
+*/__pycache__
+venv/
+*.Rhistory
+*.log
+.ipynb_checkpoints*
+constructive_mapper/simulator/results/*
+constructive_mapper/simulator/local_replot_data/*
+constructive_mapper/ampl/system-model-generated.dat
+constructive_mapper/simulator/manual_test_repetitions/*

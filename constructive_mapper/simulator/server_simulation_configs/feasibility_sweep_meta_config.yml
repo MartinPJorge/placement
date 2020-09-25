@@ -1,0 +1,15 @@
+base_config_file: "feasibility_sweep_base_config.yml"                                     # Path to config file which stores the structure and
+                                                                            # the default simulation parameters.
+simulation_name: "mobile_nf_loads"                                        # String identifying the experiment (folder created for it)
+threads: 2                                                                  # number of parallel executions of simulations
+non_product_groups:                                                         # list of keys from the config file, where instead of product, zipping should be applied for creating the single configs
+  - [optimization.improvement_score_limit, simulator.run_ampl]
+meta_config_values:                                                         # under this a full single config structure can be given, but
+  service:
+    mobile_nfs_per_sfc: [0, 4, 8, 12, 16, 18]
+    seed: [0, 1, 2, 3, 4]
+  optimization:
+    improvement_score_limit: [3, 2, 1]
+    battery_threshold: [0.4, 0.5623, 0.6248, 0.8123, 0.9373]      # 1st  value: all resources can be used, 2nd: the capacity of at least one of the smallest VNFs on each mobile can be free, etc.
+  simulator:
+    run_ampl: [True, False, False]

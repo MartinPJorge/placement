@@ -1,0 +1,14 @@
+base_config_file: "scalability_test_base_config.yml"                                     # Path to config file which stores the structure and
+                                                                            # the default simulation parameters.
+simulation_name: "scalability_test"                                        # String identifying the experiment (folder created for it)
+threads: 2                                                                  # number of parallel executions of simulations
+non_product_groups:                                                         # list of keys from the config file, where instead of product, zipping should be applied for creating the single configs
+  - [optimization.improvement_score_limit, simulator.run_ampl]
+meta_config_values:                                                         # under this a full single config structure can be given, but
+  service:
+    connected_component_sizes: [[10], [20], [30], [40], [50], [60], [70], [80], [90], [100], [110], [120]]
+    seed: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
+  optimization:
+    improvement_score_limit: [2, 1]
+  simulator:
+    run_ampl: [True, False]
