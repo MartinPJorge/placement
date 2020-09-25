@@ -5,8 +5,10 @@ import math
 import time
 
 from .mapper import AbstractMapper
+sys.path.append(os.path.dirname(os.path.abspath(__file__)) +\
+        '/constructive_mapper')
 from graphs.mapping_structure import VolatileResourcesMapping
-import heuristic.placement.constraint_violation_checkers as cvc
+import constraint_violation_checkers as cvc
 from .support_classes import *
 
 

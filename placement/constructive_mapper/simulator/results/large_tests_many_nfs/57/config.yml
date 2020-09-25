@@ -1,0 +1,21 @@
+infrastructure:
+  cluster_move_distances: [0.005]
+  full_loaded_battery_alive_prob: 0.2
+  gml_file: ../graphs/infras/cobo-calleja/pico-and-micro-cobo-calleja-ref-2.gml
+  label: id
+  name: infra
+  seed: 0
+  time_interval_count: 12
+  unloaded_battery_alive_prob: 0.99
+optimization: {battery_threshold: 0.2, coverage_threshold: 0.8, improvement_score_limit: 3,
+  time_interval_count: 12}
+service:
+  connected_component_sizes: [90]
+  mobile_nfs_per_sfc: 10
+  name: service
+  seed: 0
+  series_parallel_ratio: 0.7
+  sfc_delays: [5, 10, 15]
+simulator: {ampl_model_path: ../ampl/system-model.mod, console_log_level: DEBUG, export_ampl_data_path: ../ampl/system-model-generated.dat,
+  file_log_level: DEBUG, log_file: results/large_tests_many_nfs/57/mapping.log, run_ampl: true,
+  run_heuristic: true}
