@@ -4,7 +4,8 @@
 venv/
 *.Rhistory
 *.log
-ampl/system-model-generated.dat
 .ipynb_checkpoints*
-simulator/local_replot_data/*
-simulator/manual_test_repetitions/*
+constructive_mapper/simulator/results/*
+constructive_mapper/simulator/local_replot_data/*
+constructive_mapper/ampl/system-model-generated.dat
+constructive_mapper/simulator/manual_test_repetitions/*
