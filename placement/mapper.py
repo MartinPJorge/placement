@@ -1267,3 +1267,139 @@ class FPTASMapper(AbstractMapper):
 
         return delay
 
+
+class FMCMapper(AbstractMapper):
+
+    """Class definition of the Follow Me Chain (FMC) algorithm [fmc]
+
+    [fmc] Chen, Yan-Ting, and Wanjiun Liao. "Mobility-aware service function
+    chaining in 5g wireless networks with mobile edge computing." ICC 2019-2019
+    IEEE International Conference on Communications (ICC). IEEE, 2019.
+    """
+
+
+    def __init__(self, checker: CheckFogDigraphs, k: int):
+        """Initializes the FMC mapper
+
+        :checker: CheckFogDigraphs: instance of a fog graph checker
+        :k: int: k shortest paths parameter for the virtual links steering
+
+        """
+        self.__checker = checker
+        self.__k = k
+
+
+    def map(self, infra: nx.classes.digraph.DiGraph,
+            ns: nx.classes.digraph.DiGraph, adj: int,
+            tr: int, tl: int) -> dict:
+        """Maps a network service on top of an infrastructure.
+
+        :infra: nx.classes.digraph.DiGraph: infrastructure graph
+        :ns: nx.classes.digraph.DiGraph: network service graph
+        :adj: int: graph depth of "adjacent servers"
+        :tr: int: residence time of user in cell
+        :ts: int: user service time
+        :returns: dict: mapping decissions dictionary
+
+        """
+        mapping = {
+            'worked': True
+        }
+        ## How a mapping looks like
+        # mapping = {
+        #     "worked": true,
+        #     "AP_selection": {
+        #         "1": "cell4",
+        #            [...]
+        #         "24": "cell33"
+        #     },
+        #     "Objective_value": 293.89509,
+        #     "Running_time": 0.013942956924438477,
+        #     "nf0": "endpoint_sq1"
+        # }
+
+        # Check that graphs have correct format
+        if not self.__checker.check_infra(infra) or\
+                not self.__checker.check_ns(ns):
+            mapping['worked'] = False
+            return mapping
+
+        # Initialize queue q, enqueue the first VNF
+        # (closest to user) in SFC to q
+        # q contains VNF indexes in the networkx graph
+        q = [0]
+
+        # Initialize D as empty set
+        D = set()
+
+        # M -> set of servers 
+        M = list(filter(lambda n: infra.nodes[n]['cpu'] > 0,
+                        infra.nodes))
+
+        # Map first VNF to the endpoint specified in its location constraint
+        mapping[ns.nodes[0]['name']] =\
+                infra.nodes[ns.nodes[0]['location_constraints'][0]]['name']
+        Mi = ns.nodes[0]['location_constraints'][0]
+
+
+
+
+        # Mapping loop
+        while len(q) > 0:
+            n = q.pop(0)
+
+            # virtual link l connected to n do
+            # n0 <- the other endpoint of l;
+            for n0 in ns[n]:  
+                l = ns[n][n0]
+
+            elif n0 not in mapping:
+
+                # Find shortest paths from cell to edge servers
+                toMj = {
+                    m: nx.shortest_path(infra, source=Mi, target=M)
+                    for m in M
+                }
+                # Obtain the "adjacent" MEC servers adj=5 -> access ring
+                adjM = list(filter(lambda Mi: len(celli2M[Mi]) <= adj,
+                                   celli2M.keys()))
+
+                # Filter by possible location constraints
+                if 'location_constraints' in infra.nodes[n0]:
+                    adjM = filter(lambda m:\
+                            m in infra.nodes[n0]['location_constraints'],
+                            adjM)
+
+                # C <- {Mj |adjacent MEC nodes of Mi & Mi} \ D;
+                C = set(adjM).difference(D)
+
+                # calculate the inner product for all Mj in C
+                # (rci (t), rbij (t)) · (1, w)
+                inner_product = {}
+                for Mj in C:
+                    rci = infra.nodes[Mj]['cpu']
+                    rbij = min(map(lambda e: infra[e[0]][e[1]]['bandwidth'],
+                                zip(celliM[Mj][:-1], celliM[Mj][1:])))
+                    w = ts / tr
+                    inner_product[Mj] = [rci*1, rbij*w]
+
+                # embed n0 onto the Mj with max inner product
+                mapping[infra.nodes[n0]['name']] =\
+                    infra.nodes[max(inner_product)]['name']
+                infra.nodes[max(inner_product)]['cpu'] -=\
+                    ns.nodes[n0]['nd_demand']
+
+                # embed l onto the eij
+                embed_path = celli2M[max(inner_product)]
+                for A,B in zip(embed_path[1:], embed_path[:-1]):
+                    infra[A][B]['bandwidth'] -= l['bandwidth']
+
+                #  enqueue n0 to q, mark n0 as embedded;
+                q.append(n0)
+
+                if Mj != Mi:
+                    D = D.union(Mj)
+                    Mi = Mj
+
+
+
