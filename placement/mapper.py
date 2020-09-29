@@ -1278,11 +1278,10 @@ class FMCMapper(AbstractMapper):
     """
 
 
-    def __init__(self, checker: CheckFogDigraphs, k: int):
+    def __init__(self, checker: CheckFogDigraphs):
         """Initializes the FMC mapper
 
         :checker: CheckFogDigraphs: instance of a fog graph checker
-        :k: int: k shortest paths parameter for the virtual links steering
 
         """
         self.__checker = checker
@@ -1355,7 +1354,7 @@ class FMCMapper(AbstractMapper):
 
             elif n0 not in mapping:
 
-                # Find shortest paths from cell to edge servers
+                # Find shortest paths from current compute node Mi to Mj
                 toMj = {
                     m: nx.shortest_path(infra, source=Mi, target=M)
                     for m in M
@@ -1393,6 +1392,7 @@ class FMCMapper(AbstractMapper):
                 embed_path = celli2M[max(inner_product)]
                 for A,B in zip(embed_path[1:], embed_path[:-1]):
                     infra[A][B]['bandwidth'] -= l['bandwidth']
+                mapping[n,n0] = embed_path
 
                 #  enqueue n0 to q, mark n0 as embedded;
                 q.append(n0)

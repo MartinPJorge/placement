@@ -1,3 +1,5 @@
+import json
+import random
 import networkx as nx
 import scipy
 import sys
@@ -8,6 +10,8 @@ import logging
 from rainbow_logging_handler import RainbowLoggingHandler
 sys.path.append(os.path.abspath(".."))
 import constructive_mapper.graphs.generate_service as gs
+from ..mapper import FMCMapper
+from ..checker import CheckFogDigraphs
 
 
 
@@ -63,6 +67,9 @@ if __name__ == '__main__':
     root_logger.info("Generating service graph...")
     service_instance = gs.ServiceGMLGraph(substrate_network, **config['service'], log=root_logger)
 
+
+
+
     # Read the waypoints path
     paths_graph = nx.read_gml(
             config['infrastructure']['cluster_move_waypoints'],
@@ -71,37 +78,57 @@ if __name__ == '__main__':
             source=config['infrastructure']['cluster_src_dst_tuples'][0][0],
             target=config['infrastructure']['cluster_src_dst_tuples'][0][1],
             weight='distance')
-    print('These are the waypoints: ', path)
+    print('These are the waypoints: ', waypoints)
 
 
+    # Obtain master robot and cell nodes
+    master = substrate_network.ap_coverage_probabilities.keys()[0]
+    cell_nodes = filter(lambda n: substrate_network.nodes[n]['type'] == 'cell',
+                    substrate_network.nodes)
 
 
+    # Instantiate the FMC mapper
+    fog_checker = CheckFogDigraphs(infra=substrate_network)
+    fmc_mapper = FMCMapper(checker=fog_checker)
+
+
+    attached_cells = [] # list of cells connected to the robot
+    mapping = None
     for t in range(config['time_interval_count']):
-        # derive the robot position
-        lat, lon = position(time=t, path=waypoints,
-                            duration=config['time_interval_count']-1)
+        # dettach the robot from previous cells
+        while len(attached_cells) > 0:
+            substrate_network.remove_edge(master, attached_cells.pop())
 
-    # ================
-    # == pseudocode ==
-    # ================
-    #
-    ## select master robot
-    ## for t in [1..24]:
-    ##     obtain robot position
-    ##     update robot position
-    ##     connect master robot to a cell_t
-    ##     mapping[AP_selection][t] = cell_t
-    ##     if t=1:
-    ##         run FMC.map()
-    ##     elif t >= 2:
-    ##         run FMC.migrate()
+        # select the AP with maximum coverage probability
+        # substrate_network.ap_coverage_probabilities = {
+        #   master_id: {
+        #      time: {
+        #           cell_id: coverage probability
+        #            ...
+        #      }
+        #       ...
+        #   }
+        # }
+        coverage_t = substrate_network.ap_coverage_probabilities[master][t]
+        best_cell = reduce(lambda c1,c2: c1 if coverage_t[c1] > coverage_t[c2]\
+                                            else c2, coverage_t.keys())
+        attached_cells += [best_cell]
+
+
+        if t == 0:
+            mapping = mapper.map(infra=substrate_network, ns=service_instance,
+                    adj=5, tr=1, tl=config['time_interval_count'])
+        elif t >= 1:
+            # TODO - trigger the migration function
+
+
 
 
 
     for n in service_instance.nodes(data=True):
         print(n)
-    for n in substrate_network.nodes(data=True):
-        print(n)
+    # for n in substrate_network.nodes(data=True):
+    #     print(n)
 
-    print(list(substrate_network.nodes))
+    # print(list(substrate_network.nodes))
 
