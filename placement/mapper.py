@@ -6,7 +6,7 @@ import sys
 import os
 import re
 import logging
-from itertools import islice
+from itertools import islice, chain, combinations
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from checker import AbstractChecker, CheckFogDigraphs
 from functools import reduce
@@ -1279,13 +1279,68 @@ class FMCMapper(AbstractMapper):
 
 
     def __init__(self, checker: CheckFogDigraphs):
-        """Initializes the FMC mapper
+        """Initializes the FMC mapper.
 
         :checker: CheckFogDigraphs: instance of a fog graph checker
 
         """
         self.__checker = checker
-        self.__k = k
+
+        # TODO - remove
+        ### self.__Ms = None
+
+        ### if not self.__checker.check_infra(infra):
+        ###     raise ValueError(f'infra does not pass the check')
+
+        ### # Create a full meshed graph with servers M as vertices
+        ### # each edge (Mi, Mj) has an associated path
+        ### self.__Ms = nx.Graph()
+        ### self.__Ms.add_nodes_from({
+        ###     M: {'cpu': infra[M]['cpu']}
+        ###     for M in filter(lambda n:
+        ###             any(lambda s: s in infra[n]['name'], Mnames),
+        ###         infra.nodes)
+        ### })
+        ### # Find shortest paths among servers and use them as (Mi,Mj)
+        ### self.__Ms.add_edges_from({
+        ###     (M1,M2): {'path':
+        ###         infra.shortest_path(source=M1, target=M2, weight='delay')}
+        ###     for (M1,M2) in combinations(seld.__Ms.nodes, 2)
+        ### })
+        
+
+
+    # TODO - UNUSED
+    def __consume_bw(self, infra: nx.classes.digraph.DiGraph,
+            n1: int, n2: int, bw: float, path=None: list) -> int:
+        """
+        Consume the specified bandwidth bw along the path connecting
+        nodes n1 and n2 in the infra graph
+
+        :infra: nx.classes.digraph.DiGraph: infrastructure graph
+        :n1: int: first graph node
+        :n2: int: first graph node
+        :bw: float: bandwidth to be consumed
+        :path: list: (optional) if not specified, n1 and n2 must be present
+                     in the self.__Ms graph
+        :returns: int: 0 - success
+                       1 - not enough bandwidth
+                       2 - missing path
+
+        """
+    
+        if not path and (n1 not in self.__Ms.nodes or\
+                n2 not in self.__Ms.nodes):
+            return 2
+
+        if not path:
+            path = zip(self.__Ms[n1,n2]['path'][1:],
+                    self.__Ms[n1,n2]['path'][:-1])
+        if bw > min(map(lambda a,b: infra[a,b]['bw'], path)):
+            return 1
+        for a,b in path:
+            infra[a,b]['bw'] -= bw
+            
 
 
     def map(self, infra: nx.classes.digraph.DiGraph,
@@ -1299,6 +1354,12 @@ class FMCMapper(AbstractMapper):
         :tr: int: residence time of user in cell
         :ts: int: user service time
         :returns: dict: mapping decissions dictionary
+
+        :Note: the mapping assumes the first vnf in the ns corresponds
+        to an endpoint within the fog
+
+        :Note: infra must be the same as the passed in __init__
+               except connections between cells and fogNodes
 
         """
         mapping = {
@@ -1331,7 +1392,7 @@ class FMCMapper(AbstractMapper):
         # Initialize D as empty set
         D = set()
 
-        # M -> set of servers 
+        # M -> set of nodes with computational capabilities
         M = list(filter(lambda n: infra.nodes[n]['cpu'] > 0,
                         infra.nodes))
 
@@ -1355,7 +1416,7 @@ class FMCMapper(AbstractMapper):
             elif n0 not in mapping:
 
                 # Find shortest paths from current compute node Mi to Mj
-                toMj = {
+                celli2M = {
                     m: nx.shortest_path(infra, source=Mi, target=M)
                     for m in M
                 }
@@ -1401,5 +1462,201 @@ class FMCMapper(AbstractMapper):
                     D = D.union(Mj)
                     Mi = Mj
 
+
+
+    def handover(self, infra: nx.classes.digraph.DiGraph,
+            ns: nx.classes.digraph.DiGraph, prev_mapping: dict,
+            cutoff: int, tr: int, tl: int, Sl: float) -> dict:
+        """Performs the VNF and VL migrations due to a cell handover
+
+        :infra: nx.classes.digraph.DiGraph: infrastructure graph
+        :ns: nx.classes.digraph.DiGraph: network service graph
+        :adj: int: graph depth of "adjacent servers"
+        :prev_mapping: dict: previous mapping
+        :cutoff: int: depth in compute node graph
+        :tr: int: residence time of user in cell
+        :ts: int: user service time
+        :Sl: float: end-to-end service delay requirement
+        :returns: dict: mapping decissions dictionary
+                  None: no cell used in prev_mapping, no handover
+                        required
+
+        :Note: infra must be the same as the passed in __init__
+               except connections between cells and fogNodes
+        :Note: ns must match the provided in the previous map() 
+
+        """
+
+        mapping = dict(prev_mapping)
+
+        edge_or_cloud = any(lambda n: infra.nodes[n]['type'] == 'server',
+                infra.nodes)
+
+        # Detect the vl traveling over a cell link
+        vl_over_cell = []
+        if edge_or_cloud:
+            mapped_vls = filter(lambda k: type(k) == tuple,
+                    prev_mapping.keys())
+            vl_paths = map(lambda vl: prev_mapping[vl], mapped_vls)
+            vl_over_cell = filter(lambda vl:
+                        any(lambda n: infra.nodes[n]['type'] == 'cell',
+                            prev_mapping[vl]),
+                    mapped_vls)
+
+        # Check if no cell is used in prev_mapping
+        if list(vl_over_cell) != []:
+            return None
+
+        # p0 - original path of the previous mapping (just servers)
+        #      [(M1,M2),...,(Mn,Mn+1)]
+        p0 = map(lambda path: (path[0], path[1]), vl_paths)
+
+
+        cell_new = list(filter(lambda n: infra.nodes[n]['type'] == 'cell',
+            vl_over_cell))[0]
+        Mold = prev_mapping[vl_over_cell][-1]
+
+        
+
+
+        # Create a full meshed graph with servers M as vertices
+        # each edge (Mi, Mj) has an associated path
+        Ms = nx.Graph()
+        Ms.add_nodes_from({
+            M: {'cpu': infra.nodes[M]['cpu']}
+            for M in filter(lambda n:
+                        infra.nodes[n]['name'] in ['edge', 'fog', 'endpoint'],
+                    infra.nodes)
+        })
+        # Find shortest paths among servers and use them as (Mi,Mj)
+        Ms.add_edges_from({
+            (M1,M2): {'path':
+                infra.shortest_path(source=M1, target=M2, weight='delay')}
+            for (M1,M2) in combinations(Ms.nodes, 2)
+        })
+        for (M1,M2) in combinations(seld.__Ms.nodes, 2):
+            i, delay, bw = 0, 0, sys.maxint
+            while i < len(Ms[M1,M2]['path']) - 1:
+                n1, n2 = Ms[M1,M2]['path'][i], Ms[M1,M2]['path'][i+1]
+                delay += infra[n1,n2]['delay']
+                bw = min(bw, infra[n1,n2]['bw'])
+                i += 1
+            nx.set_edge_attributes(infra,
+                    {(M1,M2): {'delay': delay, 'bw': bw}})
+
+
+        # {pi} ← {all paths that is origined from
+        #         Mold to Mnew & path delay < Sl requirement};
+        p = nx.all_simple_paths(Ms, source=prev_mapping[ns.nodes[0]],
+                cutoff=cutoff)
+        p = filter(lambda pi:
+                reduce(lambda M1,M2:
+                    reduce(lambda (a1,a2),(b1,b2):
+                                infra[a1][a2]['delay'] +\
+                                infra[b1][b2]['delay'],
+                            zip(p[M1,M2]['path'][:-1], p[M1,M2]['path'][1:])),
+                    zip(pi[:-1], pi[1:])) <= Sl,
+                p)
+
+        # Calculate J value for all paths in {pi };
+        J = lambda pi: len(set(p0).intersection(set(pi))) /\
+                len(set(p0).union(set(pi)))
+        # Sort out {pi} in an increasing order of J;
+        p.sort(reverse=True, key=J)
+
+
+        stop = False
+        i = 1
+        q = []
+        while (not stop) and (i < len(p)):
+            n1st = ns.nodes[0]
+            q.insert(0, n1st)
+            success = True
+            mapping['migrated'], migrations = [], {}
+
+            while len(q) > 0:
+                n = q.pop()
+
+                # if (n not satisfies requirement) or (n not allocated on pi)
+                #     cpu requirements are ensured in previous mapping
+                if prev_mapping[n] not in p[i].nodes:
+                    # max_n' {bw(n,n')}
+                    max_vl_bw = ns[n][reduce(lambda n2,n2_:
+                            n2 if ns[n][n2]['bw'] > ns[n][n2_]['bw'] else n2_,
+                        ns.neighbors(n))]['bw']
+
+                    # enough over the migration link
+                    Mis = filter(lambda M:
+                                Ms[prev_mapping[n]][M]['bw'] >= max_vl_bw,
+                            Ms.neighbors(prev_mapping[n]))
+
+                    # Only compute nodes with enough CPU
+                    Mis = filter(lambda M:
+                            infra.nodes[M]['cpu'] >= ns.nodes[n]['cpu'], Mis)
+
+                    # Impossible to migrate
+                    if not len(Mis) > 0:
+                        success = False
+                        break
+                    else:
+                        migrations[n] = list(Mis)[0]
+
+                    # mark n as migrated;
+                    # n0 ← the VNF shares same edge with n & not been migrated
+                    mapping['migrated'] += [n]
+                    n0 = set(ns.neighbors(n)).intersection(
+                            set(ns.nodes).difference(set(mapping['migrated'])))
+
+                    # enqueue n0 to q;
+                    q += list(n0)
+
+            if success:
+                stop = True # in the paper there is an error, it sets to False
+            else:
+                i += 1
+        ##################################
+        ###### <- end migration loop
+        ##################################
+
+
+        # migration failure
+        if not success:
+            mapping['worked'] = False
+            return mapping
+
+        # If success, reallocate migrated resources
+        reallocated = []
+        for n in mapping['migrated']:
+            n_M = migrations[n]
+            mapping[n] = n_M
+
+            # Reassign CPUs
+            infra.nodes[prev_mapping[n]]['cpu'] += ns.nodes[n]['cpu']
+            infra.nodes[migrations[n]]['cpu'] -= ns.nodes[n]['cpu']
+
+            # Reassign bandwidth
+            for n2 in set(ns.neighbors(n)).difference(set(reallocated)):
+                # Restore bandwidth in previous link
+                for a,b in zip(prev_mapping[n1,n2][:-1],
+                        prev_mapping[n1,n2][1:]):
+                    infra[a][b]['bw'] += ns[n1][n2]['bw']
+
+                # Consume bandwidth along the new links
+                n2_M = migrated[n2] if n2 in migrated\
+                        else n2_M = prev_mapping[n2]
+                for a,b in zip(Ms[n_M][n2_M][:-1], Ms[n_M][n2_M][1:]):
+                    infra[a][b]['bw'] -= ns[n1][n2]['bw']
+
+                mapping[n][n2] = Ms[n_M][n2_M]
+
+            reallocated += [n]
+
+        mapping['worked'] = True
+
+        return mapping
+
+
+
+    
 
 
