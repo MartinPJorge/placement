@@ -10,8 +10,9 @@ import logging
 from rainbow_logging_handler import RainbowLoggingHandler
 sys.path.append(os.path.abspath(".."))
 import constructive_mapper.graphs.generate_service as gs
-from ..mapper import FMCMapper
-from ..checker import CheckFogDigraphs
+from mapper import FMCMapper
+from checker import CheckBasicGraphs
+from functools import reduce
 
 
 
@@ -64,10 +65,29 @@ if __name__ == '__main__':
     root_logger = logging.Logger('FMC volatile sims logger')
     root_logger.info("Generating infrastructure...")
     substrate_network = gs.InfrastructureGMLGraph(**config['infrastructure'], log=root_logger)
+    infra = nx.Graph(substrate_network) # undirected version
+
     root_logger.info("Generating service graph...")
     service_instance = gs.ServiceGMLGraph(substrate_network, **config['service'], log=root_logger)
+    nx.set_node_attributes(service_instance, {
+        vnf: {'cpu': service_instance.nodes[vnf]['weight']}
+        for vnf in service_instance.nodes
+    })
+    nx.set_edge_attributes(service_instance, {
+        vl: {'bandwidth': 0}
+        for vl in service_instance.edges
+    })
+    ns = nx.Graph(service_instance)
 
 
+
+
+    for n in ns.nodes(data=True):
+        print(n)
+    for n in infra.nodes(data=True):
+        print(n)
+    for n in ns.edges(data=True):
+        print(n)
 
 
     # Read the waypoints path
@@ -82,19 +102,19 @@ if __name__ == '__main__':
 
 
     # Obtain master robot and cell nodes
-    master = substrate_network.ap_coverage_probabilities.keys()[0]
+    master = list(substrate_network.ap_coverage_probabilities.keys())[0]
     cell_nodes = filter(lambda n: substrate_network.nodes[n]['type'] == 'cell',
                     substrate_network.nodes)
 
 
     # Instantiate the FMC mapper
-    fog_checker = CheckFogDigraphs(infra=substrate_network)
+    fog_checker = CheckBasicGraphs()
     fmc_mapper = FMCMapper(checker=fog_checker)
 
 
     attached_cells = [] # list of cells connected to the robot
-    mapping = None
-    for t in range(config['time_interval_count']):
+    mapping = {}
+    for t in range(1,config['infrastructure']['time_interval_count']+1):
         # dettach the robot from previous cells
         while len(attached_cells) > 0:
             substrate_network.remove_edge(master, attached_cells.pop())
@@ -112,21 +132,34 @@ if __name__ == '__main__':
         coverage_t = substrate_network.ap_coverage_probabilities[master][t]
         best_cell = reduce(lambda c1,c2: c1 if coverage_t[c1] > coverage_t[c2]\
                                             else c2, coverage_t.keys())
+        infra.add_edge(master, best_cell, bandwidth=100,
+            delay=substrate_network.nodes[best_cell]['delay'])
         attached_cells += [best_cell]
 
 
-        if t == 0:
-            mapping = mapper.map(infra=substrate_network, ns=service_instance,
-                    adj=5, tr=1, tl=config['time_interval_count'])
-        elif t >= 1:
-            # TODO - trigger the migration function
+        if t == 1:
+            mapping[t] = fmc_mapper.map(infra=infra, ns=ns, adj=5, tr=1,
+                    ts=config['infrastructure']['time_interval_count'])
+            mapping[0] = dict(mapping[t])
+
+        print(f'mapping[{t}]={mapping[t]}')
+
+        # Perform migration (even at t=0, so it meets delay restrictions)
+        mapping[t] = fmc_mapper.handover(infra=infra, ns=ns,
+                prev_mapping=mapping[t-1],
+                tr=1, ts=config['infrastructure']['time_interval_count'],
+                Sl=sum(map(lambda dp: dp[0],
+                    service_instance.sfc_delays_list)),
+                cutoff=8)
+
+
+        print(f'migration mapping[{t}]={mapping[t]}')
 
 
 
 
 
-    for n in service_instance.nodes(data=True):
-        print(n)
+
     # for n in substrate_network.nodes(data=True):
     #     print(n)
 

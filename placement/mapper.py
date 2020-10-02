@@ -8,7 +8,7 @@ import re
 import logging
 from itertools import islice, chain, combinations
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-from checker import AbstractChecker, CheckFogDigraphs
+from checker import AbstractChecker, CheckFogDigraphs, CheckBasicGraphs
 from functools import reduce
 from utils import k_shortest_paths, k_reasonable_paths
 from math import log, sqrt
@@ -1278,10 +1278,10 @@ class FMCMapper(AbstractMapper):
     """
 
 
-    def __init__(self, checker: CheckFogDigraphs):
+    def __init__(self, checker: CheckBasicGraphs):
         """Initializes the FMC mapper.
 
-        :checker: CheckFogDigraphs: instance of a fog graph checker
+        :checker: CheckBasicGraphs: instance of a fog graph checker
 
         """
         self.__checker = checker
@@ -1311,13 +1311,13 @@ class FMCMapper(AbstractMapper):
 
 
     # TODO - UNUSED
-    def __consume_bw(self, infra: nx.classes.digraph.DiGraph,
-            n1: int, n2: int, bw: float, path=None: list) -> int:
+    def __consume_bw(self, infra: nx.classes.graph.Graph,
+            n1: int, n2: int, bw: float, path: list=None) -> int:
         """
         Consume the specified bandwidth bw along the path connecting
         nodes n1 and n2 in the infra graph
 
-        :infra: nx.classes.digraph.DiGraph: infrastructure graph
+        :infra: nx.classes.graph.Graph: infrastructure graph
         :n1: int: first graph node
         :n2: int: first graph node
         :bw: float: bandwidth to be consumed
@@ -1336,20 +1336,20 @@ class FMCMapper(AbstractMapper):
         if not path:
             path = zip(self.__Ms[n1,n2]['path'][1:],
                     self.__Ms[n1,n2]['path'][:-1])
-        if bw > min(map(lambda a,b: infra[a,b]['bw'], path)):
+        if bw > min(map(lambda a,b: infra[a,b]['bandwidth'], path)):
             return 1
         for a,b in path:
-            infra[a,b]['bw'] -= bw
+            infra[a,b]['bandwidth'] -= bw
             
 
 
-    def map(self, infra: nx.classes.digraph.DiGraph,
-            ns: nx.classes.digraph.DiGraph, adj: int,
-            tr: int, tl: int) -> dict:
+    def map(self, infra: nx.classes.graph.Graph,
+            ns: nx.classes.graph.Graph, adj: int,
+            tr: int, ts: int) -> dict:
         """Maps a network service on top of an infrastructure.
 
-        :infra: nx.classes.digraph.DiGraph: infrastructure graph
-        :ns: nx.classes.digraph.DiGraph: network service graph
+        :infra: nx.classes.graph.Graph: infrastructure graph
+        :ns: nx.classes.graph.Graph: network service graph
         :adj: int: graph depth of "adjacent servers"
         :tr: int: residence time of user in cell
         :ts: int: user service time
@@ -1358,8 +1358,7 @@ class FMCMapper(AbstractMapper):
         :Note: the mapping assumes the first vnf in the ns corresponds
         to an endpoint within the fog
 
-        :Note: infra must be the same as the passed in __init__
-               except connections between cells and fogNodes
+        :Note: the mapping contains ids of both infra, and ns graph
 
         """
         mapping = {
@@ -1369,13 +1368,13 @@ class FMCMapper(AbstractMapper):
         # mapping = {
         #     "worked": true,
         #     "AP_selection": {
-        #         "1": "cell4",
+        #         "1": "23"  # name_23="cell4",
         #            [...]
-        #         "24": "cell33"
+        #         "24": "52" # name_52="cell33"
         #     },
         #     "Objective_value": 293.89509,
         #     "Running_time": 0.013942956924438477,
-        #     "nf0": "endpoint_sq1"
+        #     "1": "1"       # "nf0": "endpoint_sq1"
         # }
 
         # Check that graphs have correct format
@@ -1393,13 +1392,15 @@ class FMCMapper(AbstractMapper):
         D = set()
 
         # M -> set of nodes with computational capabilities
-        M = list(filter(lambda n: infra.nodes[n]['cpu'] > 0,
+        #      that are edge/fog
+        M = list(filter(lambda n: infra.nodes[n]['cpu'] > 0 and
+                    ('edge' in infra.nodes[n]['name'] \
+                            or 'fogNode' in infra.nodes[n]['name']),
                         infra.nodes))
 
         # Map first VNF to the endpoint specified in its location constraint
-        mapping[ns.nodes[0]['name']] =\
-                infra.nodes[ns.nodes[0]['location_constraints'][0]]['name']
-        Mi = ns.nodes[0]['location_constraints'][0]
+        mapping[0] = ns.nodes[0]['location_constraints'][0]
+        Mi = mapping[0]
 
 
 
@@ -1407,27 +1408,28 @@ class FMCMapper(AbstractMapper):
         # Mapping loop
         while len(q) > 0:
             n = q.pop(0)
+            print(f'mapping VNF={n}')
+            print(f'Mi={Mi}')
 
             # virtual link l connected to n do
             # n0 <- the other endpoint of l;
-            for n0 in ns[n]:  
+            #  if n0 has not been embedded then
+            for n0 in filter(lambda n0: n0 not in mapping, ns[n].keys()):  
                 l = ns[n][n0]
 
-            elif n0 not in mapping:
-
                 # Find shortest paths from current compute node Mi to Mj
-                celli2M = {
-                    m: nx.shortest_path(infra, source=Mi, target=M)
+                Mi_to = {
+                    m: nx.shortest_path(infra, source=Mi, target=m)
                     for m in M
                 }
-                # Obtain the "adjacent" MEC servers adj=5 -> access ring
-                adjM = list(filter(lambda Mi: len(celli2M[Mi]) <= adj,
-                                   celli2M.keys()))
+                ### Obtain the "adjacent" MEC servers adj=5 -> access ring
+                adjM = list(filter(lambda Mi: len(Mi_to[Mi]) <= adj,
+                                   Mi_to.keys()))
 
                 # Filter by possible location constraints
-                if 'location_constraints' in infra.nodes[n0]:
+                if 'location_constraints' in ns.nodes[n0]:
                     adjM = filter(lambda m:\
-                            m in infra.nodes[n0]['location_constraints'],
+                            m in ns.nodes[n0]['location_constraints'],
                             adjM)
 
                 # C <- {Mj |adjacent MEC nodes of Mi & Mi} \ D;
@@ -1439,18 +1441,17 @@ class FMCMapper(AbstractMapper):
                 for Mj in C:
                     rci = infra.nodes[Mj]['cpu']
                     rbij = min(map(lambda e: infra[e[0]][e[1]]['bandwidth'],
-                                zip(celliM[Mj][:-1], celliM[Mj][1:])))
+                                zip(Mi_to[Mj][:-1], Mi_to[Mj][1:])))
                     w = ts / tr
                     inner_product[Mj] = [rci*1, rbij*w]
 
                 # embed n0 onto the Mj with max inner product
-                mapping[infra.nodes[n0]['name']] =\
-                    infra.nodes[max(inner_product)]['name']
+                mapping[n0] = max(inner_product)
                 infra.nodes[max(inner_product)]['cpu'] -=\
-                    ns.nodes[n0]['nd_demand']
+                    ns.nodes[n0]['cpu']
 
                 # embed l onto the eij
-                embed_path = celli2M[max(inner_product)]
+                embed_path = Mi_to[max(inner_product)]
                 for A,B in zip(embed_path[1:], embed_path[:-1]):
                     infra[A][B]['bandwidth'] -= l['bandwidth']
                 mapping[n,n0] = embed_path
@@ -1459,65 +1460,21 @@ class FMCMapper(AbstractMapper):
                 q.append(n0)
 
                 if Mj != Mi:
-                    D = D.union(Mj)
+                    D = D.union({Mj})
                     Mi = Mj
 
+        return mapping
 
 
-    def handover(self, infra: nx.classes.digraph.DiGraph,
-            ns: nx.classes.digraph.DiGraph, prev_mapping: dict,
-            cutoff: int, tr: int, tl: int, Sl: float) -> dict:
-        """Performs the VNF and VL migrations due to a cell handover
+    def __servers_graph(self,
+            infra: nx.classes.graph.Graph) -> nx.Graph:
+        """Creates a full-meshed servers' graph, with edges
+        representing the shortest path among them.
 
-        :infra: nx.classes.digraph.DiGraph: infrastructure graph
-        :ns: nx.classes.digraph.DiGraph: network service graph
-        :adj: int: graph depth of "adjacent servers"
-        :prev_mapping: dict: previous mapping
-        :cutoff: int: depth in compute node graph
-        :tr: int: residence time of user in cell
-        :ts: int: user service time
-        :Sl: float: end-to-end service delay requirement
-        :returns: dict: mapping decissions dictionary
-                  None: no cell used in prev_mapping, no handover
-                        required
+        infra: nx.classes.graph.Graph: infrastructure graph
 
-        :Note: infra must be the same as the passed in __init__
-               except connections between cells and fogNodes
-        :Note: ns must match the provided in the previous map() 
-
+        return: nx.Graph: full-meshed servers' graph
         """
-
-        mapping = dict(prev_mapping)
-
-        edge_or_cloud = any(lambda n: infra.nodes[n]['type'] == 'server',
-                infra.nodes)
-
-        # Detect the vl traveling over a cell link
-        vl_over_cell = []
-        if edge_or_cloud:
-            mapped_vls = filter(lambda k: type(k) == tuple,
-                    prev_mapping.keys())
-            vl_paths = map(lambda vl: prev_mapping[vl], mapped_vls)
-            vl_over_cell = filter(lambda vl:
-                        any(lambda n: infra.nodes[n]['type'] == 'cell',
-                            prev_mapping[vl]),
-                    mapped_vls)
-
-        # Check if no cell is used in prev_mapping
-        if list(vl_over_cell) != []:
-            return None
-
-        # p0 - original path of the previous mapping (just servers)
-        #      [(M1,M2),...,(Mn,Mn+1)]
-        p0 = map(lambda path: (path[0], path[1]), vl_paths)
-
-
-        cell_new = list(filter(lambda n: infra.nodes[n]['type'] == 'cell',
-            vl_over_cell))[0]
-        Mold = prev_mapping[vl_over_cell][-1]
-
-        
-
 
         # Create a full meshed graph with servers M as vertices
         # each edge (Mi, Mj) has an associated path
@@ -1525,49 +1482,146 @@ class FMCMapper(AbstractMapper):
         Ms.add_nodes_from({
             M: {'cpu': infra.nodes[M]['cpu']}
             for M in filter(lambda n:
-                        infra.nodes[n]['name'] in ['edge', 'fog', 'endpoint'],
+                    any(map(lambda _fix: _fix in infra.nodes[n]['name'],
+                        ['edge', 'fog', 'endpoint'])),
                     infra.nodes)
         })
         # Find shortest paths among servers and use them as (Mi,Mj)
-        Ms.add_edges_from({
-            (M1,M2): {'path':
-                infra.shortest_path(source=M1, target=M2, weight='delay')}
+        Ms.add_edges_from((
+            (M1, M2, {'path':
+                nx.shortest_path(infra, source=M1, target=M2, weight='delay')})
             for (M1,M2) in combinations(Ms.nodes, 2)
-        })
-        for (M1,M2) in combinations(seld.__Ms.nodes, 2):
-            i, delay, bw = 0, 0, sys.maxint
-            while i < len(Ms[M1,M2]['path']) - 1:
-                n1, n2 = Ms[M1,M2]['path'][i], Ms[M1,M2]['path'][i+1]
-                delay += infra[n1,n2]['delay']
-                bw = min(bw, infra[n1,n2]['bw'])
+        ))
+        for (M1,M2) in combinations(Ms.nodes, 2):
+            i, delay, bw = 0, 0, float('inf')
+            while i < len(Ms[M1][M2]['path']) - 1:
+                n1, n2 = Ms[M1][M2]['path'][i], Ms[M1][M2]['path'][i+1]
+                delay += infra[n1][n2]['delay']
+                bw = min(bw, infra[n1][n2]['bandwidth'])
                 i += 1
-            nx.set_edge_attributes(infra,
-                    {(M1,M2): {'delay': delay, 'bw': bw}})
+            nx.set_edge_attributes(Ms,
+                    {(M1,M2): {'delay': delay, 'bandwidth': bw}})
+
+        return Ms
+
+
+
+    def handover(self, infra: nx.classes.graph.Graph,
+            ns: nx.classes.graph.Graph, prev_mapping: dict,
+            tr: int, ts: int, Sl: float, cutoff: int=None) -> dict:
+        """Performs the VNF and VL migrations due to a cell handover
+
+        :infra: nx.classes.digraph.DiGraph: infrastructure graph
+        :ns: nx.classes.digraph.DiGraph: network service graph
+        :adj: int: graph depth of "adjacent servers"
+        :prev_mapping: dict: previous mapping
+        :tr: int: residence time of user in cell
+        :ts: int: user service time
+        :Sl: float: end-to-end service delay requirement
+        :cutoff: int: (optional) specify depth to search hosts in a full-meshed
+                      graph of servers. By default is set to len(ns.nodes)
+        :returns: dict: mapping decissions dictionary
+                  None: no cell used in prev_mapping, no handover
+                        required
+
+        :Note: ns must match the provided in the previous map() 
+
+        :Note: the mapping contains ids of both infra, and ns graph
+
+        """
+
+        if cutoff == None:
+            cutoff = len(ns.nodes)
+        print(f'I receive delay Sl={Sl}')
+
+        mapping = dict(prev_mapping)
+
+        edge_or_cloud = any(map(lambda n: infra.nodes[n]['type'] == 'server',
+                infra.nodes))
+
+        # Detect the vl traveling over a cell link
+        vl_over_cell = []
+        if edge_or_cloud:
+            mapped_vls = filter(lambda k: type(k) == tuple,
+                    prev_mapping.keys())
+            vl_paths = map(lambda vl: prev_mapping[vl], mapped_vls)
+            vls_over_cell = list(filter(lambda vl:
+                        any(map(lambda n: infra.nodes[n]['type'] == 'cell',
+                            prev_mapping[vl])),
+                    mapped_vls))
+
+        # Check if no cell is used in prev_mapping
+        if vls_over_cell == []:
+            return None
+        else:
+            vl_over_cell = vls_over_cell[0]
+
+        # p0 - original path of the previous mapping (just servers)
+        #      [(M1,M2),...,(Mn,Mn+1)]
+        p0 = map(lambda path: (path[0], path[1]), vl_paths)
+
+
+        print(f'vl_over_cell={vl_over_cell}')
+        cell_new = list(filter(lambda n: infra.nodes[n]['type'] == 'cell',
+            vl_over_cell))[0]
+        print(f'cell_new={cell_new}')
+        print(f' data={infra.nodes[cell_new]}')
+        Mold = prev_mapping[vl_over_cell][-1]
+
+        
+        # Full-meshed servers' graph (and endpoint)
+        Ms = self.__servers_graph(infra)
+        print(f'servers graph nodes={Ms.nodes}')
 
 
         # {pi} ← {all paths that is origined from
         #         Mold to Mnew & path delay < Sl requirement};
-        p = nx.all_simple_paths(Ms, source=prev_mapping[ns.nodes[0]],
-                cutoff=cutoff)
-        p = filter(lambda pi:
-                reduce(lambda M1,M2:
-                    reduce(lambda (a1,a2),(b1,b2):
-                                infra[a1][a2]['delay'] +\
-                                infra[b1][b2]['delay'],
-                            zip(p[M1,M2]['path'][:-1], p[M1,M2]['path'][1:])),
+        src = prev_mapping[0] # 0 is the first VNF in NS
+        print(f'looking for paths from src={src}')
+        p = []
+        print(f'Ms has {len(Ms.node)}-nodes and {len(Ms.edges)} edges')
+        # TODO - use here a DFS tree with depth <= Sl
+        for t in set(Ms.nodes).difference({src}):
+            print(f'paths from {src} to {t}')
+            paths_ = [p for p in nx.all_simple_paths(Ms, source=src, target=t,
+                                        cutoff=cutoff)\
+                        if len(p) == cutoff]
+            ### print(f'paths from {src} to {t}')
+            ### paths_=list(islice(nx.shortest_simple_paths(Ms,
+            ###     source=src, target=t,
+            ###     weight='delay'), cutoff))
+            ### print(f'  num nfs = {len(ns.nodes)}')
+            ### print(f'  paths={paths_}')
+
+            ## print(f'paths from {src} to {t}')
+            ## tree = nx.bfs_tree(infra, source=src) 
+            ## print(f' nwighs[{src}]={tree[src]}')
+            ## #print(f'  {list(nx.dfs_preorder_nodes(Ms,source=src,depth_limit=cutoff))}')
+        print('ou')
+        p = [list(nx.all_simple_paths(Ms, source=src, target=t,
+                                        cutoff=cutoff))\
+                for t in set(Ms.nodes).difference({src})]
+        print(f'before filtering p={p}')
+        p = list(filter(lambda pi:
+                reduce(lambda MlnkA, MlnkB:
+                        Ms.edges[MlnkA]['delay'] + Ms.edges[MlnkB]['delay'],
                     zip(pi[:-1], pi[1:])) <= Sl,
-                p)
+                p))
 
         # Calculate J value for all paths in {pi };
         J = lambda pi: len(set(p0).intersection(set(pi))) /\
                 len(set(p0).union(set(pi)))
-        # Sort out {pi} in an increasing order of J;
+        # Sort out {pi} in an decreasing order of J;
         p.sort(reverse=True, key=J)
 
 
-        stop = False
+        ##################
+        # Migration loop #
+        ##################
+        stop, success = False, False
         i = 1
         q = []
+        print(f'len(p)={len(p)}')
         while (not stop) and (i < len(p)):
             n1st = ns.nodes[0]
             q.insert(0, n1st)
@@ -1582,12 +1636,12 @@ class FMCMapper(AbstractMapper):
                 if prev_mapping[n] not in p[i].nodes:
                     # max_n' {bw(n,n')}
                     max_vl_bw = ns[n][reduce(lambda n2,n2_:
-                            n2 if ns[n][n2]['bw'] > ns[n][n2_]['bw'] else n2_,
-                        ns.neighbors(n))]['bw']
+                            n2 if ns[n][n2]['bandwidth'] > ns[n][n2_]['bandwidth'] else n2_,
+                        ns.neighbors(n))]['bandwidth']
 
                     # enough over the migration link
                     Mis = filter(lambda M:
-                                Ms[prev_mapping[n]][M]['bw'] >= max_vl_bw,
+                                Ms[prev_mapping[n]][M]['bandwidth'] >= max_vl_bw,
                             Ms.neighbors(prev_mapping[n]))
 
                     # Only compute nodes with enough CPU
@@ -1617,6 +1671,7 @@ class FMCMapper(AbstractMapper):
         ##################################
         ###### <- end migration loop
         ##################################
+        print(f'exit migration loop with i={i}')
 
 
         # migration failure
@@ -1624,7 +1679,10 @@ class FMCMapper(AbstractMapper):
             mapping['worked'] = False
             return mapping
 
-        # If success, reallocate migrated resources
+
+        #################################
+        # Reallocate migrated resources #
+        #################################
         reallocated = []
         for n in mapping['migrated']:
             n_M = migrations[n]
@@ -1639,13 +1697,13 @@ class FMCMapper(AbstractMapper):
                 # Restore bandwidth in previous link
                 for a,b in zip(prev_mapping[n1,n2][:-1],
                         prev_mapping[n1,n2][1:]):
-                    infra[a][b]['bw'] += ns[n1][n2]['bw']
+                    infra[a][b]['bandwidth'] += ns[n1][n2]['bandwidth']
 
                 # Consume bandwidth along the new links
                 n2_M = migrated[n2] if n2 in migrated\
-                        else n2_M = prev_mapping[n2]
+                        else prev_mapping[n2]
                 for a,b in zip(Ms[n_M][n2_M][:-1], Ms[n_M][n2_M][1:]):
-                    infra[a][b]['bw'] -= ns[n1][n2]['bw']
+                    infra[a][b]['bandwidth'] -= ns[n1][n2]['bandwidth']
 
                 mapping[n][n2] = Ms[n_M][n2_M]
 

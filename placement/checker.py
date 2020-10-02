@@ -265,3 +265,134 @@ class CheckFogDigraphs(AbstractChecker):
 
         return basic_checker.check_ns(ns)
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+class CheckBasicGraphs(AbstractChecker):
+
+    """Checker for network services and infrastructure graphs as the shown
+    below, where a minimal set of keys is specified for a fog-cloud scenario.
+    
+    >>> infra = nx.Graph()
+    >>> # cost relates to cpu/bandwidth costs
+    >>> infra.add_node(1, name='robot_sq1_fogNode_1',
+            cpu=2, lat=39.1408046, lon=-1.0795603, cost=238,
+            type='fogNode')
+    >>> infra.add_node(2, name='cell_2',
+            cpu=2, lat=39.1408046, lon=-1.0795603, cost=238,
+            type='cell')
+    >>> infra.add_node(3, name='edge_server_server_3',
+            cpu=20, lat=39.1408046, lon=-1.0795603, cost=238,
+            type='server')
+    >>> infra.add_node(4, name='m1_switch',
+            cpu=0, lat=39.1408046, lon=-1.0795603, cost=238,
+            type='m1')
+    >>> infra.add_node(5, name='m2_switch',
+            cpu=0, lat=39.1408046, lon=-1.0795603, cost=238,
+            type='m2')
+    >>> infra.add_node(6, name='cloud_server_server_0',
+            cpu=0, lat=39.1408046, lon=-1.0795603, cost=238,
+            type='cloud')
+    >>> infra.add_edge(1, 2, bandwidth=100, delay=1)
+    >>> infra.add_edge(2, 3, bandwidth=100, delay=1)
+    >>> infra.add_edge(2, 4, bandwidth=100, delay=1)
+    >>> infra.add_edge(4, 5, bandwidth=100, delay=1)
+    >>> infra.add_edge(5, 6, bandwidth=100, delay=1)
+
+
+    >>> ns = nx.Graph()
+    >>> # some VNFs may require location constraints, be inside id=1
+    >>> ns.add_node(1, cpu=0.1, location=[1])
+    >>> ns.add_node(2, cpu=2)
+    >>> ns.add_edge(1, 2, bandwidth=3)
+
+
+    """
+
+    def __init__(self):
+        pass
+
+        
+    def check_infra(self, infra: nx.classes.graph.Graph) -> bool:
+        """Checks if the infrastructure graph has the correct format
+
+        :infra: nx.classes.graph.Graph: infrastructure graph
+        :returns: bool: telling if it satisfies it or not
+
+        """
+        for node in infra.nodes():
+            node_dict = infra.nodes[node]
+            if 'cpu' not in node_dict or type(node_dict['cpu']) != int:
+                print("'cpu' key not present in node", node,
+                      "or not an int", file=sys.stderr)
+                return False
+            if 'cost' not in node_dict or\
+                    type(node_dict['cost']) not in [float, int]:
+                print("'cost' key not inside host, or is not float|int",
+                        file=sys.stderr)
+                return False
+            if 'type' not in node_dict or type(node_dict['type']) != str:
+                print("'type' key not inside host, or is not a str",
+                        file=sys.stderr)
+                return False
+            if 'name' not in node_dict or type(node_dict['name']) != str:
+                print("'name' key not inside host, or is not a str",
+                        file=sys.stderr)
+                return False
+
+
+
+        for h1,h2 in infra.edges():
+            edge_dict = infra[h1][h2]
+            if 'bandwidth' not in edge_dict or\
+                    type(edge_dict['bandwidth']) != int:
+                print("'bandwidth' key not in physical link, or is not int",
+                        file=sys.stderr)
+                return False
+            if 'delay' not in edge_dict or\
+                    not isinstance(edge_dict['delay'], (int,float)):
+                print("'delay' key not in physical link, or is not int|float",
+                        file=sys.stderr)
+                return False
+
+        return True
+
+
+    def check_ns(self, ns: nx.classes.graph.Graph) -> bool:
+        """Checks if the network service graph has the correct format
+
+        :ns: nx.classes.graph.Graph: network service graph
+        :returns: bool: telling if it satisfies it or not
+
+        """
+
+        for node in ns.nodes():
+            node_dict = ns.nodes[node]
+            if 'cpu' not in node_dict or\
+                    type(node_dict['cpu']) not in [float, int]:
+                print("'cpu' key not present in node, or not an int|float",
+                        file=sys.stderr)
+                return False
+
+
+        for h1,h2 in ns.edges():
+            edge_dict = ns[h1][h2]
+            if 'bandwidth' not in edge_dict or\
+                    type(edge_dict['bandwidth']) != int:
+                print(edge_dict)
+                print("'bandwidth' key not in virtual link, or is not int",
+                        file=sys.stderr)
+                return False
+
+        return True
+
