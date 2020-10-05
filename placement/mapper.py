@@ -1343,6 +1343,7 @@ class FMCMapper(AbstractMapper):
             
 
 
+    # TODO - remove the adjacency parameter and refactor code
     def map(self, infra: nx.classes.graph.Graph,
             ns: nx.classes.graph.Graph, adj: int,
             tr: int, ts: int) -> dict:
@@ -1386,22 +1387,28 @@ class FMCMapper(AbstractMapper):
         # Initialize queue q, enqueue the first VNF
         # (closest to user) in SFC to q
         # q contains VNF indexes in the networkx graph
-        q = [0]
+        n0_ = list(ns.nodes)[0]
+        q = [n0_]
 
         # Initialize D as empty set
         D = set()
 
         # M -> set of nodes with computational capabilities
         #      that are edge/fog
-        M = list(filter(lambda n: infra.nodes[n]['cpu'] > 0 and
-                    ('edge' in infra.nodes[n]['name'] \
-                            or 'fogNode' in infra.nodes[n]['name']),
+        M = list(filter(lambda n: 'edge' in infra.nodes[n]['name']\
+                            or 'fogNode' in infra.nodes[n]['name']\
+                            or 'endpoint' in infra.nodes[n]['name'],
                         infra.nodes))
 
         # Map first VNF to the endpoint specified in its location constraint
-        mapping[0] = ns.nodes[0]['location_constraints'][0]
-        Mi = mapping[0]
-
+        # in case it doesnt have it, map wherever it can
+        if 'location_constraint' in ns.nodes[n0_]:
+            mapping[n0_] = ns.nodes[n0_]['location_constraints'][0]
+            Mi = mapping[n0_]
+        else:
+            Mi = list(filter(lambda m:
+                    infra.nodes[m]['cpu'] >= ns.nodes[n0_]['cpu'], M))[0]
+            mapping[n0_] = Mi
 
 
 
@@ -1414,13 +1421,18 @@ class FMCMapper(AbstractMapper):
             # virtual link l connected to n do
             # n0 <- the other endpoint of l;
             #  if n0 has not been embedded then
-            for n0 in filter(lambda n0: n0 not in mapping, ns[n].keys()):  
+            for n0 in filter(lambda n0: n0 not in mapping
+                    or ((n,n0) not in mapping) and ((n0,n) not in mapping),
+                        ns[n].keys()):  
                 l = ns[n][n0]
+
+                print(f'vl={(n,n0)}')
 
                 # Find shortest paths from current compute node Mi to Mj
                 Mi_to = {
-                    m: nx.shortest_path(infra, source=Mi, target=m)
-                    for m in M
+                    m: nx.shortest_path(infra, source=Mi, target=m,
+                        weight='delay')
+                    for m in filter(lambda Mj: Mj != Mi, M)
                 }
                 ### Obtain the "adjacent" MEC servers adj=5 -> access ring
                 adjM = list(filter(lambda Mi: len(Mi_to[Mi]) <= adj,
@@ -1445,16 +1457,20 @@ class FMCMapper(AbstractMapper):
                     w = ts / tr
                     inner_product[Mj] = [rci*1, rbij*w]
 
+                # If n0 was previously mapped, use that server
+                print(f'n0={n0} not in mapping={n0 not in mapping}')
+                Mj = max(inner_product) if n0 not in mapping else mapping[n0]
+
                 # embed n0 onto the Mj with max inner product
-                mapping[n0] = max(inner_product)
-                infra.nodes[max(inner_product)]['cpu'] -=\
-                    ns.nodes[n0]['cpu']
+                mapping[n0] = Mj 
+                infra.nodes[Mj]['cpu'] -= ns.nodes[n0]['cpu']
 
                 # embed l onto the eij
-                embed_path = Mi_to[max(inner_product)]
-                for A,B in zip(embed_path[1:], embed_path[:-1]):
-                    infra[A][B]['bandwidth'] -= l['bandwidth']
-                mapping[n,n0] = embed_path
+                if Mi != Mj:
+                    embed_path = Mi_to[Mj]
+                    for A,B in zip(embed_path[1:], embed_path[:-1]):
+                        infra[A][B]['bandwidth'] -= l['bandwidth']
+                    mapping[n,n0] = embed_path
 
                 #  enqueue n0 to q, mark n0 as embedded;
                 q.append(n0)
@@ -1502,13 +1518,21 @@ class FMCMapper(AbstractMapper):
             nx.set_edge_attributes(Ms,
                     {(M1,M2): {'delay': delay, 'bandwidth': bw}})
 
+        # Add self-loops to enhance mapping in same VNF
+        Ms.add_edges_from((
+            (M1, M1, {'path': [M1,M1], 'delay': 0, 'bandwidth': float('inf')})
+            for M1 in Ms.nodes
+        ))
+
         return Ms
+
+
 
 
 
     def handover(self, infra: nx.classes.graph.Graph,
             ns: nx.classes.graph.Graph, prev_mapping: dict,
-            tr: int, ts: int, Sl: float, cutoff: int=None) -> dict:
+            tr: int, ts: int, Sl: float, paths: int=None) -> dict:
         """Performs the VNF and VL migrations due to a cell handover
 
         :infra: nx.classes.digraph.DiGraph: infrastructure graph
@@ -1518,8 +1542,7 @@ class FMCMapper(AbstractMapper):
         :tr: int: residence time of user in cell
         :ts: int: user service time
         :Sl: float: end-to-end service delay requirement
-        :cutoff: int: (optional) specify depth to search hosts in a full-meshed
-                      graph of servers. By default is set to len(ns.nodes)
+        :paths: int: the number of paths computed for each (src,dst)
         :returns: dict: mapping decissions dictionary
                   None: no cell used in prev_mapping, no handover
                         required
@@ -1530,8 +1553,8 @@ class FMCMapper(AbstractMapper):
 
         """
 
-        if cutoff == None:
-            cutoff = len(ns.nodes)
+        if paths == None:
+            paths = len(ns.nodes)
         print(f'I receive delay Sl={Sl}')
 
         mapping = dict(prev_mapping)
@@ -1557,55 +1580,39 @@ class FMCMapper(AbstractMapper):
             vl_over_cell = vls_over_cell[0]
 
         # p0 - original path of the previous mapping (just servers)
-        #      [(M1,M2),...,(Mn,Mn+1)]
-        p0 = map(lambda path: (path[0], path[1]), vl_paths)
+        #      [M1,M2,...,Mn,Mn+1]
+        p0 = list(map(lambda v: prev_mapping[v],
+                filter(lambda k: type(k) not in (tuple,str), prev_mapping)))
 
 
-        print(f'vl_over_cell={vl_over_cell}')
+        #print(f'vl_over_cell={vl_over_cell}')
         cell_new = list(filter(lambda n: infra.nodes[n]['type'] == 'cell',
-            vl_over_cell))[0]
-        print(f'cell_new={cell_new}')
-        print(f' data={infra.nodes[cell_new]}')
+            prev_mapping[vl_over_cell]))[0]
+        #print(f'cell_new={cell_new}')
+        #print(f' data={infra.nodes[cell_new]}')
         Mold = prev_mapping[vl_over_cell][-1]
 
         
         # Full-meshed servers' graph (and endpoint)
         Ms = self.__servers_graph(infra)
-        print(f'servers graph nodes={Ms.nodes}')
+        #print(f'servers graph nodes={Ms.nodes}')
 
 
         # {pi} ← {all paths that is origined from
         #         Mold to Mnew & path delay < Sl requirement};
         src = prev_mapping[0] # 0 is the first VNF in NS
-        print(f'looking for paths from src={src}')
+        #print(f'looking for paths from src={src}')
         p = []
-        print(f'Ms has {len(Ms.node)}-nodes and {len(Ms.edges)} edges')
-        # TODO - use here a DFS tree with depth <= Sl
-        for t in set(Ms.nodes).difference({src}):
-            print(f'paths from {src} to {t}')
-            paths_ = [p for p in nx.all_simple_paths(Ms, source=src, target=t,
-                                        cutoff=cutoff)\
-                        if len(p) == cutoff]
-            ### print(f'paths from {src} to {t}')
-            ### paths_=list(islice(nx.shortest_simple_paths(Ms,
-            ###     source=src, target=t,
-            ###     weight='delay'), cutoff))
-            ### print(f'  num nfs = {len(ns.nodes)}')
-            ### print(f'  paths={paths_}')
-
-            ## print(f'paths from {src} to {t}')
-            ## tree = nx.bfs_tree(infra, source=src) 
-            ## print(f' nwighs[{src}]={tree[src]}')
-            ## #print(f'  {list(nx.dfs_preorder_nodes(Ms,source=src,depth_limit=cutoff))}')
-        print('ou')
-        p = [list(nx.all_simple_paths(Ms, source=src, target=t,
-                                        cutoff=cutoff))\
-                for t in set(Ms.nodes).difference({src})]
-        print(f'before filtering p={p}')
+        # print(f'Ms has {len(Ms.node)}-nodes and {len(Ms.edges)} edges')
+        p = [k_shortest_paths(G=Ms, source=src, target=t, k=paths,
+                weight='delay') for t in set(Ms.nodes).difference({src})]
+        p = list(chain(*p)) # unpack the lists of paths
+        #print(f'before filtering p={p}')
+        #print(f'before filtering p[0]={p[0]}')
         p = list(filter(lambda pi:
-                reduce(lambda MlnkA, MlnkB:
-                        Ms.edges[MlnkA]['delay'] + Ms.edges[MlnkB]['delay'],
-                    zip(pi[:-1], pi[1:])) <= Sl,
+                Ms[pi[0]][pi[1]]['delay'] <= Sl if len(pi) == 2 else\
+                sum(map(lambda Mlnk: Ms.edges[Mlnk]['delay'],
+                    zip(pi[:-1], pi[1:]))) <= Sl,
                 p))
 
         # Calculate J value for all paths in {pi };
@@ -1613,6 +1620,9 @@ class FMCMapper(AbstractMapper):
                 len(set(p0).union(set(pi)))
         # Sort out {pi} in an decreasing order of J;
         p.sort(reverse=True, key=J)
+
+        #print(f'prev p0 = {list(p0)}')
+        #print(f'sorted p: {p}')
 
 
         ##################
@@ -1623,17 +1633,23 @@ class FMCMapper(AbstractMapper):
         q = []
         print(f'len(p)={len(p)}')
         while (not stop) and (i < len(p)):
-            n1st = ns.nodes[0]
+            n1st = list(ns.nodes)[0]
             q.insert(0, n1st)
             success = True
-            mapping['migrated'], migrations = [], {}
+            mapping['migrated'], mapping['remain'], migrations = [], [], {}
 
             while len(q) > 0:
                 n = q.pop()
 
+                # print(f'\tchecking path p[{i}]={p[i]} for vnf={n}')
+                if prev_mapping[n] in p[i]:
+                    mapping['remain'].append(n)
                 # if (n not satisfies requirement) or (n not allocated on pi)
                 #     cpu requirements are ensured in previous mapping
-                if prev_mapping[n] not in p[i].nodes:
+                elif prev_mapping[n] not in p[i]:
+                    # print(f'\t vnf={n} was on {prev_mapping[n]}',
+                    #         f'and that is not inside p[{i}]')
+
                     # max_n' {bw(n,n')}
                     max_vl_bw = ns[n][reduce(lambda n2,n2_:
                             n2 if ns[n][n2]['bandwidth'] > ns[n][n2_]['bandwidth'] else n2_,
@@ -1641,28 +1657,37 @@ class FMCMapper(AbstractMapper):
 
                     # enough over the migration link
                     Mis = filter(lambda M:
-                                Ms[prev_mapping[n]][M]['bandwidth'] >= max_vl_bw,
-                            Ms.neighbors(prev_mapping[n]))
+                            Ms[prev_mapping[n]][M]['bandwidth'] >= max_vl_bw\
+                                and M in p[i],
+                        Ms.neighbors(prev_mapping[n]))
 
                     # Only compute nodes with enough CPU
-                    Mis = filter(lambda M:
-                            infra.nodes[M]['cpu'] >= ns.nodes[n]['cpu'], Mis)
+                    Mis = list(filter(lambda M:
+                            infra.nodes[M]['cpu'] >= ns.nodes[n]['cpu'], Mis))
+                    # Filter by possible location constraints
+                    if 'location_constraints' in ns.nodes[n]:
+                        Mis = list(filter(lambda M:
+                            M in ns.nodes[n]['location_constraints'], Mis))
 
                     # Impossible to migrate
                     if not len(Mis) > 0:
+                        # print(f'\tcould not migrate {n}')
                         success = False
                         break
                     else:
                         migrations[n] = list(Mis)[0]
+                        # print(f'\t{n} migrated to {migrations[n]}')
 
                     # mark n as migrated;
                     # n0 ← the VNF shares same edge with n & not been migrated
                     mapping['migrated'] += [n]
-                    n0 = set(ns.neighbors(n)).intersection(
-                            set(ns.nodes).difference(set(mapping['migrated'])))
+                n0 = set(ns.neighbors(n)).intersection(
+                        set(ns.nodes).difference(
+                            set(mapping['migrated']).union(
+                                set(mapping['remain']))))
 
-                    # enqueue n0 to q;
-                    q += list(n0)
+                # enqueue n0 to q;
+                q += list(n0)
 
             if success:
                 stop = True # in the paper there is an error, it sets to False
@@ -1692,20 +1717,32 @@ class FMCMapper(AbstractMapper):
             infra.nodes[prev_mapping[n]]['cpu'] += ns.nodes[n]['cpu']
             infra.nodes[migrations[n]]['cpu'] -= ns.nodes[n]['cpu']
 
+            #print(f'\tremaping vnf={n}')
+
             # Reassign bandwidth
             for n2 in set(ns.neighbors(n)).difference(set(reallocated)):
+                #print(f'\t  vl {n,n2}')
+
                 # Restore bandwidth in previous link
-                for a,b in zip(prev_mapping[n1,n2][:-1],
-                        prev_mapping[n1,n2][1:]):
-                    infra[a][b]['bandwidth'] += ns[n1][n2]['bandwidth']
+                vl = (n,n2) if (n,n2) in prev_mapping else (n2,n)
+                for a,b in zip(prev_mapping[vl][:-1],
+                        prev_mapping[vl][1:]):
+                    if b not in infra[a]: # unexisting cell connection
+                        continue
+                    infra[a][b]['bandwidth'] += ns[n][n2]['bandwidth']
 
                 # Consume bandwidth along the new links
-                n2_M = migrated[n2] if n2 in migrated\
+                n2_M = migrations[n2] if n2 in migrations\
                         else prev_mapping[n2]
-                for a,b in zip(Ms[n_M][n2_M][:-1], Ms[n_M][n2_M][1:]):
-                    infra[a][b]['bandwidth'] -= ns[n1][n2]['bandwidth']
+                # print(f'n_M={n_M}  n2_M={n2_M}')
+                for a,b in zip(Ms[n_M][n2_M]['path'][:-1],
+                        Ms[n_M][n2_M]['path'][1:]):
+                    if a != b:
+                        infra[a][b]['bandwidth'] -= ns[n][n2]['bandwidth']
+                    else:
+                        pass # note that 2 VNFs might be on same host
 
-                mapping[n][n2] = Ms[n_M][n2_M]
+                mapping[vl] = Ms[n_M][n2_M]['path']
 
             reallocated += [n]
 
@@ -1714,6 +1751,19 @@ class FMCMapper(AbstractMapper):
         return mapping
 
 
+    def mapping_cost(self, infra: nx.classes.graph.Graph,
+            ns: nx.classes.graph.Graph, mapping: dict) -> float:
+        """Derives the cost associated to a mapping
+
+        :infra: nx.classes.digraph.DiGraph: infrastructure graph
+        :ns: nx.classes.digraph.DiGraph: network service graph
+        :adj: int: graph depth of "adjacent servers"
+        :mapping: dict: mapping
+        :returns: float: the mapping cost
+        """
+        return sum(map(lambda n:
+                infra.nodes[mapping[n]]['cost'] * ns.nodes[n]['cpu'],
+            ns.nodes))
 
     
 

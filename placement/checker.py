@@ -332,9 +332,10 @@ class CheckBasicGraphs(AbstractChecker):
         """
         for node in infra.nodes():
             node_dict = infra.nodes[node]
-            if 'cpu' not in node_dict or type(node_dict['cpu']) != int:
+            if 'cpu' not in node_dict or\
+                    type(node_dict['cpu']) not in (int,float):
                 print("'cpu' key not present in node", node,
-                      "or not an int", file=sys.stderr)
+                      "or not an int|float", file=sys.stderr)
                 return False
             if 'cost' not in node_dict or\
                     type(node_dict['cost']) not in [float, int]:
