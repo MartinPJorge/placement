@@ -1270,7 +1270,11 @@ class FPTASMapper(AbstractMapper):
 
 class FMCMapper(AbstractMapper):
 
-    """Class definition of the Follow Me Chain (FMC) algorithm [fmc]
+    """Class definition of the Follow Me Chain (FMC) algorithm [fmc].
+    This version corrects [fmc] pitfall of not mapping all virtual
+    links ([fmc] visits the graph using a node-based BFS), and uses
+    k-shortest_paths rather than the range-based DFS, which does not
+    scale.
 
     [fmc] Chen, Yan-Ting, and Wanjiun Liao. "Mobility-aware service function
     chaining in 5g wireless networks with mobile edge computing." ICC 2019-2019
