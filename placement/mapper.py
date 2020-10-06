@@ -1767,16 +1767,29 @@ class FMCMapper(AbstractMapper):
 
 
     def mapping_cost(self, infra: nx.classes.graph.Graph,
-            ns: nx.classes.graph.Graph, mapping: dict) -> float:
+            ns: nx.classes.graph.Graph, mapping: dict,
+            with_cell: bool=False) -> float:
         """Derives the cost associated to a mapping
 
         :infra: nx.classes.digraph.DiGraph: infrastructure graph
         :ns: nx.classes.digraph.DiGraph: network service graph
         :adj: int: graph depth of "adjacent servers"
         :mapping: dict: mapping
+        :with_cell: bool: (default=False) specifies if the cell
+                          cost is considered
         :returns: float: the mapping cost
         """
-        return sum(map(lambda n:
+        cell_cost, cell_found = 0, False
+        
+        if with_cell:
+            for l in filter(lambda k: type(k)==tuple, mapping.keys()):
+                for m in filter(lambda m: infra[m]['type']=='cell', mapping[l]):
+                    cell_cost = infra[m]['cost']
+                    cell_found = True
+                    break
+                if cell_found: break
+
+        return cell_cost + sum(map(lambda n:
                 infra.nodes[mapping[n]]['cost'] * ns.nodes[n]['cpu'],
             ns.nodes))
 

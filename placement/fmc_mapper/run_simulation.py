@@ -195,7 +195,7 @@ def run_sim(config, out):
         }
         result[t]['worked'] = mapping[t]['worked']
         result[t]['Objective_value'] = fmc_mapper.mapping_cost(
-                infra=infra, ns=ns, mapping=mapping[t])
+                infra=infra, ns=ns, mapping=mapping[t], with_cell=False)
         end = time.time()
         result[t]['Running_time'] = end - start
 
@@ -205,12 +205,11 @@ def run_sim(config, out):
 
     # DUmp results as JSON
     result['worked'] = all_worked
+    ts = list(result['AP_selection'].keys())
+    result['Running_time'] = sum(map(lambda t: result[t]['Running_time'], ts))
     result['Objective_value'] = sum(map(lambda t:
-            result[t]['Objective_value'] /\
-                    len(result['AP_selection'].keys()),
-        result['AP_selection'].keys()))
-    result['Running_time'] = sum(map(lambda t:
-            result[t]['Running_time'], result['AP_selection'].keys()))
+                result[t]['Objective_value'] / len(ts), ts)) +\
+        sum(map(lambda t: infra.nodes[result['AP_selection'][t]]['cost'], ts))
     with open(out, 'w') as f:
         json.dump(result, f, indent=4)
 
