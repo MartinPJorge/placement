@@ -1369,6 +1369,12 @@ class FMCMapper(AbstractMapper):
         mapping = {
             'worked': True
         }
+        for n in ns.nodes:
+            mapping[n] = list(filter(lambda n: infra.nodes[n]['cpu'] >= 0 and\
+                    ('edge' in infra.nodes[n]['name'] or\
+                        'fog' in infra.nodes[n]['name']), infra.nodes))[0]
+        for n1,n2 in ns.edges():
+            mapping[n1,n2] = []
         ## How a mapping looks like
         # mapping = {
         #     "worked": true,
@@ -1450,6 +1456,11 @@ class FMCMapper(AbstractMapper):
 
                 # C <- {Mj |adjacent MEC nodes of Mi & Mi} \ D;
                 C = set(adjM).difference(D)
+
+                # C = emptyset -> return error in mapping
+                if len(C) == 0:
+                    mapping['worked'] = False
+                    return mapping
 
                 # calculate the inner product for all Mj in C
                 # (rci (t), rbij (t)) · (1, w)
