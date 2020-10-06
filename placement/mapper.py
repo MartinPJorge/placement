@@ -1369,12 +1369,6 @@ class FMCMapper(AbstractMapper):
         mapping = {
             'worked': True
         }
-        for n in ns.nodes:
-            mapping[n] = list(filter(lambda n: infra.nodes[n]['cpu'] >= 0 and\
-                    ('edge' in infra.nodes[n]['name'] or\
-                        'fog' in infra.nodes[n]['name']), infra.nodes))[0]
-        for n1,n2 in ns.edges():
-            mapping[n1,n2] = []
         ## How a mapping looks like
         # mapping = {
         #     "worked": true,
@@ -1457,11 +1451,6 @@ class FMCMapper(AbstractMapper):
                 # C <- {Mj |adjacent MEC nodes of Mi & Mi} \ D;
                 C = set(adjM).difference(D)
 
-                # C = emptyset -> return error in mapping
-                if len(C) == 0:
-                    mapping['worked'] = False
-                    return mapping
-
                 # calculate the inner product for all Mj in C
                 # (rci (t), rbij (t)) · (1, w)
                 inner_product = {}
@@ -1471,6 +1460,17 @@ class FMCMapper(AbstractMapper):
                                 zip(Mi_to[Mj][:-1], Mi_to[Mj][1:])))
                     w = ts / tr
                     inner_product[Mj] = [rci*1, rbij*w]
+
+                # C = emptyset -> return error in mapping
+                if n0 not in mapping and len(C) == 0:
+                    for n in filter(lambda n: n not in mapping, ns.nodes):
+                        mapping[n] = list(filter(lambda n: infra.nodes[n]['cpu'] >= 0 and\
+                                ('edge' in infra.nodes[n]['name'] or\
+                                    'fog' in infra.nodes[n]['name']), infra.nodes))[0]
+                    for n1,n2 in filter(lambda l: l not in mapping, ns.edges()):
+                        mapping[n1,n2] = []
+                    mapping['worked'] = False
+                    return mapping
 
                 # If n0 was previously mapped, use that server
                 print(f'n0={n0} not in mapping={n0 not in mapping}')
