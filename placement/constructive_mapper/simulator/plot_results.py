@@ -109,6 +109,7 @@ class DataExtractor(object):
         log.info("Extracting plot data based on params: \ndependent_section_key: {}\nsection_keys_to_aggr: {}\nsection_key_filters: {}".
                  format(dependent_section_key, section_keys_to_aggr, section_key_filters))
         plot_data = {}
+        feas_data = {}
         aggr_value_tuples = {}
         for sim_id in range(1, self.sim_id_num+1):
             sim_id_str = str(sim_id)
@@ -154,6 +155,10 @@ class DataExtractor(object):
                         log.debug("Mapping object of simulation id {}:\n{}".format(sim_id_str, mapping))
                         # extend the plotdata with the given method
                         plot_data = plot_value_extractor(mapping, plot_data, dependent_value)
+                        # Append feasibility of the mapping
+                        if dependent_value not in feas_data:
+                            feas_data[dependent_value] = []
+                        feas_data = DataExtractor.count_feasible(mapping, feas_data, dependent_value)
                 except FileNotFoundError as e:
                     log.error("File not found {} Skipping plot creation".format(sol_path))
         if len(aggr_value_tuples) == 0 or len(plot_data) == 0:
@@ -161,6 +166,7 @@ class DataExtractor(object):
                       format(sim_id, config[section][key], value, section, key))
         log.debug("Aggregation value tuples: \n{}".format(json.dumps(aggr_value_tuples, indent=2)))
         log.info("Data to be plotted: \n{}".format(json.dumps(plot_data, indent=2)))
+        log.info("Feasibility: \n{}".format(json.dumps(feas_data, indent=2)))
         return plot_data
 
 
@@ -288,12 +294,15 @@ class MakeCompareBoxPlot(MakeBoxPlot):
         # skip the box spaces which we added to separate the values
         pos_offset = 1
         boxes_artists = []
+        print('legend_from_keys')
         for legend_name in legend_from_keys:
             # take one data from each dataset, which corresponds to the same value
             values_to_plot = []
             for x_label in dependent_data_lables:
                 values_to_plot.append(dict_of_plot_data[legend_name][x_label])
             pos = [i * (len(legend_from_keys)+1) + pos_offset for i in range(0, len(dependent_data_lables))]
+            print('pos_offset', pos_offset)
+            print('seld.linestyle_list', self.linestyle_list)
             boxplot_res = ax.boxplot(values_to_plot, positions=pos, whis=1.5,
                        boxprops=self.linestyle_list[pos_offset-1], medianprops=self.linestyle_list[pos_offset-1],
                        whiskerprops=self.linestyle_list[pos_offset-1], flierprops=self.flierstyle_list[pos_offset-1],
@@ -369,6 +378,13 @@ def plot_both_if_needed(de : DataExtractor, plotter : MakeBoxPlot, plot_value_fu
                                section_keys_to_aggr=aggregation_keys,
                                plot_value_extractor=plot_value_func)
     plotter.make_and_save_plot("heuristic-{}-impr-{}".format(name, improvement_limit), pd1, dependent_section_key, name)
+    # TODO - JORGE: this line is included to consider SoA solutions
+    pd1 = de.extract_plot_data(sol_file_name="soa_solution.json",
+                               section_key_filters=section_key_filters,
+                               dependent_section_key=dependent_section_key,
+                               section_keys_to_aggr=aggregation_keys,
+                               plot_value_extractor=plot_value_func)
+    plotter.make_and_save_plot("soa-{}".format(name), pd1, dependent_section_key, name)
 
 
 help_text = "Positional arguments are either \n" \
