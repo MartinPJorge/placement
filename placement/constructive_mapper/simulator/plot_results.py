@@ -34,6 +34,15 @@ config_section_key_to_axis_label_dict = {
 }
 
 
+PALETTES = [
+    ['#d73027','#fc8d59','#fee090','#e0f3f8','#91bfdb','#4575b4'], #https://colorbrewer2.org/?type=diverging&scheme=RdYlBu&n=6
+    ['#b2182b','#ef8a62','#d1e5f0','#67a9cf','#2166ac'], #https://colorbrewer2.org/?type=diverging&scheme=RdBu&n=6
+    ['black', 'red', 'green', 'blue']
+]
+PALETTE=PALETTES[1]
+
+
+
 class DataExtractor(object):
 
     def __init__(self,  experiment_path, sim_id_num, config_file_name='config.yml', section_key_separator='.'):
@@ -255,21 +264,25 @@ class MakeCompareBoxPlot(MakeBoxPlot):
         self.show_feasibility_percentage = show_feasibility_percentage
         self.max_sample_size = max_sample_size
         self.linestyle_list = [
-            {'linewidth': 1, 'color': 'black', 'linestyle': '-'},
-            {'linewidth': 1, 'color': 'red', 'linestyle': '--'},
-            {'linewidth': 1, 'color': 'green', 'linestyle': '-.'},
-            {'linewidth': 1, 'color': 'blue', 'linestyle': ':'}
+            {'linewidth': 1, 'color': PALETTE[0], 'linestyle': '-'},
+            {'linewidth': 1, 'color': PALETTE[1], 'linestyle': '--'},
+            {'linewidth': 1, 'color': PALETTE[2], 'linestyle': '-.'},
+            {'linewidth': 1, 'color': PALETTE[3], 'linestyle': ':'}
         ]
+        if len(PALETTE) > 4:
+            self.linestyle_list.append({'linewidth': 1, 'color': PALETTE[4],
+                'linestyle': 'solid'})
         self.flierstyle_list = [
-            {'markeredgecolor': 'black'},
-            {'markeredgecolor': 'red'},
-            {'markeredgecolor': 'green'},
-            {'markeredgecolor': 'blue'},
+            {'markeredgecolor': PALETTE[0]},
+            {'markeredgecolor': PALETTE[1]},
+            {'markeredgecolor': PALETTE[2]},
+            {'markeredgecolor': PALETTE[3]},
         ]
         self.y_scale = y_scale
         self.show_every_2nd_feas = show_every_2nd_feas
 
-    def make_and_save_plot(self, file_name, dict_of_plot_data, dependent_section_key, y_axis_label):
+    def make_and_save_plot(self, file_name, dict_of_plot_data,
+            dependent_section_key, y_axis_label, fill_color=False):
         """
 
 
@@ -277,6 +290,7 @@ class MakeCompareBoxPlot(MakeBoxPlot):
         :param dict_of_plot_data: keys are legend items, values are dict of plot_data in the same struct as in baseclass
         :param dependent_section_key:
         :param y_axis_label:
+        :param fill_color: (optional) boolean to fill boxes with color
         :return:
         """
         if len(dict_of_plot_data) == 0:
@@ -303,10 +317,26 @@ class MakeCompareBoxPlot(MakeBoxPlot):
             pos = [i * (len(legend_from_keys)+1) + pos_offset for i in range(0, len(dependent_data_lables))]
             print('pos_offset', pos_offset)
             print('seld.linestyle_list', self.linestyle_list)
-            boxplot_res = ax.boxplot(values_to_plot, positions=pos, whis=1.5,
-                       boxprops=self.linestyle_list[pos_offset-1], medianprops=self.linestyle_list[pos_offset-1],
-                       whiskerprops=self.linestyle_list[pos_offset-1], flierprops=self.flierstyle_list[pos_offset-1],
-                       capprops=self.linestyle_list[pos_offset-1])
+            if fill_color:
+                boxplot_res = ax.boxplot(values_to_plot, positions=pos,
+                        whis=1.5, patch_artist=True,
+                        medianprops={'color': 'black', 'linewidth': 2},
+                        whiskerprops={'markeredgecolor': 'black'},
+                        flierprops={'markeredgecolor': 'black',
+                                    'markerfacecolor':
+                                    self.linestyle_list[pos_offset-1]['color']},
+                        capprops={'markeredgecolor': 'black'})
+                print(f'box_path props: {boxplot_res.keys()}')
+                for box_patch in boxplot_res['boxes']:
+                    box_patch.set_facecolor(self.linestyle_list[pos_offset-1]['color'])
+                    #box_patch.set_edgecolor(self.linestyle_list[pos_offset-1]['color'])
+                    box_patch.set_linewidth(self.linestyle_list[pos_offset-1]['linewidth'])
+                    # box_patch.set_linestyle(self.linestyle_list[pos_offset-1]['linestyle'])
+            else:
+                boxplot_res = ax.boxplot(values_to_plot, positions=pos, whis=1.5,
+                           boxprops=self.linestyle_list[pos_offset-1], medianprops=self.linestyle_list[pos_offset-1],
+                           whiskerprops=self.linestyle_list[pos_offset-1], flierprops=self.flierstyle_list[pos_offset-1],
+                           capprops=self.linestyle_list[pos_offset-1])
             pos_offset += 1
             boxes_artists.append(boxplot_res["boxes"][0])
         xtick_offset = len(legend_from_keys)/2+0.5 if len(legend_from_keys)%2==0 else len(legend_from_keys)//2+1
@@ -315,9 +345,13 @@ class MakeCompareBoxPlot(MakeBoxPlot):
         dependent_data_lables_removed_brackets = map(lambda l: l.rstrip("]").lstrip("["), dependent_data_lables)
         plt.xticks(xtick_positions, dependent_data_lables_removed_brackets)
         # reverse both so they would match the order of the feasibilty numbers
-        ax.legend(reversed(boxes_artists), reversed(legend_from_keys), loc='lower right', prop={'size': 15})
+        #ax.legend(reversed(boxes_artists), reversed(legend_from_keys),
+        #        loc='best', prop={'size': 12}, ncol=2)
+        ax.legend(reversed(boxes_artists), reversed(legend_from_keys),
+                loc='lower right', prop={'size': 15})
 
         ax.set_xlabel(config_section_key_to_axis_label_dict[dependent_section_key], fontdict={'fontsize': 15})
+        #ax.set_xlabel('VNF count bound to mobile nodes', fontdict={'fontsize': 15})
         ax.set_ylabel(y_axis_label, fontdict={'fontsize': 15})
         ax.tick_params(labelsize=13)
         plt.yscale(self.y_scale)
@@ -393,7 +427,8 @@ help_text = "Positional arguments are either \n" \
             "\t (b) dependent_section_key (e.g. optimization.coverage_threshold)\n" \
             "\t (c) max_sample_size giving the divisor in the feasibility ratio, calculated from the sample size (if 1 then skip plotting feasibilty)" \
             "\t (d) y_axis_label is the label to be shown on y axes\n" \
-            "\t (e) y_scale is one of linear, log, symlog, logit, ... (taken from matplotlib)"
+            "\t (e) y_scale is one of linear, log, symlog, logit, ... (taken from matplotlib)\n"\
+            "\t (f) [OPTIONAL] fill_color - boolean to fill boxplot boxes"
 
 if __name__ == "__main__":
 
@@ -411,6 +446,7 @@ if __name__ == "__main__":
             max_sample_size = int(sys.argv[3])
             y_axis_label = sys.argv[4]
             y_scale = sys.argv[5]
+            fill_color = bool(sys.argv[6]) if len(sys.argv) >= 7 else False
         except:
             print(help_text)
             raise ValueError("Missing input parameters!")
@@ -422,7 +458,8 @@ if __name__ == "__main__":
             plotter = MakeCompareBoxPlot(output_filetype='pdf', plots_path='local_replot_data',
                                          max_sample_size=max_sample_size, show_feasibility_percentage=max_sample_size != 1,
                                          y_scale=y_scale)
-            plotter.make_and_save_plot(replot_file.rstrip(".json"), replot_data, dependent_section_key, y_axis_label)
+            plotter.make_and_save_plot(replot_file.rstrip(".json"),
+                    replot_data, dependent_section_key, y_axis_label, fill_color)
     elif simulation_name == "large_tests_many_nfs":
         ref_to_path = {
             'ref-1': "../graphs/infras/cobo-calleja/pico-and-micro-cobo-calleja-ref-1.gml",

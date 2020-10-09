@@ -52,10 +52,15 @@ for json in $jsons; do
     echo -e "{\n" > $json
 done
 
+echo ${exp_name_lines[0]}
+
 for i in `seq 0 $(( ${#exp_map_lines[@]} - 1 ))`; do
     # Print experiment key, e.g., "ampl-cost-sfcs-1"
+    ## THIS DOES'T WORK ON BATTERY NAMINGS
+    ## exp_name=`tail --lines=+${exp_name_lines[i]} $plot_log | head -n1 |\
+    ##     grep -oe "[a-Z0-9\-\_\.]\+\.png" | grep -oe "[a-Z0-9\-]\+" | head -n1`;
     exp_name=`tail --lines=+${exp_name_lines[i]} $plot_log | head -n1 |\
-        grep -oe "[a-Z0-9\-]\+\.png" | grep -oe "[a-Z0-9\-]\+" | head -n1`;
+        grep -oe "\/.*png" | rev | cut -d'/' -f1 | rev`;
 
     # Select to which JSON file it is dumped
     echo $i $exp_name
