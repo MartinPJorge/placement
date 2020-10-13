@@ -136,156 +136,20 @@ def check_battery(config, mapping, battery_th):
     else:
         violations_dict[mobile_nfs_per_sfc]['fail'] += 1
 
-###########
-###########
-###########
-###########    ### REMOVE FROM HERE
-###########
-###########    # Print service and nodes info
-###########    ### for n in ns.nodes(data=True):
-###########    ###     print(n)
-###########    ### for n in ns.edges(data=True):
-###########    ###     print(n)
-###########    ### for n in infra.nodes(data=True):
-###########    ###     print(n)
-###########
-###########
-###########    # Read the waypoints path
-###########    paths_graph = nx.read_gml(
-###########            config['infrastructure']['cluster_move_waypoints'],
-###########            destringizer=float)
-###########    waypoints = nx.shortest_path(paths_graph,
-###########            source=config['infrastructure']['cluster_src_dst_tuples'][0][0],
-###########            target=config['infrastructure']['cluster_src_dst_tuples'][0][1],
-###########            weight='distance')
-###########    print('These are the waypoints: ', waypoints)
-###########
-###########
-###########    # Obtain master robot and cell nodes
-###########    master = list(substrate_network.ap_coverage_probabilities.keys())[0]
-###########    cell_nodes = filter(lambda n: substrate_network.nodes[n]['type'] == 'cell',
-###########                    substrate_network.nodes)
-###########
-###########
-###########    # Instantiate the FMC mapper
-###########    fog_checker = CheckBasicGraphs()
-###########    fmc_mapper = FMCMapper(checker=fog_checker)
-###########
-###########
-###########    attached_cells = [] # list of cells connected to the robot
-###########    all_worked = True
-###########    mapping = {}
-###########    result = {'AP_selection': {}} # for the resulting JSON dumped
-###########    print('NS edges')
-###########    for edge in ns.edges():
-###########        print(f'  {edge}')
-###########    for t in range(1,config['infrastructure']['time_interval_count']+1):
-###########        mapping[t] = {}
-###########        start = time.time()
-###########        print(f't={t}')
-###########        # dettach the robot from previous cells
-###########        while len(attached_cells) > 0:
-###########            infra.remove_edge(master, attached_cells.pop())
-###########
-###########        # select the AP with maximum coverage probability
-###########        # substrate_network.ap_coverage_probabilities = {
-###########        #   master_id: {
-###########        #      time: {
-###########        #           cell_id: coverage probability
-###########        #            ...
-###########        #      }
-###########        #       ...
-###########        #   }
-###########        # }
-###########        coverage_t = substrate_network.ap_coverage_probabilities[master][t]
-###########        best_cell = reduce(lambda c1,c2: c1 if coverage_t[c1] > coverage_t[c2]\
-###########                                            else c2, coverage_t.keys())
-###########        result['AP_selection'][t] = best_cell
-###########        infra.add_edge(master, best_cell, bandwidth=100,
-###########            delay=substrate_network.nodes[best_cell]['delay'])
-###########        attached_cells += [best_cell]
-###########
-###########        print(f'  best_cell={best_cell}')
-###########
-###########
-###########        if t == 1:
-###########            worked_cs = True # Map all connected components in NS
-###########            for c in nx.connected_components(ns):
-###########                print(f'mapping connected_component {c}')
-###########                nsc = ns.subgraph(c)#.copy()
-###########                mappingc = fmc_mapper.map(infra=infra, ns=nsc, adj=200, tr=1,
-###########                        ts=config['infrastructure']['time_interval_count'])
-###########                worked_cs = worked_cs and mappingc['worked']
-###########                for k in mappingc:
-###########                    mapping[t][k] = mappingc[k]
-###########
-###########            mapping[t]['worked'] = worked_cs
-###########            mapping[0] = dict(mapping[t])
-###########
-###########            print(f'mapping[{t}]={mapping[t]}')
-###########
-###########        # Perform migration (even at t=0, so it meets delay restrictions)
-###########        worked_cs = True
-###########        mapping[t] = dict(mapping[t-1])
-###########        for c in nx.connected_components(ns):
-###########            print(f'migrating connected_component {c}')
-###########            nsc = ns.subgraph(c)#.copy()
-###########            mappingc = fmc_mapper.handover(infra=infra, ns=nsc,
-###########                    prev_mapping=mapping[t-1],
-###########                    tr=1, ts=config['infrastructure']['time_interval_count'],
-###########                    Sl=sum(map(lambda dp: dp[0],
-###########                        service_instance.sfc_delays_list)),
-###########                    paths=10)
-###########            # No cell used, keep previous mapping
-###########            if mappingc == None:
-###########                worked_cs = False
-###########                continue
-###########            else:
-###########                worked_cs = worked_cs and mappingc['worked']
-###########            # add mappings of the connected component
-###########            for k in mappingc:
-###########                mapping[t][k] = mappingc[k]
-###########        if worked_cs != None:
-###########            mapping[t]['worked'] = worked_cs
-###########
-###########        print('worked_cs',worked_cs)
-###########        # Keep track if all mappings have worked
-###########        all_worked = all_worked and mapping[t]['worked']
-###########
-###########        result[t] = {
-###########            ns.nodes[n]['name']: infra.nodes[mapping[t][n]]['name']
-###########            for n in ns.nodes
-###########        }
-###########        result[t]['worked'] = mapping[t]['worked']
-###########        result[t]['Objective_value'] = fmc_mapper.mapping_cost(
-###########                infra=infra, ns=ns, mapping=mapping[t], with_cell=False)
-###########        end = time.time()
-###########        result[t]['Running_time'] = end - start
-###########
-###########
-###########        print(f'migration mapping[{t}]={mapping[t]}')
-###########
-###########
-###########    # DUmp results as JSON
-###########    result['worked'] = all_worked
-###########    ts = list(result['AP_selection'].keys())
-###########    result['Running_time'] = sum(map(lambda t: result[t]['Running_time'], ts))
-###########    result['Objective_value'] = sum(map(lambda t:
-###########                result[t]['Objective_value'] / len(ts), ts)) +\
-###########        sum(map(lambda t: infra.nodes[result['AP_selection'][t]]['cost'], ts))
-###########    with open(out, 'w') as f:
-###########        json.dump(result, f, indent=4)
 
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description="Checks if the FMC solutions meet battery reqs.")
+    parser.add_argument('experiments_dir', type=str,
+            help='path to experiments\' directory')
     parser.add_argument('battery_th', type=float, help='battery_threshold')
     args = parser.parse_args()
 
     count = 1
-    for subdir, dirs, files in os.walk("../constructive_mapper/simulator/results/mobile_nf_loads_small_sweep"):
+    #nf_loads_dir = "../constructive_mapper/simulator/results/mobile_nf_loads_small_sweep"
+    for subdir, dirs, files in os.walk(args.experiments_dir):
         for file in files:
 
 

@@ -79,8 +79,15 @@ def run_sim(config, out):
 
 
     # Print service and nodes info
-    ### for n in ns.nodes(data=True):
-    ###     print(n)
+    import matplotlib as mpl
+    import matplotlib.cm as cm
+    norm = mpl.colors.Normalize(vmin=0, vmax=1)
+    cmap = cm.get_cmap('magma_r')
+    x = 0.3
+    m = cm.ScalarMappable(norm=norm, cmap=cmap)
+    for n in ns.nodes(data=True):
+        print(n)
+        print('load in RGBA', [c*255 for c in m.to_rgba(n[1]['cpu'])])
     ### for n in ns.edges(data=True):
     ###     print(n)
     ### for n in infra.nodes(data=True):
